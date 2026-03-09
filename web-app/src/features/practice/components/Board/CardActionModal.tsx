@@ -11,6 +11,13 @@ export const CardActionModal: React.FC<Props> = ({ card: initialCard, onClose })
     const liveCard = useGameStore(state => state.cards[initialCard.instanceId]) || initialCard;
     const { updateCardState, zones } = useGameStore();
     const [isFlipped, setIsFlipped] = useState(false);
+    const [flashDamage, setFlashDamage] = useState(false);
+
+    React.useEffect(() => {
+        setFlashDamage(true);
+        const timer = setTimeout(() => setFlashDamage(false), 600);
+        return () => clearTimeout(timer);
+    }, [liveCard.damage]);
 
     let currentZone = '';
     for (const [zName, cardIds] of Object.entries(zones)) {
@@ -96,7 +103,9 @@ export const CardActionModal: React.FC<Props> = ({ card: initialCard, onClose })
 
                             <div className="space-y-4">
                                 <div>
-                                    <p className="text-xs text-slate-400 mb-2">ダメージ ({liveCard.damage})</p>
+                                    <p className={`text-xs mb-2 transition-all duration-300 ${flashDamage ? 'text-red-500 font-bold scale-110' : 'text-slate-400'}`}>
+                                        ダメージ ({liveCard.damage}) {flashDamage && <span className="animate-pulse">●</span>}
+                                    </p>
                                     <div className="grid grid-cols-3 gap-2 text-[10px]">
                                         {[10, 50, 100, -10, -50, -100].map(val => (
                                             <button key={val} onClick={() => handleAddDamage(val)} className={`px-2 py-1.5 rounded font-bold border ${val > 0 ? 'bg-red-900/40 border-red-800/50 text-red-200' : 'bg-blue-900/40 border-blue-800/50 text-blue-200'}`}>

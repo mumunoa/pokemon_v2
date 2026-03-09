@@ -71,13 +71,20 @@ export const Arena: React.FC = () => {
     }, [cards, initializeDeck]);
 
     const handleConfirmEndTurn = () => {
-        endTurn();
         setIsEndTurnModalOpen(false);
+        endTurn();
+        // Auto-draw 1 card at the start of the next turn
+        setTimeout(() => {
+            const nextPlayer = useGameStore.getState().currentTurnPlayer;
+            handleDraw1(nextPlayer);
+        }, 300);
     };
 
     const handleConfirmStartGame = () => {
-        startGame();
         setIsStartGameModalOpen(false);
+        startGame();
+        // Initial draw for turn 1
+        handleDraw1('player1');
     };
 
     const handleDraw1 = (playerId: PlayerId) => {
@@ -421,18 +428,34 @@ export const Arena: React.FC = () => {
                             isValidDrop = false;
                         }
                     }
+                    else if (targetCard.instanceId && sourceZone) {
+                        // Check if dropping onto a card in hand
+                        let cardZone: string | null = null;
+                        for (const [zName, cardIds] of Object.entries(zones)) {
+                            if (cardIds.includes(targetCard.instanceId)) {
+                                cardZone = zName;
+                                break;
+                            }
+                        }
+                        if (cardZone && (cardZone === 'player1-hand' || cardZone === 'player2-hand')) {
+                            moveCard(cardId, sourceZone, cardZone as ZoneType);
+                            isValidDrop = true;
+                        } else {
+                            isValidDrop = false;
+                        }
+                    }
                     else {
-                        isValidDrop = false; // Prevent trainers dropping on Pokemon, and prevent any attachment to Hand Pokemon
+                        isValidDrop = false;
                     }
                 } else {
                     isValidDrop = false;
                 }
             }
-            // 2. Dropped on a Zone
-            else if (Object.keys(zones).includes(targetZone)) {
-                if (targetZone === sourceZone && (targetZone.startsWith('player1-bench') || targetZone === 'player1-active')) {
+            // 2. Dropped on a Zone (or a Card which we resolve to its Zone)
+            else if (Object.keys(zones).includes(finalTargetZone)) {
+                if (finalTargetZone === sourceZone && (finalTargetZone.startsWith('player1-bench') || finalTargetZone === 'player1-active')) {
                     isValidDrop = false; // Cannot re-order field slots manually just by dropping on itself. Protects active/bench self-drops.
-                } else if (targetZone === 'stadium') {
+                } else if (finalTargetZone === 'stadium') {
                     if (draggedCard.kinds !== 'stadium') {
                         isValidDrop = false; // Only stadium cards can be placed in the stadium zone
                     } else if (sourceZone !== 'stadium') {
@@ -443,7 +466,7 @@ export const Arena: React.FC = () => {
                             moveCard(currentStadiumId, 'stadium', `${currentOwner}-trash` as ZoneType);
                         }
                         if (sourceZone) {
-                            moveCard(cardId, sourceZone, targetZone);
+                            moveCard(cardId, sourceZone, finalTargetZone);
                         }
                         isValidDrop = true;
                     } else {
@@ -451,16 +474,16 @@ export const Arena: React.FC = () => {
                     }
                 } else {
                     // Feature: Drop Constraints
-                    const isFieldSlot = targetZone.startsWith('player1-bench') || targetZone === 'player1-active';
-                    const isEmptyFieldSlot = isFieldSlot && zones[targetZone].length === 0;
+                    const isFieldSlot = finalTargetZone.startsWith('player1-bench') || finalTargetZone === 'player1-active';
+                    const isEmptyFieldSlot = isFieldSlot && zones[finalTargetZone].length === 0;
 
                     // Handle return to Hand or Deck or Trash or Prizes for resetting equipped cards and statuses
-                    if (['player1-hand', 'player1-deck', 'player1-trash', 'player1-prizes'].includes(targetZone) && draggedCard.type === 'pokemon') {
+                    if (['player1-hand', 'player1-deck', 'player1-trash', 'player1-prizes'].includes(finalTargetZone) && draggedCard.type === 'pokemon') {
                         if (draggedCard.attachedEnergyIds && draggedCard.attachedEnergyIds.length > 0) {
                             const energies = [...draggedCard.attachedEnergyIds];
                             useGameStore.getState().updateCardState(cardId, { attachedEnergyIds: [] });
                             energies.forEach(eid => {
-                                detachEnergy(eid, cardId, targetZone);
+                                detachEnergy(eid, cardId, finalTargetZone);
                                 useGameStore.getState().updateCardState(eid, { isReversed: false });
                             });
                         }
@@ -478,7 +501,7 @@ export const Arena: React.FC = () => {
                     }
                     // Intercept drops on populated field slots
                     else if (isFieldSlot && !isEmptyFieldSlot) {
-                        const pokemonIdInZone = [...zones[targetZone]].reverse().find(id => cards[id]?.type === 'pokemon');
+                        const pokemonIdInZone = [...zones[finalTargetZone]].reverse().find(id => cards[id]?.type === 'pokemon');
 
                         if (pokemonIdInZone) {
                             if (draggedCard.type === 'energy') {
@@ -513,15 +536,15 @@ export const Arena: React.FC = () => {
                                 }
 
                                 if (sourceZone) {
-                                    moveCard(cardId, sourceZone, targetZone);
+                                    moveCard(cardId, sourceZone, finalTargetZone);
                                     if (draggedToolId) {
-                                        moveCard(draggedToolId, sourceZone, targetZone, 0);
+                                        moveCard(draggedToolId, sourceZone, finalTargetZone, 0);
                                     }
                                 }
                                 isValidDrop = true;
                             }
                             else if (draggedCard.type === 'trainer' && draggedCard.kinds === 'tool') {
-                                if (sourceZone) moveCard(cardId, sourceZone, targetZone, 0);
+                                if (sourceZone) moveCard(cardId, sourceZone, finalTargetZone, 0);
                                 isValidDrop = true;
                             }
                             else {
@@ -536,13 +559,13 @@ export const Arena: React.FC = () => {
 
                         // Support detaching energy if dragged away manually to a non-pokemon target
                         if (energySourcePokemonId) {
-                            detachEnergy(cardId, energySourcePokemonId, targetZone);
-                        } else if (sourceZone && sourceZone !== targetZone) {
+                            detachEnergy(cardId, energySourcePokemonId, finalTargetZone);
+                        } else if (sourceZone && sourceZone !== finalTargetZone) {
                             // Normal zone to zone move
-                            moveCard(cardId, sourceZone, targetZone);
+                            moveCard(cardId, sourceZone, finalTargetZone);
                             if (draggedToolId) {
                                 // When moving to an empty field or matching zone, move tool over too
-                                moveCard(draggedToolId, sourceZone, targetZone, 0);
+                                moveCard(draggedToolId, sourceZone, finalTargetZone, 0);
                             }
 
                             // Reset orientation when dropping onto the field
@@ -853,7 +876,7 @@ export const Arena: React.FC = () => {
                             {(isDrawing === playerId || isDrawing === 'both') && (
                                 <div className="absolute z-[9999] pointer-events-none" style={{
                                     top: '0', left: '0', width: '90%', height: '92%',
-                                    animation: 'drawAnim 0.5s ease-out forwards'
+                                    animation: 'drawAnim 1.0s cubic-bezier(0.4, 0, 0.2, 1) forwards'
                                 }}>
                                     <div className="w-full h-full rounded-md shadow-xl" style={{ backgroundImage: "url('https://www.pokemon-card.com/assets/images/card_images/back.png')", backgroundSize: "cover" }} />
                                 </div>
@@ -878,12 +901,7 @@ export const Arena: React.FC = () => {
                             {renderCardsInZone(playerId, `${playerId}-trash` as ZoneType, true)}
                             <div className="absolute inset-0 z-40" onClick={(e) => {
                                 e.stopPropagation();
-                                const trashCards = zones[`${playerId}-trash` as ZoneType];
-                                if (trashCards.length > 0) {
-                                    setSelectedCard(cards[trashCards[trashCards.length - 1]]);
-                                } else {
-                                    setPopupState({ zone: `${playerId}-trash` as ZoneType });
-                                }
+                                setPopupState({ zone: `${playerId}-trash` as ZoneType });
                             }}></div>
                         </Zone>
                     </div>
@@ -997,9 +1015,10 @@ export const Arena: React.FC = () => {
                     animation: shuffleAnim 0.15s ease-in-out infinite;
                 }
                 @keyframes drawAnim {
-                    0% { transform: scale(1); opacity: 1; top: 0; left: 0; }
-                    50% { transform: scale(1.1); opacity: 1; top: -50px; left: -20px; }
-                    100% { transform: scale(0.6); opacity: 0; top: 250px; left: -20px; }
+                    0% { transform: scale(1) translate(0, 0); opacity: 1; }
+                    40% { transform: scale(1.2) translate(-20vw, 10vh) rotate(-10deg); opacity: 1; }
+                    70% { transform: scale(1.1) translate(-10vw, 30vh) rotate(0deg); opacity: 0.8; }
+                    100% { transform: scale(0.8) translate(5vw, 60vh) rotate(0deg); opacity: 0; }
                 }
                 @keyframes returnToDeckAnim {
                     0% { transform: scale(0.6); opacity: 0; top: 250px; left: -20px; }
