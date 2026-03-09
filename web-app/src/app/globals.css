@@ -51,10 +51,10 @@
 
 :root {
   --spacer-f-opp: 0;
-  --spacer-f-self: 1;
+  --spacer-f-self: 0.1;
   --spacer-f-top: 0;
-  --field-f-opp: 1.0;
-  --field-f-self: 2.5;
+  --field-f-opp: 0.5;
+  --field-f-self: 1.0;
   --hand-h-mult: 0.9;
   --row-s-opp-active: 0.8;
   --row-s-self-active: 1.0;
