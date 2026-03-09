@@ -917,7 +917,7 @@ export const Arena: React.FC = () => {
                         ))}
                     </Zone>
                 ) : (
-                    <Zone id={`${playerId}-hand` as ZoneType} className={`${playerId}-hand relative w-full bg-slate-900/90 border-t border-slate-700 shadow-[0_-5px_15px_rgba(0,0,0,0.5)] flex items-start justify-center space-x-[calc(var(--card-w)*-0.4)] overflow-visible z-50 pb-2 flex-shrink-0`} style={{ height: 'calc(var(--card-h) * var(--hand-h-mult))' }}>
+                    <Zone id={`${playerId}-hand` as ZoneType} className={`${playerId}-hand relative w-full bg-slate-900/90 border-t border-slate-700 shadow-[0_-5px_15px_rgba(0,0,0,0.5)] flex items-start justify-center space-x-[calc(var(--card-w)*-0.4)] overflow-visible z-50 pb-1 flex-shrink-0`} style={{ height: 'calc(var(--card-h) * var(--hand-h-mult))' }}>
                         {/* Toolbar Toggle Button */}
                         <button
                             className="absolute -top-[var(--bar-h)] right-[5vw] z-[70] bg-slate-800/95 rounded-full border-2 border-slate-500 text-white shadow-xl flex items-center justify-center transition-all hover:bg-slate-700 active:scale-90"

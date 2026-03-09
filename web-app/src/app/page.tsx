@@ -14,7 +14,7 @@ export default function Home() {
 
   return (
     <main className="w-full h-screen h-[100dvh] bg-slate-950 flex flex-col overflow-hidden relative" onClick={() => setIsLogOpen(false)}>
-      <header className="glass-panel main-header flex justify-between items-center p-4 bg-slate-900/80 backdrop-blur-md border-b border-slate-700/50 shadow-lg shrink-0 z-[1000]">
+      <header className="glass-panel main-header flex justify-between items-center p-2 sm:p-4 bg-slate-900/80 backdrop-blur-md border-b border-slate-700/50 shadow-lg shrink-0 z-[1000]">
         <button
           onClick={(e) => { e.stopPropagation(); setIsSettingsOpen(true); }}
           className="icon-btn settings-btn text-white bg-slate-800 px-4 py-2 rounded-md hover:bg-slate-700 active:scale-95 transition-all flex items-center gap-2"
