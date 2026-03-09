@@ -108,8 +108,8 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                             {pid === 'player1' ? 'プレイヤー 1' : 'プレイヤー 2'}
                                         </span>
                                         <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${(pid === 'player1' ? p1Count : p2Count) > 0
-                                                ? 'bg-green-500/10 text-green-400'
-                                                : 'bg-slate-700 text-slate-500'
+                                            ? 'bg-green-500/10 text-green-400'
+                                            : 'bg-slate-700 text-slate-500'
                                             }`}>
                                             {(pid === 'player1' ? p1Count : p2Count)} 枚
                                         </span>
@@ -120,14 +120,14 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                             placeholder="デッキコード"
                                             value={deckCodes[pid]}
                                             onChange={(e) => setDeckCodes(prev => ({ ...prev, [pid]: e.target.value }))}
-                                            className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-green-500/50 transition-all placeholder:text-slate-700"
+                                            className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-base focus:outline-none focus:ring-1 focus:ring-green-500/50 transition-all placeholder:text-slate-700"
                                         />
                                         <button
                                             onClick={() => handleLoadDeck(pid)}
                                             disabled={loading[pid] || !deckCodes[pid].trim()}
                                             className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${loading[pid] || !deckCodes[pid].trim()
-                                                    ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
-                                                    : 'bg-green-600 hover:bg-green-500 text-white active:scale-95'
+                                                ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
+                                                : 'bg-green-600 hover:bg-green-500 text-white active:scale-95'
                                                 }`}
                                         >
                                             {loading[pid] ? (
@@ -146,8 +146,8 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                             onClick={handleStartGame}
                             disabled={p1Count === 0 && p2Count === 0}
                             className={`w-full mt-4 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 ${p1Count === 0 && p2Count === 0
-                                    ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
-                                    : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/40 border border-blue-500 active:scale-[0.98]'
+                                ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
+                                : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/40 border border-blue-500 active:scale-[0.98]'
                                 }`}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 3l14 9-14 9V3z"></path></svg>

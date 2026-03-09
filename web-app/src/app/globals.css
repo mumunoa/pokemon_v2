@@ -6,7 +6,7 @@
 
   /* Enhanced Fluid Scaling - Tightened constraints to ensure full visibility of hand on all displays */
   /* Fluid Scaling with height constraint to prevent vertical overflow on landscape/PC */
-  --card-w: clamp(60px, min(16.8vw, 11vh), 130px);
+  --card-w: clamp(65px, min(17vw, 13.5vh), 150px);
   --card-h: calc(var(--card-w) * 1.4);
   --card-gap: clamp(4px, 1.5vw, 12px);
   --card-overlap: calc(var(--card-w) * -0.2);
@@ -50,16 +50,16 @@
 }
 
 :root {
-  --spacer-f-opp: 0.05;
-  --spacer-f-self: 0.1;
-  --spacer-f-top: 0.02;
-  --field-f-opp: 0.8;
-  --field-f-self: 1.2;
-  --hand-h-mult: 0.95;
-  --row-s-opp-active: 0.6;
-  --row-s-self-active: 0.75;
-  --row-s-opp-bench: 0.55;
-  --row-s-self-bench: 0.75;
+  --spacer-f-opp: 0;
+  --spacer-f-self: 0;
+  --spacer-f-top: 0;
+  --field-f-opp: 1.0;
+  --field-f-self: 1.5;
+  --hand-h-mult: 0.9;
+  --row-s-opp-active: 0.75;
+  --row-s-self-active: 0.95;
+  --row-s-opp-bench: 0.7;
+  --row-s-self-bench: 0.95;
 }
 
 .responsive-btn {
