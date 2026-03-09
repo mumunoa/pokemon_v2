@@ -4,16 +4,16 @@ import { useGameStore } from '@/features/practice/store/useGameStore';
 import { CardInstance } from '@/types/game';
 
 export const getEnergyIcon = (energyName: string) => {
-    // Map energy names to the design_rules files
-    if (energyName.includes('雷')) return '/assets/symbols/lightning.png';
-    if (energyName.includes('草')) return '/assets/symbols/grass.png';
-    if (energyName.includes('炎')) return '/assets/symbols/fire.png';
-    if (energyName.includes('水')) return '/assets/symbols/water.png';
-    if (energyName.includes('超')) return '/assets/symbols/psychic.png';
-    if (energyName.includes('闘')) return '/assets/symbols/fighting.png';
-    if (energyName.includes('悪')) return '/assets/symbols/darkness.png';
-    if (energyName.includes('鋼')) return '/assets/symbols/metal.png';
-    if (energyName.includes('ドラゴン')) return '/assets/symbols/dragon.png';
+    // Map energy names to types
+    if (energyName.includes('雷') || energyName.includes('lightning')) return '/assets/symbols/lightning.png';
+    if (energyName.includes('草') || energyName.includes('grass')) return '/assets/symbols/grass.png';
+    if (energyName.includes('炎') || energyName.includes('fire')) return '/assets/symbols/fire.png';
+    if (energyName.includes('水') || energyName.includes('water')) return '/assets/symbols/water.png';
+    if (energyName.includes('超') || energyName.includes('psychic')) return '/assets/symbols/psychic.png';
+    if (energyName.includes('闘') || energyName.includes('fighting')) return '/assets/symbols/fighting.png';
+    if (energyName.includes('悪') || energyName.includes('darkness')) return '/assets/symbols/darkness.png';
+    if (energyName.includes('鋼') || energyName.includes('metal')) return '/assets/symbols/metal.png';
+    if (energyName.includes('ドラゴン') || energyName.includes('dragon')) return '/assets/symbols/dragon.png';
     return '/assets/symbols/colorless.png';
 };
 
@@ -41,7 +41,7 @@ const AttachedEnergyIcon: React.FC<{ energyId: string, zIndex: number }> = ({ en
             ref={setNodeRef}
             {...listeners}
             {...attributes}
-            className="w-5 h-5 rounded-full border border-white bg-white/50 shadow-md flex-shrink-0 relative overflow-hidden"
+            className="w-7 h-7 rounded-full border border-white bg-white/50 shadow-md flex-shrink-0 relative overflow-hidden"
             style={dndStyle}
             onClick={(e) => e.stopPropagation()}
         >
@@ -152,7 +152,7 @@ export const Card: React.FC<CardProps> = ({ card, style = {}, className = '', on
             style={dndStyle}
             {...listeners}
             {...attributes}
-            className={`card ${className} active:brightness-90 transition-all duration-75 overflow-hidden`}
+            className={`card ${className} active:brightness-90 transition-all duration-75`}
             onClick={(e) => {
                 e.stopPropagation();
                 if (onClick) onClick(card);
@@ -198,9 +198,9 @@ export const Card: React.FC<CardProps> = ({ card, style = {}, className = '', on
 
             {/* Attached Energy Indicators */}
             {card.attachedEnergyIds?.length > 0 && (
-                <div className="absolute -bottom-2 -left-2 flex flex-wrap gap-0.5 z-[60]" style={{ pointerEvents: 'auto' }}>
+                <div className="absolute -bottom-3 -left-3 flex flex-wrap gap-0 z-[100]" style={{ pointerEvents: 'auto' }}>
                     {card.attachedEnergyIds.map((eid: string, idx: number) => (
-                        <AttachedEnergyIcon key={`${eid}-${idx}`} energyId={eid} zIndex={60 + idx} />
+                        <AttachedEnergyIcon key={`${eid}-${idx}`} energyId={eid} zIndex={100 + idx} />
                     ))}
                 </div>
             )}

@@ -138,6 +138,23 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                     {errors[pid] && (
                                         <p className="text-red-400 text-[10px] px-1">{errors[pid]}</p>
                                     )}
+                                    {/* Deck History */}
+                                    {useGameStore.getState().deckHistory.length > 0 && (
+                                        <div className="mt-2 space-y-1">
+                                            <p className="text-[10px] text-slate-500 px-1 font-medium">最近使用したデッキ (タップで選択)</p>
+                                            <div className="flex flex-wrap gap-1">
+                                                {useGameStore.getState().deckHistory.map((historyCode, idx) => (
+                                                    <button
+                                                        key={`${pid}-hist-${idx}`}
+                                                        onClick={() => setDeckCodes(prev => ({ ...prev, [pid]: historyCode }))}
+                                                        className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded border border-slate-700 transition-colors max-w-[120px] truncate"
+                                                    >
+                                                        {historyCode}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>

@@ -78,6 +78,8 @@ export interface GameState {
     isOpponentView: boolean;
     displayMode: 'text' | 'compact' | 'local-image';
     logs: string[];
+    deckHistory: string[];
+    isGameStarted: boolean;
 
     // History
     pastStates: {
@@ -87,6 +89,8 @@ export interface GameState {
         currentTurnPlayer: PlayerId;
         isOpponentView: boolean;
         logs: string[];
+        deckHistory: string[];
+        isGameStarted: boolean;
     }[];
     futureStates: {
         cards: Record<string, CardInstance>;
@@ -95,6 +99,8 @@ export interface GameState {
         currentTurnPlayer: PlayerId;
         isOpponentView: boolean;
         logs: string[];
+        deckHistory: string[];
+        isGameStarted: boolean;
     }[];
 
     // Actions
@@ -106,10 +112,13 @@ export interface GameState {
         currentTurnPlayer: PlayerId;
         isOpponentView: boolean;
         logs: string[];
+        deckHistory: string[];
+        isGameStarted: boolean;
     }) => void;
     undo: () => void;
     redo: () => void;
     addLog: (message: string) => void;
+    startGame: () => void;
 
     initializeDeck: (deckList1: DeckCard[], deckList2: DeckCard[]) => void;
     moveCard: (cardId: string, fromZone: ZoneType, toZone: ZoneType, newIndex?: number) => void;

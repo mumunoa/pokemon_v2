@@ -31,7 +31,11 @@ const sampleDeck: DeckCard[] = [
 ];
 
 export const Arena: React.FC = () => {
-    const { cards, zones, turnCount, currentTurnPlayer, isOpponentView, endTurn, setOpponentView, initializeDeck, moveCard, attachEnergy, detachEnergy, drawCards, shuffleDeck, tossCoin, coinFlips } = useGameStore();
+    const {
+        cards, zones, turnCount, currentTurnPlayer, isOpponentView,
+        isGameStarted, startGame,
+        endTurn, setOpponentView, initializeDeck, moveCard, attachEnergy, detachEnergy, drawCards, shuffleDeck, tossCoin, coinFlips
+    } = useGameStore();
 
     const operatingPlayer = isOpponentView ? 'player2' : 'player1';
     const isTurnActive = operatingPlayer === currentTurnPlayer;
@@ -56,6 +60,7 @@ export const Arena: React.FC = () => {
     const [isShuffling, setIsShuffling] = useState<PlayerId | 'both' | null>(null);
     const [draggedToolId, setDraggedToolId] = useState<string | null>(null);
     const [isEndTurnModalOpen, setIsEndTurnModalOpen] = useState(false);
+    const [isStartGameModalOpen, setIsStartGameModalOpen] = useState(false);
     const [isToolbarOpen, setIsToolbarOpen] = useState(true);
 
     // 初期起動時、カードが1枚もない場合にサンプルデータを投入
@@ -68,6 +73,11 @@ export const Arena: React.FC = () => {
     const handleConfirmEndTurn = () => {
         endTurn();
         setIsEndTurnModalOpen(false);
+    };
+
+    const handleConfirmStartGame = () => {
+        startGame();
+        setIsStartGameModalOpen(false);
     };
 
     const handleDraw1 = (playerId: PlayerId) => {
@@ -546,7 +556,11 @@ export const Arena: React.FC = () => {
         }
 
         if (isValidDrop && dragStartSnapshotRef.current) {
-            useGameStore.getState().pushHistory(dragStartSnapshotRef.current);
+            useGameStore.getState().pushHistory({
+                ...dragStartSnapshotRef.current,
+                deckHistory: useGameStore.getState().deckHistory,
+                isGameStarted: useGameStore.getState().isGameStarted
+            });
         }
 
         if (transferSnapshot) {
@@ -653,12 +667,17 @@ export const Arena: React.FC = () => {
             useGameStore.getState().updateCardState(cardId, { specialConditions: [] });
         });
 
+        const activePocket = cards[activeCards[0]];
+        const benchPocket = cards[benchCards[0]];
+        const logMsg = `${playerId === 'player1' ? 'プレイヤー1' : 'プレイヤー2'}: ${activePocket?.name || 'ポケモン'} と ${benchPocket?.name || 'ポケモン'} を入れ替えました。`;
+
         useGameStore.setState(state => ({
             zones: {
                 ...state.zones,
                 [activeZone]: benchCards,
                 [benchId]: activeCards
-            }
+            },
+            logs: [...state.logs, logMsg]
         }));
 
         if (escapePlayerId === playerId) {
@@ -757,7 +776,7 @@ export const Arena: React.FC = () => {
             let disableDrag = isOpponentTarget && (zoneName.endsWith('-deck') || zoneName.endsWith('-prizes'));
             if (!isTurnActive && isSelfTarget) disableDrag = true;
 
-            return <Card key={card.instanceId} card={cardProps} style={{ ...stackStyles }} onClick={(c) => setSelectedCard(isPrizes ? null : c)} zoneName={zoneName} forcedTransform={activeZoneRotation || undefined} disableDrag={disableDrag} />;
+            return <Card key={card.instanceId} card={cardProps} style={{ ...stackStyles }} onClick={(c) => setSelectedCard(c)} zoneName={zoneName} forcedTransform={activeZoneRotation || undefined} disableDrag={disableDrag} />;
         });
     };
 
@@ -775,7 +794,7 @@ export const Arena: React.FC = () => {
     const renderPlayerField = (playerId: PlayerId, isOpponent: boolean) => {
         const spacerFlex = isOpponent ? "var(--spacer-f-opp)" : "var(--spacer-f-self)";
         return (
-            <div className={`field ${playerId}-field relative flex flex-col px-2 py-1 overflow-visible ${isOpponent ? 'rotate-180' : ''}`} style={{ flex: isOpponent ? 'var(--field-f-opp)' : 'var(--field-f-self)', minHeight: 0 }}>
+            <div className={`field ${playerId}-field relative flex flex-col px-2 py-1 overflow-visible ${isOpponent ? 'rotate-180' : ''}`} style={{ flex: isOpponent ? undefined : 'var(--field-f-self)', minHeight: 0 }}>
                 <div style={{ flex: isOpponent ? "var(--spacer-f-top)" : spacerFlex }} />
                 <div className={`active-row flex justify-center items-center w-full max-w-4xl mx-auto gap-[var(--card-gap)] flex-shrink-0 ${isOpponent ? 'scale-[var(--row-s-opp-active)] origin-center' : 'scale-[var(--row-s-self-active)] origin-bottom'}`}>
 
@@ -857,7 +876,15 @@ export const Arena: React.FC = () => {
                                 </div>
                             )}
                             {renderCardsInZone(playerId, `${playerId}-trash` as ZoneType, true)}
-                            <div className="absolute inset-0 z-40" onClick={(e) => { e.stopPropagation(); setPopupState({ zone: `${playerId}-trash` as ZoneType }); }}></div>
+                            <div className="absolute inset-0 z-40" onClick={(e) => {
+                                e.stopPropagation();
+                                const trashCards = zones[`${playerId}-trash` as ZoneType];
+                                if (trashCards.length > 0) {
+                                    setSelectedCard(cards[trashCards[trashCards.length - 1]]);
+                                } else {
+                                    setPopupState({ zone: `${playerId}-trash` as ZoneType });
+                                }
+                            }}></div>
                         </Zone>
                     </div>
                 </div>
@@ -908,10 +935,6 @@ export const Arena: React.FC = () => {
 
                 {isOpponent ? (
                     <Zone id={`${playerId}-hand` as ZoneType} className={`${playerId}-hand-opponent relative w-full flex justify-center space-x-[calc(var(--card-w)*-0.6)] overflow-visible z-[10] opacity-90 flex-shrink-0`} style={{ height: 'calc(var(--card-h) * 0.5)' }}>
-                        <div className="absolute top-[100%] left-4 flex space-x-[1vw] z-[60] bg-slate-800/80 p-[min(1.5vw,1.5vh)] rounded-lg border border-slate-600 shadow-xl backdrop-blur-sm rotate-180 cursor-pointer pointer-events-auto">
-                            <button className="bg-green-700 hover:bg-green-600 px-[var(--btn-padding-x)] py-[var(--btn-padding-y)] text-[var(--btn-font-size)] text-white rounded shadow font-bold border border-green-500 transition-colors whitespace-nowrap" onClick={() => handleDraw1(playerId)}>ドロー</button>
-                            <button className="bg-orange-700 hover:bg-orange-600 px-[var(--btn-padding-x)] py-[var(--btn-padding-y)] text-[var(--btn-font-size)] text-white rounded shadow font-bold border border-orange-500 transition-colors whitespace-nowrap" onClick={() => handleReturnToDeck(playerId)}>山札に戻す</button>
-                        </div>
                         {zones[`${playerId}-hand` as ZoneType].map((cardId) => (
                             <div key={cardId} className="w-[var(--card-w)] h-[calc(var(--card-w)*1.4)] bg-slate-700 rounded shadow-md border border-slate-600 scale-[0.6] origin-top" style={{ backgroundImage: "url('https://www.pokemon-card.com/assets/images/card_images/back.png')", backgroundSize: "cover" }} />
                         ))}
@@ -1017,10 +1040,10 @@ export const Arena: React.FC = () => {
                     <div className="flex space-x-[var(--card-gap)] absolute right-[2vw] z-[5000]">
                         {useGameStore.getState().currentTurnPlayer === (isOpponentView ? 'player2' : 'player1') && (
                             <button
-                                className="bg-red-700 hover:bg-red-600 text-white rounded shadow-md font-bold border border-red-500 transition-colors responsive-btn"
-                                onClick={() => setIsEndTurnModalOpen(true)}
+                                className={`text-white rounded shadow-md font-bold border transition-colors responsive-btn ${isGameStarted ? 'bg-red-700 hover:bg-red-600 border-red-500' : 'bg-blue-700 hover:bg-blue-600 border-blue-500'}`}
+                                onClick={() => isGameStarted ? setIsEndTurnModalOpen(true) : setIsStartGameModalOpen(true)}
                             >
-                                ターン終了
+                                {isGameStarted ? 'ターン終了' : 'バトル開始'}
                             </button>
                         )}
                         <button
@@ -1112,6 +1135,27 @@ export const Arena: React.FC = () => {
                             </button>
                             <button className="bg-red-700 hover:bg-red-600 text-white rounded shadow font-bold border border-red-500 transition-colors responsive-btn" onClick={handleConfirmEndTurn}>
                                 はい (終了)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isStartGameModalOpen && (
+                <div className="fixed inset-0 z-[10000] bg-black/80 flex items-center justify-center pointer-events-auto backdrop-blur-sm" onClick={() => setIsStartGameModalOpen(false)}>
+                    <div
+                        className="bg-slate-800 border-2 border-slate-600 rounded-xl p-[5vw] shadow-2xl min-w-[300px] max-w-[90vw] text-center transform scale-100 animate-in fade-in zoom-in duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h2 className="text-white text-[clamp(14px,4vw,20px)] font-bold mb-[4vh]">
+                            バトルを開始しますか？
+                        </h2>
+                        <div className="flex space-x-[2vw] justify-center mt-[4vh]">
+                            <button className="bg-slate-700 hover:bg-slate-600 text-white rounded shadow font-bold border border-slate-500 transition-colors responsive-btn" onClick={() => setIsStartGameModalOpen(false)}>
+                                いいえ (準備中)
+                            </button>
+                            <button className="bg-blue-700 hover:bg-blue-600 text-white rounded shadow font-bold border border-blue-500 transition-colors responsive-btn" onClick={handleConfirmStartGame}>
+                                はい (対戦開始)
                             </button>
                         </div>
                     </div>

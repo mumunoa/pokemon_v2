@@ -46,6 +46,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     isOpponentView: false,
     displayMode: 'compact',
     logs: [],
+    deckHistory: [],
+    isGameStarted: false,
     pastStates: [],
     futureStates: [],
 
@@ -63,6 +65,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                 isOpponentView: state.isOpponentView,
                 displayMode: state.displayMode,
                 logs: state.logs,
+                deckHistory: state.deckHistory,
+                isGameStarted: state.isGameStarted,
             }));
             return {
                 pastStates: [...state.pastStates, snapshot],
@@ -90,6 +94,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                 isOpponentView: state.isOpponentView,
                 displayMode: state.displayMode,
                 logs: state.logs,
+                deckHistory: state.deckHistory,
+                isGameStarted: state.isGameStarted,
             }));
 
             const newPast = [...state.pastStates];
@@ -115,6 +121,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                 isOpponentView: state.isOpponentView,
                 displayMode: state.displayMode,
                 logs: state.logs,
+                deckHistory: state.deckHistory,
+                isGameStarted: state.isGameStarted,
             }));
 
             const newFuture = [...state.futureStates];
@@ -137,13 +145,31 @@ export const useGameStore = create<GameState>((set, get) => ({
                 deckList.forEach((card) => {
                     for (let i = 0; i < card.count; i++) {
                         const instanceId = `${playerId}-${card.id}-${i}-${crypto.randomUUID()}`;
+
+                        // Feature: Detect energy symbols/types from name
+                        let detectedType = card.type;
+                        let detectedKinds = card.kinds;
+                        if (card.name.includes('基本') && card.name.includes('エネルギー')) {
+                            detectedType = 'energy';
+                            if (card.name.includes('草')) detectedKinds = 'grass';
+                            else if (card.name.includes('炎')) detectedKinds = 'fire';
+                            else if (card.name.includes('水')) detectedKinds = 'water';
+                            else if (card.name.includes('雷')) detectedKinds = 'lightning';
+                            else if (card.name.includes('超')) detectedKinds = 'psychic';
+                            else if (card.name.includes('闘')) detectedKinds = 'fighting';
+                            else if (card.name.includes('悪')) detectedKinds = 'darkness';
+                            else if (card.name.includes('鋼')) detectedKinds = 'metal';
+                            else if (card.name.includes('ドラゴン')) detectedKinds = 'dragon';
+                            else detectedKinds = 'colorless';
+                        }
+
                         newCards[instanceId] = {
                             instanceId,
                             baseCardId: card.id,
                             name: card.name,
                             imageUrl: card.imageUrl,
-                            type: card.type,
-                            kinds: card.kinds,
+                            type: detectedType,
+                            kinds: detectedKinds,
                             damage: 0,
                             isReversed: false,
                             specialConditions: [],
@@ -166,7 +192,7 @@ export const useGameStore = create<GameState>((set, get) => ({
             const prizes2 = shuffledDeck2.splice(0, 6);
 
             const initialLogs = [
-                `対戦を開始しました。`,
+                `準備フェーズを開始しました。`,
                 `プレイヤー1: デッキ${deckList1.reduce((s, c) => s + c.count, 0)}枚`,
                 `プレイヤー2: デッキ${deckList2.reduce((s, c) => s + c.count, 0)}枚`
             ];
@@ -189,6 +215,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                 isOpponentView: false,
                 displayMode: state.displayMode,
                 logs: initialLogs,
+                deckHistory: state.deckHistory,
+                isGameStarted: false,
                 pastStates: [],
                 futureStates: []
             };
@@ -459,6 +487,13 @@ export const useGameStore = create<GameState>((set, get) => ({
         });
     },
 
+    startGame: () => {
+        set((state) => ({
+            isGameStarted: true,
+            logs: [...state.logs, "バトルを開始しました！ プレイヤー1のターン1です。"]
+        }));
+    },
+
     resetGame: () => {
         set({
             cards: {},
@@ -469,6 +504,8 @@ export const useGameStore = create<GameState>((set, get) => ({
             isOpponentView: false,
             displayMode: 'compact',
             logs: ['ゲームをリセットしました。'],
+            deckHistory: get().deckHistory,
+            isGameStarted: false,
             pastStates: [],
             futureStates: []
         });
@@ -490,6 +527,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                 isOpponentView: state.isOpponentView,
                 displayMode: state.displayMode,
                 logs: state.logs,
+                deckHistory: state.deckHistory,
+                isGameStarted: state.isGameStarted,
             }));
 
             return {
@@ -513,6 +552,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                 isOpponentView: state.isOpponentView,
                 displayMode: state.displayMode,
                 logs: state.logs,
+                deckHistory: state.deckHistory,
+                isGameStarted: state.isGameStarted,
             }));
 
             return {
@@ -535,9 +576,15 @@ export const useGameStore = create<GameState>((set, get) => ({
             const deckList: DeckCard[] = data.cards;
 
             if (playerId === 'player1') {
-                set({ player1Deck: deckList });
+                set((state) => {
+                    const newHistory = [code, ...state.deckHistory.filter(c => c !== code)].slice(0, 4);
+                    return { player1Deck: deckList, deckHistory: newHistory };
+                });
             } else {
-                set({ player2Deck: deckList });
+                set((state) => {
+                    const newHistory = [code, ...state.deckHistory.filter(c => c !== code)].slice(0, 4);
+                    return { player2Deck: deckList, deckHistory: newHistory };
+                });
             }
 
             return { success: true, count: deckList.reduce((sum, card) => sum + card.count, 0) };
