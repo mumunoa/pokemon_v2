@@ -50,8 +50,9 @@
 }
 
 :root {
-  --spacer-f-opp: 0.5;
-  --spacer-f-self: 1;
+  --spacer-f-opp: 0.35;
+  --spacer-f-self: 0.7;
+  --spacer-f-top: 0.175;
   --field-f-opp: 0.6;
   --field-f-self: 1.1;
   --hand-h-mult: 1.0;

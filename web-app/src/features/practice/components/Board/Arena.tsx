@@ -776,7 +776,7 @@ export const Arena: React.FC = () => {
         const spacerFlex = isOpponent ? "var(--spacer-f-opp)" : "var(--spacer-f-self)";
         return (
             <div className={`field ${playerId}-field relative flex flex-col px-2 py-1 overflow-visible ${isOpponent ? 'rotate-180' : ''}`} style={{ flex: isOpponent ? 'var(--field-f-opp)' : 'var(--field-f-self)', minHeight: 0 }}>
-                <div style={{ flex: spacerFlex }} />
+                <div style={{ flex: isOpponent ? "var(--spacer-f-top)" : spacerFlex }} />
                 <div className={`active-row flex justify-center items-center w-full max-w-4xl mx-auto gap-[var(--card-gap)] flex-shrink-0 ${isOpponent ? 'scale-[var(--row-s-opp-active)] origin-center' : 'scale-[var(--row-s-self-active)] origin-bottom'}`}>
 
                     <div className="relative">
