@@ -14,7 +14,7 @@ export default function Home() {
 
   return (
     <main className="w-full h-screen h-[100dvh] bg-slate-950 flex flex-col overflow-hidden relative" onClick={() => setIsLogOpen(false)}>
-      <header className="glass-panel main-header flex justify-between items-center p-2 sm:p-4 bg-slate-900/80 backdrop-blur-md border-b border-slate-700/50 shadow-lg shrink-0 z-[1000]">
+      <header className="glass-panel main-header flex justify-between items-center p-1 sm:p-4 bg-slate-900/80 backdrop-blur-md border-b border-slate-700/50 shadow-lg shrink-0 z-[1000]">
         <button
           onClick={(e) => { e.stopPropagation(); setIsSettingsOpen(true); }}
           className="icon-btn settings-btn text-white bg-slate-800 px-4 py-2 rounded-md hover:bg-slate-700 active:scale-95 transition-all flex items-center gap-2"
@@ -22,7 +22,7 @@ export default function Home() {
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
           設定
         </button>
-        <div className="turn-indicator font-bold text-lg text-white">TURN {turnCount} : {currentTurnPlayer === 'player1' ? 'プレイヤー1' : 'プレイヤー2'}</div>
+        <div className="turn-indicator font-bold text-sm sm:text-lg text-white">TURN {turnCount} : {currentTurnPlayer === 'player1' ? 'プレイヤー1' : 'プレイヤー2'}</div>
         <button
           onClick={(e) => { e.stopPropagation(); setIsLogOpen(!isLogOpen); }}
           className="primary-btn menu-btn text-white bg-slate-800 px-4 py-2 rounded-md hover:bg-slate-700 flex items-center gap-2 relative transition-all"
@@ -31,7 +31,7 @@ export default function Home() {
           ログ ({logs.length})
         </button>
       </header>
-      <div className="flex-1 relative overflow-hidden">
+      <div className="flex-1 relative overflow-hidden min-h-0">
         <Arena />
       </div>
 
