@@ -1,0 +1,133 @@
+export type CardType = 'pokemon' | 'energy' | 'trainer';
+export type CardKind =
+    | 'has_rule' | 'non_rule'
+    | 'grass' | 'fire' | 'water' | 'lightning' | 'psychic' | 'fighting' | 'darkness' | 'metal' | 'dragon' | 'colorless'
+    | 'item' | 'tool' | 'supporter' | 'stadium';
+
+export interface DeckCard {
+    id: string; // The base image ID or identifier
+    name: string;
+    imageUrl: string;
+    count: number;
+    type: CardType;
+    kinds?: CardKind;
+    hp?: number;
+}
+
+// Instance representing a single card in play
+export interface CardInstance {
+    instanceId: string; // Unique ID for this specific copy of the card
+    baseCardId: string;
+    name: string;
+    imageUrl: string;
+    type: CardType;
+    kinds?: CardKind;
+    ownerId: PlayerId; // Player who originally owns the card
+
+    // Game State variables
+    damage: number;
+    isReversed: boolean; // For face-down (e.g. prizes)
+    specialConditions: string[]; // 'poisoned', 'burned', 'asleep', 'paralyzed', 'confused'
+    attachedEnergyIds: string[]; // Array of Energy instance IDs attached to this Pokemon
+    hasUsedAbility?: boolean;
+    hp?: number;
+}
+
+export type PlayerId = 'player1' | 'player2';
+
+export type ZoneType =
+    | 'player1-deck'
+    | 'player1-hand'
+    | 'player1-active'
+    | 'player1-bench-1'
+    | 'player1-bench-2'
+    | 'player1-bench-3'
+    | 'player1-bench-4'
+    | 'player1-bench-5'
+    | 'player1-trash'
+    | 'player1-prizes'
+    | 'player2-deck'
+    | 'player2-hand'
+    | 'player2-active'
+    | 'player2-bench-1'
+    | 'player2-bench-2'
+    | 'player2-bench-3'
+    | 'player2-bench-4'
+    | 'player2-bench-5'
+    | 'player2-trash'
+    | 'player2-prizes'
+    | 'stadium';
+
+export interface GameState {
+    // Dictionary of all card instances in the game
+    cards: Record<string, CardInstance>;
+
+    // Current deck configurations
+    player1Deck: DeckCard[];
+    player2Deck: DeckCard[];
+
+    // Mapping of zone names to an array of card instance IDs
+    zones: Record<ZoneType, string[]>;
+
+    // Global game state logs
+    coinFlips: Array<'heads' | 'tails'>;
+
+    // Turn Management
+    turnCount: number;
+    currentTurnPlayer: PlayerId;
+    isOpponentView: boolean;
+    displayMode: 'text' | 'compact' | 'local-image';
+    logs: string[];
+
+    // History
+    pastStates: {
+        cards: Record<string, CardInstance>;
+        zones: Record<ZoneType, string[]>;
+        turnCount: number;
+        currentTurnPlayer: PlayerId;
+        isOpponentView: boolean;
+        logs: string[];
+    }[];
+    futureStates: {
+        cards: Record<string, CardInstance>;
+        zones: Record<ZoneType, string[]>;
+        turnCount: number;
+        currentTurnPlayer: PlayerId;
+        isOpponentView: boolean;
+        logs: string[];
+    }[];
+
+    // Actions
+    saveState: () => void;
+    pushHistory: (snapshot: {
+        cards: Record<string, CardInstance>;
+        zones: Record<ZoneType, string[]>;
+        turnCount: number;
+        currentTurnPlayer: PlayerId;
+        isOpponentView: boolean;
+        logs: string[];
+    }) => void;
+    undo: () => void;
+    redo: () => void;
+    addLog: (message: string) => void;
+
+    initializeDeck: (deckList1: DeckCard[], deckList2: DeckCard[]) => void;
+    moveCard: (cardId: string, fromZone: ZoneType, toZone: ZoneType, newIndex?: number) => void;
+    attachEnergy: (energyId: string, pokemonId: string) => void;
+    detachEnergy: (energyId: string, pokemonId: string, toZone: ZoneType) => void;
+    updateCardState: (cardId: string, updates: Partial<Omit<CardInstance, 'instanceId' | 'baseCardId'>>) => void;
+    drawCards: (playerId: PlayerId, count: number) => void;
+    discardHandAndDraw: (playerId: PlayerId, count: number) => void;
+    shuffleHandAndDraw: (playerId: PlayerId, count: number) => void;
+    judgeMan: () => void;
+    shuffleDeck: (playerId: PlayerId) => void;
+    returnHandToDeck: (playerId: PlayerId) => void;
+    tossCoin: () => void;
+    resetGame: () => void;
+    loadDeckFromCode: (playerId: PlayerId, code: string) => Promise<{ success: boolean; error?: string }>;
+
+    // Turn control
+    endTurn: () => void;
+    setOpponentView: (isOpponent: boolean) => void;
+    setDisplayMode: (mode: 'text' | 'compact' | 'local-image') => void;
+}

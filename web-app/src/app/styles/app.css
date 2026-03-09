@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+    .card {
+        transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease;
+        width: var(--card-w);
+        height: var(--card-h);
+        border-radius: 4px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+        transform-origin: center center;
+    }
+
+    /* Make hand cards overlap slightly */
+    .card-in-hand {
+        transition: transform 0.2s ease, margin 0.2s ease;
+    }
+
+    .card-in-hand:hover {
+        transform: translateY(-20px) scale(1.1);
+        z-index: 9999 !important;
+    }
+
+    /* Reversed cards */
+    .rotated-180 {
+        transform: rotate(180deg);
+    }
+
+    .rotated-90 {
+        transform: rotate(90deg);
+    }
+}

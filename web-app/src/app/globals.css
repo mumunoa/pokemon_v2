@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+
+  /* Enhanced Fluid Scaling - Tightened constraints to ensure full visibility of hand on all displays */
+  /* Fluid Scaling with height constraint to prevent vertical overflow on landscape/PC */
+  --card-w: clamp(60px, min(16.8vw, 14vh), 130px);
+  --card-h: calc(var(--card-w) * 1.4);
+  --card-gap: clamp(4px, 1.5vw, 12px);
+  --card-overlap: calc(var(--card-w) * -0.2);
+
+  /* Aggressive Fluid UI Scaling - Reduced to 85% of previous height */
+  --btn-fs: clamp(5px, calc(0.9vw + 0.7vh), 15px);
+  --btn-px: clamp(2px, 2.5vw, 22px);
+  --btn-py: clamp(1px, 1vh, 9px);
+  --panel-p: clamp(2px, 1.2vw, 15px);
+  --bar-h: clamp(16px, 7vh, 44px);
+  --coin-size: clamp(20px, 8vw, 42px);
+  --stadium-w: calc(var(--card-w) * 0.7);
+}
+
+/* Landscape / Responsive scaling adjustments (Applied to all horizontal screens) */
+@media (orientation: landscape) {
+  :root {
+    --card-w: clamp(45px, min(14vw, 11vh), 100px);
+    /* Slightly increased max for 700px+ height */
+    --btn-fs: clamp(4.5px, calc(0.8vw + 0.6vh), 11px);
+    --bar-h: clamp(14px, 4.5vh, 28px);
+    --spacer-f-opp: 0.05;
+    --spacer-f-self: 0.05;
+    --field-f-opp: 0.6;
+    --field-f-self: 1.0;
+    --hand-h-mult: 0.95;
+    --row-s-opp-active: 0.65;
+    --row-s-self-active: 0.8;
+    --row-s-opp-bench: 0.6;
+    --row-s-self-bench: 0.75;
+  }
+
+  .battle-arena {
+    transform: scale(0.9);
+    transform-origin: center;
+    border-radius: 12px;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+    padding-top: 30px;
+    /* Shift contents down by 30px as requested */
+  }
+}
+
+:root {
+  --spacer-f-opp: 0.5;
+  --spacer-f-self: 1;
+  --field-f-opp: 0.7;
+  --field-f-self: 1.3;
+  --hand-h-mult: 1.35;
+  --row-s-opp-active: 0.75;
+  --row-s-self-active: 1;
+  --row-s-opp-bench: 0.7;
+  --row-s-self-bench: 1;
+}
+
+.responsive-btn {
+  font-size: var(--btn-fs) !important;
+  padding-left: var(--btn-px) !important;
+  padding-right: var(--btn-px) !important;
+  padding-top: var(--btn-py) !important;
+  padding-bottom: var(--btn-py) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  line-height: normal !important;
+  height: auto !important;
+  width: auto !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.responsive-panel {
+  padding: var(--panel-p) !important;
+  gap: clamp(2px, 1.2vw, 15px) !important;
+  display: flex !important;
+}
+
+.res-icon {
+  width: calc(var(--btn-fs) * 1.35) !important;
+  height: calc(var(--btn-fs) * 1.35) !important;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body,
+html {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  position: fixed;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+/* Prevent native scrolling while dragging elements */
+.no-touch-action {
+  touch-action: none;
+}
