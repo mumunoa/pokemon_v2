@@ -1,5 +1,8 @@
 import { create } from 'zustand';
 import { CardInstance, DeckCard, GameState, ZoneType, PlayerId } from '@/types/game';
+import { buildAIInput } from '../utils/ai-schema';
+import { supabase, createSupabaseClient } from '@/lib/supabase';
+import { generateGameStatusContext } from '@/lib/ai/promptGenerator';
 
 // Helper to shuffle an array
 const shuffleArray = <T>(array: T[]): T[] => {
@@ -46,13 +49,50 @@ export const useGameStore = create<GameState>((set, get) => ({
     isOpponentView: false,
     displayMode: 'compact',
     logs: [],
+    structuredLogs: [],
+    stateSnapshots: [],
+    gameId: crypto.randomUUID(),
     deckHistory: [],
     isGameStarted: false,
+    isAnalyzing: false,
+
+    // Actions
     pastStates: [],
     futureStates: [],
 
     addLog: (message: string) => {
         set((state) => ({ logs: [...state.logs, message] }));
+    },
+
+    addStructuredLog: (logInput) => {
+        set((state) => {
+            const newLog = {
+                ...logInput,
+                id: crypto.randomUUID(),
+                gameId: state.gameId,
+                turn: state.turnCount,
+                createdAt: new Date().toISOString()
+            };
+            return { structuredLogs: [...state.structuredLogs, newLog] };
+        });
+    },
+
+    takeSnapshot: (phase: 'setup' | 'main' | 'attack' | 'end') => {
+        set((state) => {
+            const snapshot = {
+                id: crypto.randomUUID(),
+                gameId: state.gameId,
+                turn: state.turnCount,
+                phase,
+                state: JSON.parse(JSON.stringify({
+                    cards: state.cards,
+                    zones: state.zones,
+                    currentTurnPlayer: state.currentTurnPlayer
+                })),
+                createdAt: new Date().toISOString()
+            };
+            return { stateSnapshots: [...state.stateSnapshots, snapshot] };
+        });
     },
 
     saveState: () => {
@@ -197,10 +237,47 @@ export const useGameStore = create<GameState>((set, get) => ({
                 `プレイヤー2: デッキ${deckList2.reduce((s, c) => s + c.count, 0)}枚`
             ];
 
+            const deckCounts = {
+                player1: deckList1.reduce((s, c) => s + c.count, 0),
+                player2: deckList2.reduce((s, c) => s + c.count, 0)
+            };
+
+            const setupLog = {
+                id: crypto.randomUUID(),
+                gameId: state.gameId,
+                turn: 1,
+                playerId: 'player1' as PlayerId,
+                actionType: 'game_initialize',
+                payload: { deckCounts },
+                createdAt: new Date().toISOString()
+            };
+
+            const setupSnapshot = {
+                id: crypto.randomUUID(),
+                gameId: state.gameId,
+                turn: 1,
+                phase: 'setup' as const,
+                state: JSON.parse(JSON.stringify({
+                    cards: newCards,
+                    zones: {
+                        ...defaultZones,
+                        'player1-deck': shuffledDeck1,
+                        'player1-hand': hand1,
+                        'player1-prizes': prizes1,
+                        'player2-deck': shuffledDeck2,
+                        'player2-hand': hand2,
+                        'player2-prizes': prizes2,
+                    },
+                    currentTurnPlayer: 'player1'
+                })),
+                createdAt: new Date().toISOString()
+            };
+
             return {
                 cards: newCards,
                 player1Deck: deckList1,
                 player2Deck: deckList2,
+                gameId: crypto.randomUUID(), // New game sessions should have new IDs
                 zones: {
                     ...defaultZones,
                     'player1-deck': shuffledDeck1,
@@ -215,6 +292,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                 isOpponentView: false,
                 displayMode: state.displayMode,
                 logs: initialLogs,
+                structuredLogs: [setupLog],
+                stateSnapshots: [setupSnapshot],
                 deckHistory: state.deckHistory,
                 isGameStarted: false,
                 pastStates: [],
@@ -247,13 +326,27 @@ export const useGameStore = create<GameState>((set, get) => ({
             const card = state.cards[cardId];
             const logMsg = card ? `${card.name} を ${fromZone} から ${toZone} へ移動しました。` : `カードを ${fromZone} から ${toZone} へ移動しました。`;
 
+            const structuredLog = {
+                id: crypto.randomUUID(),
+                gameId: state.gameId,
+                turn: state.turnCount,
+                playerId: state.currentTurnPlayer,
+                actionType: 'move_card',
+                sourceZone: fromZone,
+                targetZone: toZone,
+                cardInstanceId: cardId,
+                baseCardId: card?.baseCardId,
+                createdAt: new Date().toISOString()
+            };
+
             return {
                 zones: {
                     ...state.zones,
                     [fromZone]: sourceArray,
                     [toZone]: destArray
                 },
-                logs: [...state.logs, logMsg]
+                logs: [...state.logs, logMsg],
+                structuredLogs: [...state.structuredLogs, structuredLog]
             };
         });
     },
@@ -290,6 +383,20 @@ export const useGameStore = create<GameState>((set, get) => ({
 
             const logMsg = `${pokemon.name} に ${energy.name} をつけました。`;
 
+            const structuredLog = {
+                id: crypto.randomUUID(),
+                gameId: state.gameId,
+                turn: state.turnCount,
+                playerId: state.currentTurnPlayer,
+                actionType: 'attach_energy',
+                sourceZone: sourceZone as ZoneType,
+                targetZone: `${sourceZone?.startsWith('player1') ? 'player1' : 'player2'}-active` as ZoneType, // Placeholder for logic
+                cardInstanceId: energyId,
+                baseCardId: energy.baseCardId,
+                payload: { pokemonId },
+                createdAt: new Date().toISOString()
+            };
+
             return {
                 zones: newZones,
                 cards: {
@@ -299,7 +406,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                         attachedEnergyIds: [...(pokemon.attachedEnergyIds || []), energyId]
                     }
                 },
-                logs: [...state.logs, logMsg]
+                logs: [...state.logs, logMsg],
+                structuredLogs: [...state.structuredLogs, structuredLog]
             };
         });
     },
@@ -314,13 +422,25 @@ export const useGameStore = create<GameState>((set, get) => ({
             const newDeck = [...state.zones[deckZone], ...handCards];
             const logMsg = `${playerId} の手札を山札に戻しました。`;
 
+            const structuredLog = {
+                id: crypto.randomUUID(),
+                gameId: state.gameId,
+                turn: state.turnCount,
+                playerId: playerId,
+                actionType: 'return_hand_to_deck',
+                sourceZone: handZone,
+                targetZone: deckZone,
+                createdAt: new Date().toISOString()
+            };
+
             return {
                 zones: {
                     ...state.zones,
                     [handZone]: [],
                     [deckZone]: newDeck
                 },
-                logs: [...state.logs, logMsg]
+                logs: [...state.logs, logMsg],
+                structuredLogs: [...state.structuredLogs, structuredLog]
             };
         });
     },
@@ -338,6 +458,20 @@ export const useGameStore = create<GameState>((set, get) => ({
 
             const logMsg = `${pokemon.name} から ${energy.name} を ${toZone} へトラッシュしました。`;
 
+            const structuredLog = {
+                id: crypto.randomUUID(),
+                gameId: state.gameId,
+                turn: state.turnCount,
+                playerId: state.currentTurnPlayer,
+                actionType: 'detach_energy',
+                sourceZone: 'active' as any, // Simplified
+                targetZone: toZone,
+                cardInstanceId: energyId,
+                baseCardId: energy.baseCardId,
+                payload: { pokemonId },
+                createdAt: new Date().toISOString()
+            };
+
             return {
                 zones: newZones,
                 cards: {
@@ -347,7 +481,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                         attachedEnergyIds: (pokemon.attachedEnergyIds || []).filter(id => id !== energyId)
                     }
                 },
-                logs: [...state.logs, logMsg]
+                logs: [...state.logs, logMsg],
+                structuredLogs: [...state.structuredLogs, structuredLog]
             };
         });
     },
@@ -363,14 +498,30 @@ export const useGameStore = create<GameState>((set, get) => ({
 
             const logMsg = `${playerId} がカードを ${actualCount} 枚引きました。`;
 
-            return {
+            const structuredLog = {
+                id: crypto.randomUUID(),
+                gameId: state.gameId,
+                turn: state.turnCount,
+                playerId: playerId,
+                actionType: 'draw_cards',
+                payload: { count: actualCount },
+                createdAt: new Date().toISOString()
+            };
+
+            const newState = {
                 zones: {
                     ...state.zones,
                     [`${playerId}-deck`]: deck,
                     [`${playerId}-hand`]: [...hand, ...drawn]
                 },
-                logs: [...state.logs, logMsg]
+                logs: [...state.logs, logMsg],
+                structuredLogs: [...state.structuredLogs, structuredLog]
             };
+
+            // 手札が変化したのでスナップショットを撮る
+            setTimeout(() => get().takeSnapshot('main'), 0);
+
+            return newState;
         });
     },
 
@@ -389,6 +540,16 @@ export const useGameStore = create<GameState>((set, get) => ({
 
             const logMsg = `${playerId} が手札をトラッシュし、${actualCount} 枚引きました。`;
 
+            const structuredLog = {
+                id: crypto.randomUUID(),
+                gameId: state.gameId,
+                turn: state.turnCount,
+                playerId: playerId,
+                actionType: 'discard_hand_and_draw',
+                payload: { count: actualCount, discardedCount: hand.length },
+                createdAt: new Date().toISOString()
+            };
+
             return {
                 zones: {
                     ...state.zones,
@@ -396,7 +557,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                     [`${playerId}-hand`]: drawn,
                     [`${playerId}-trash`]: newTrash
                 },
-                logs: [...state.logs, logMsg]
+                logs: [...state.logs, logMsg],
+                structuredLogs: [...state.structuredLogs, structuredLog]
             };
         });
     },
@@ -418,13 +580,24 @@ export const useGameStore = create<GameState>((set, get) => ({
 
             const logMsg = `${playerId} が手札を山札に戻して混ぜ、${actualCount} 枚引きました。`;
 
+            const structuredLog = {
+                id: crypto.randomUUID(),
+                gameId: state.gameId,
+                turn: state.turnCount,
+                playerId: playerId,
+                actionType: 'shuffle_hand_and_draw',
+                payload: { count: actualCount, shuffledCount: hand.length },
+                createdAt: new Date().toISOString()
+            };
+
             return {
                 zones: {
                     ...state.zones,
                     [`${playerId}-deck`]: shuffledDeck,
                     [`${playerId}-hand`]: drawn
                 },
-                logs: [...state.logs, logMsg]
+                logs: [...state.logs, logMsg],
+                structuredLogs: [...state.structuredLogs, structuredLog]
             };
         });
     },
@@ -455,9 +628,20 @@ export const useGameStore = create<GameState>((set, get) => ({
 
             const logMsg = `ジャッジマン: お互いの手札を山札に戻して混ぜ、それぞれ4枚引きました。`;
 
+            const structuredLog = {
+                id: crypto.randomUUID(),
+                gameId: state.gameId,
+                turn: state.turnCount,
+                playerId: state.currentTurnPlayer,
+                actionType: 'judge_man',
+                payload: { drawCount1, drawCount2 },
+                createdAt: new Date().toISOString()
+            };
+
             return {
                 zones: nextZones,
-                logs: [...state.logs, logMsg]
+                logs: [...state.logs, logMsg],
+                structuredLogs: [...state.structuredLogs, structuredLog]
             };
         });
     },
@@ -504,6 +688,9 @@ export const useGameStore = create<GameState>((set, get) => ({
             isOpponentView: false,
             displayMode: 'compact',
             logs: ['ゲームをリセットしました。'],
+            structuredLogs: [],
+            stateSnapshots: [],
+            gameId: crypto.randomUUID(),
             deckHistory: get().deckHistory,
             isGameStarted: false,
             pastStates: [],
@@ -518,7 +705,29 @@ export const useGameStore = create<GameState>((set, get) => ({
 
             const logMsg = `ターン終了: Player ${nextPlayer} の番です (Turn ${nextTurnCount})`;
 
-            // Snapshot for history
+            const structuredLog = {
+                id: crypto.randomUUID(),
+                gameId: state.gameId,
+                turn: state.turnCount,
+                playerId: state.currentTurnPlayer,
+                actionType: 'end_turn',
+                payload: { nextPlayer, nextTurnCount },
+                createdAt: new Date().toISOString()
+            };
+
+            const aiSnapshot = {
+                id: crypto.randomUUID(),
+                gameId: state.gameId,
+                turn: state.turnCount,
+                phase: 'end' as const,
+                state: JSON.parse(JSON.stringify({
+                    cards: state.cards,
+                    zones: state.zones,
+                    currentTurnPlayer: state.currentTurnPlayer
+                })),
+                createdAt: new Date().toISOString()
+            };
+
             const snapshot = JSON.parse(JSON.stringify({
                 cards: state.cards,
                 zones: state.zones,
@@ -537,7 +746,9 @@ export const useGameStore = create<GameState>((set, get) => ({
                 isOpponentView: nextPlayer === 'player2',
                 pastStates: [...state.pastStates, snapshot],
                 futureStates: [],
-                logs: [...state.logs, logMsg]
+                logs: [...state.logs, logMsg],
+                structuredLogs: [...state.structuredLogs, structuredLog],
+                stateSnapshots: [...state.stateSnapshots, aiSnapshot]
             };
         });
     },
@@ -596,5 +807,150 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     setDisplayMode: (mode: 'text' | 'compact' | 'local-image') => {
         set({ displayMode: mode });
+    },
+
+    analyzeGame: async () => {
+        const state = get();
+        const playerId = state.currentTurnPlayer;
+        const hand = state.zones[`${playerId}-hand` as ZoneType];
+
+        const handCards = hand.map(id => state.cards[id]);
+        const pokemonCount = handCards.filter(c => c?.type === 'pokemon').length;
+        const energyCount = handCards.filter(c => c?.type === 'energy').length;
+        const supporterCount = handCards.filter(c => c?.kinds === 'supporter').length;
+
+        let accidentRate = 0;
+        let setupRate = 50;
+        let recommendedAction = "AI分析中...";
+        let description = "AIが盤面を読み解いています。少々お待ちください。";
+
+        // 初手の簡易的な事故率計算（ローカルロジック）
+        if (hand.length > 0) {
+            if (pokemonCount === 0) {
+                accidentRate = 90;
+                recommendedAction = "たねポケモンを探す";
+            } else if (energyCount === 0 && supporterCount === 0) {
+                accidentRate = 75;
+                recommendedAction = "ドローソースを確保する";
+            } else if (energyCount > 0 && supporterCount > 0) {
+                setupRate = 90;
+            }
+        }
+
+        // 初期状態で一旦set（ローディング表示のため）
+        set({
+            isAnalyzing: true,
+            aiAnalysis: { accidentRate, setupRate, recommendedAction, description }
+        });
+
+        try {
+            // プロンプト生成
+            const prompt = generateGameStatusContext(state);
+
+            // API呼び出し (盤面データとメタデータを送信)
+            const response = await fetch('/api/ai/coach', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    prompt,
+                    boardState: buildAIInput(state), // 正規化された盤面データ
+                    turnCount: state.turnCount,
+                    gameId: state.gameId,
+                    userId: 'user_dummy' // 将来的にClerk等のIDを渡す拡張性
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.error) throw new Error(data.error);
+
+            set({
+                isAnalyzing: false,
+                aiAnalysis: {
+                    accidentRate,
+                    setupRate,
+                    recommendedAction: "AIコーチのアドバイス",
+                    description: data.analysis
+                }
+            });
+
+            // 分析履歴保存（スナップショット）
+            get().takeSnapshot('main');
+
+        } catch (error: any) {
+            console.error('AI Analysis Failed:', error);
+            set({
+                isAnalyzing: false,
+                aiAnalysis: {
+                    accidentRate,
+                    setupRate,
+                    recommendedAction: "分析エラー",
+                    description: "AIとの通信に失敗しました。APIキーの設定を確認してください。"
+                }
+            });
+        }
+    },
+
+    syncToSupabase: async (userId: string, clerkToken?: string) => {
+        const state = get();
+
+        // 認証済みクライアントまたはデフォルトクライアントを使用
+        const client = clerkToken ? createSupabaseClient(clerkToken) : supabase;
+        if (!client) return { success: false, error: 'Supabase client not initialized' };
+
+        try {
+            // 1. セッション情報の保存
+            const { error: sessionError } = await client
+                .from('game_sessions')
+                .upsert({
+                    game_id: state.gameId,
+                    user_id: userId,
+                    deck_history: state.deckHistory,
+                    created_at: new Date().toISOString() // 本来はセッション開始時が良いが簡易化
+                }, { onConflict: 'game_id' });
+
+            if (sessionError) throw sessionError;
+
+            // 実際のDB側のID（UUID）を取得するために一度selectが必要な場合があるが
+            // 今回はgameIdをキーに紐付ける設計にするか、
+            // スキーマ側でsession_idをgameId(text)として持たせるのが楽かもしれない。
+            // ここでは実装の簡略化のため、game_idをキーとしてそのまま使う想定（スキーマ調整が必要）
+
+            // 2. ログの保存
+            if (state.structuredLogs.length > 0) {
+                const { error: logError } = await client
+                    .from('game_logs')
+                    .upsert(state.structuredLogs.map(log => ({
+                        id: log.id,
+                        game_id: state.gameId,
+                        turn: log.turn,
+                        player_id: log.playerId,
+                        action_type: log.actionType,
+                        payload: log.payload,
+                        created_at: log.createdAt
+                    })));
+                if (logError) throw logError;
+            }
+
+            // 3. スナップショットの保存
+            if (state.stateSnapshots.length > 0) {
+                const { error: snapshotError } = await client
+                    .from('game_snapshots')
+                    .upsert(state.stateSnapshots.map(snap => ({
+                        id: snap.id,
+                        game_id: state.gameId,
+                        turn: snap.turn,
+                        phase: snap.phase,
+                        state: snap.state,
+                        created_at: snap.createdAt
+                    })));
+                if (snapshotError) throw snapshotError;
+            }
+
+            return { success: true };
+        } catch (error: any) {
+            console.error('Supabase Sync Error:', error);
+            return { success: false, error: error.message };
+        }
     }
 }));

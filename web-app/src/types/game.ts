@@ -31,6 +31,41 @@ export interface CardInstance {
     attachedEnergyIds: string[]; // Array of Energy instance IDs attached to this Pokemon
     hasUsedAbility?: boolean;
     hp?: number;
+    rotation?: number; // 0, 90, 180, 270 degrees
+}
+
+export interface StructuredLog {
+    id: string;
+    gameId: string;
+    turn: number;
+    playerId: PlayerId;
+    actionType: string;
+    sourceZone?: ZoneType;
+    targetZone?: ZoneType;
+    cardInstanceId?: string;
+    baseCardId?: string;
+    payload?: Record<string, any>;
+    createdAt: string;
+}
+
+export interface StateSnapshot {
+    id: string;
+    gameId: string;
+    turn: number;
+    phase: 'setup' | 'main' | 'attack' | 'end';
+    state: {
+        cards: Record<string, CardInstance>;
+        zones: Record<ZoneType, string[]>;
+        currentTurnPlayer: PlayerId;
+    };
+    createdAt: string;
+}
+
+export interface AiAnalysisResult {
+    accidentRate: number; // 0-100
+    setupRate: number;    // 0-100
+    recommendedAction: string;
+    description: string;
 }
 
 export type PlayerId = 'player1' | 'player2';
@@ -78,8 +113,13 @@ export interface GameState {
     isOpponentView: boolean;
     displayMode: 'text' | 'compact' | 'local-image';
     logs: string[];
+    structuredLogs: StructuredLog[];
+    stateSnapshots: StateSnapshot[];
+    gameId: string;
     deckHistory: string[];
     isGameStarted: boolean;
+    isAnalyzing: boolean;
+    aiAnalysis?: AiAnalysisResult;
 
     // History
     pastStates: {
@@ -118,6 +158,8 @@ export interface GameState {
     undo: () => void;
     redo: () => void;
     addLog: (message: string) => void;
+    addStructuredLog: (log: Omit<StructuredLog, 'id' | 'createdAt' | 'gameId' | 'turn'>) => void;
+    takeSnapshot: (phase: StateSnapshot['phase']) => void;
     startGame: () => void;
 
     initializeDeck: (deckList1: DeckCard[], deckList2: DeckCard[]) => void;
@@ -139,4 +181,6 @@ export interface GameState {
     endTurn: () => void;
     setOpponentView: (isOpponent: boolean) => void;
     setDisplayMode: (mode: 'text' | 'compact' | 'local-image') => void;
+    analyzeGame: () => void;
+    syncToSupabase: (userId: string, clerkToken?: string) => Promise<{ success: boolean; error?: string }>;
 }

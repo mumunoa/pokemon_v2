@@ -20,6 +20,10 @@ import { Zone } from './Zone';
 import { Card } from './Card';
 import { CardActionModal } from './CardActionModal';
 import { ZonePopupModal, PopupState } from './ZonePopupModal';
+import { AnalysisOverlay } from '../Modals/AnalysisOverlay';
+import { UserButton, SignInButton } from "@clerk/nextjs";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from '@/lib/supabase';
 
 // Temporary Mock Data for Testing
 const sampleDeck: DeckCard[] = [
@@ -34,8 +38,14 @@ export const Arena: React.FC = () => {
     const {
         cards, zones, turnCount, currentTurnPlayer, isOpponentView,
         isGameStarted, startGame,
-        endTurn, setOpponentView, initializeDeck, moveCard, attachEnergy, detachEnergy, drawCards, shuffleDeck, tossCoin, coinFlips
+        endTurn, setOpponentView, initializeDeck, moveCard, attachEnergy, detachEnergy, drawCards, shuffleDeck, tossCoin, coinFlips,
+        aiAnalysis, isAnalyzing, analyzeGame, syncToSupabase
     } = useGameStore();
+
+    // カスタムフックを使用してClerkの状態を安全に取得
+    const { user, isSignedIn, getToken } = useAuth();
+    const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+    const isClerkEnabled = clerkKey && clerkKey.startsWith('pk_');
 
     const operatingPlayer = isOpponentView ? 'player2' : 'player1';
     const isTurnActive = operatingPlayer === currentTurnPlayer;
@@ -48,6 +58,28 @@ export const Arena: React.FC = () => {
         isOpponentView: boolean;
         logs: string[];
     } | null>(null);
+
+    const handleFeedback = async (rating: 'good' | 'bad') => {
+        const state = useGameStore.getState();
+        try {
+            const response = await fetch('/api/ai/coach/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    feedback: rating,
+                    gameId: state.gameId,
+                    turnCount: state.turnCount
+                }),
+            });
+            const data = await response.json();
+            if (data.success) {
+                // 成功したらボタンを消すか、メッセージを出す（今回は簡易的にログのみ）
+                console.log('Feedback submitted:', rating);
+            }
+        } catch (error) {
+            console.error('Failed to submit feedback:', error);
+        }
+    };
     const [activeId, setActiveId] = useState<string | null>(null);
     const [selectedCard, setSelectedCard] = useState<CardInstance | null>(null);
     const [popupState, setPopupState] = useState<PopupState>(null);
@@ -62,6 +94,7 @@ export const Arena: React.FC = () => {
     const [isEndTurnModalOpen, setIsEndTurnModalOpen] = useState(false);
     const [isStartGameModalOpen, setIsStartGameModalOpen] = useState(false);
     const [isToolbarOpen, setIsToolbarOpen] = useState(true);
+    const [isAiAnalysisModalOpen, setIsAiAnalysisModalOpen] = useState(false);
 
     // 初期起動時、カードが1枚もない場合にサンプルデータを投入
     useEffect(() => {
@@ -70,9 +103,38 @@ export const Arena: React.FC = () => {
         }
     }, [cards, initializeDeck]);
 
-    const handleConfirmEndTurn = () => {
+    const handleAnalyzeGame = async () => {
+        analyzeGame();
+        setIsAiAnalysisModalOpen(true);
+
+        if (isClerkEnabled && isSignedIn && user) {
+            try {
+                const token = await getToken({ template: 'supabase' });
+                if (token) {
+                    syncToSupabase(user.id, token);
+                }
+            } catch (e) {
+                console.error('Failed to get Supabase token:', e);
+            }
+        }
+    };
+
+    const handleConfirmEndTurn = async () => {
         setIsEndTurnModalOpen(false);
         endTurn();
+
+        // Sync to Supabase
+        if (isClerkEnabled && isSignedIn && user) {
+            try {
+                const token = await getToken({ template: 'supabase' });
+                if (token) {
+                    syncToSupabase(user.id, token);
+                }
+            } catch (e) {
+                console.error('Failed to get Supabase token:', e);
+            }
+        }
+
         // Auto-draw 1 card at the start of the next turn
         setTimeout(() => {
             const nextPlayer = useGameStore.getState().currentTurnPlayer;
@@ -80,9 +142,22 @@ export const Arena: React.FC = () => {
         }, 300);
     };
 
-    const handleConfirmStartGame = () => {
+    const handleConfirmStartGame = async () => {
         setIsStartGameModalOpen(false);
         startGame();
+
+        // Sync to Supabase
+        if (isClerkEnabled && isSignedIn && user) {
+            try {
+                const token = await getToken({ template: 'supabase' });
+                if (token) {
+                    syncToSupabase(user.id, token);
+                }
+            } catch (e) {
+                console.error('Failed to get Supabase token:', e);
+            }
+        }
+
         // Initial draw for turn 1
         handleDraw1('player1');
     };
@@ -1055,15 +1130,27 @@ export const Arena: React.FC = () => {
                         {zones.stadium.length > 0 ? renderCardsInZone('player1', 'stadium') : <div className="text-white opacity-30 text-[10px] sm:text-xs font-bold">スタジアム</div>}
                     </Zone>
 
+                    <div className="flex items-center space-x-3 ml-4">
+                        {isClerkEnabled ? <AuthStatus /> : <div className="text-[10px] text-slate-500">Local Mode</div>}
+                    </div>
+
                     {/* Operation Buttons (Right side of bar) */}
                     <div className="flex space-x-[var(--card-gap)] absolute right-[2vw] z-[5000]">
                         {useGameStore.getState().currentTurnPlayer === (isOpponentView ? 'player2' : 'player1') && (
-                            <button
-                                className={`text-white rounded shadow-md font-bold border transition-colors responsive-btn ${isGameStarted ? 'bg-red-700 hover:bg-red-600 border-red-500' : 'bg-blue-700 hover:bg-blue-600 border-blue-500'}`}
-                                onClick={() => isGameStarted ? setIsEndTurnModalOpen(true) : setIsStartGameModalOpen(true)}
-                            >
-                                {isGameStarted ? 'ターン終了' : 'バトル開始'}
-                            </button>
+                            <>
+                                <button
+                                    className="bg-purple-700 hover:bg-purple-600 text-white rounded shadow-md font-bold border border-purple-500 transition-colors responsive-btn"
+                                    onClick={handleAnalyzeGame}
+                                >
+                                    AI分析
+                                </button>
+                                <button
+                                    className={`text-white rounded shadow-md font-bold border transition-colors responsive-btn ${isGameStarted ? 'bg-red-700 hover:bg-red-600 border-red-500' : 'bg-blue-700 hover:bg-blue-600 border-blue-500'}`}
+                                    onClick={() => isGameStarted ? setIsEndTurnModalOpen(true) : setIsStartGameModalOpen(true)}
+                                >
+                                    {isGameStarted ? 'ターン終了' : 'バトル開始'}
+                                </button>
+                            </>
                         )}
                         <button
                             className="bg-slate-700 hover:bg-slate-600 text-white rounded shadow-md font-bold border border-slate-500 transition-colors responsive-btn"
@@ -1181,6 +1268,15 @@ export const Arena: React.FC = () => {
                 </div>
             )}
 
+            {/* AI Analysis Overlay (Stylish) */}
+            <AnalysisOverlay
+                isOpen={isAiAnalysisModalOpen}
+                isAnalyzing={isAnalyzing}
+                analysis={aiAnalysis}
+                onClose={() => setIsAiAnalysisModalOpen(false)}
+                onFeedback={handleFeedback}
+            />
+
             {/* Drag Overlay for smooth card visual out of hidden overflow areas (like Popup) */}
             <DragOverlay dropAnimation={{
                 sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.4' } } })
@@ -1235,5 +1331,38 @@ export const Arena: React.FC = () => {
                 </div>
             )}
         </DndContext>
+    );
+};
+
+const AuthStatus: React.FC = () => {
+    const { user, isSignedIn } = useAuth();
+    const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+    const isClerkEnabled = clerkKey && clerkKey.startsWith('pk_');
+
+    if (!isClerkEnabled) {
+        return (
+            <div className="bg-slate-800 text-slate-500 text-[10px] font-bold px-3 py-1 rounded-full border border-slate-700">
+                Local Mode
+            </div>
+        );
+    }
+
+    return (
+        <>
+            {isSignedIn && isClerkEnabled ? (
+                <div className="flex items-center space-x-2 bg-slate-900/50 p-1 px-2 rounded-full border border-slate-700">
+                    <span className="text-[10px] text-slate-400 mr-1">Sync ON</span>
+                    <UserButton appearance={{ elements: { userButtonAvatarBox: 'w-6 h-6' } }} />
+                </div>
+            ) : isClerkEnabled ? (
+                <div className="bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold px-3 py-1 rounded-full transition-colors cursor-pointer border border-blue-400/30">
+                    <SignInButton mode="modal">Login to Sync</SignInButton>
+                </div>
+            ) : (
+                <div className="bg-slate-800 text-slate-500 text-[10px] font-bold px-3 py-1 rounded-full border border-slate-700">
+                    Offline
+                </div>
+            )}
+        </>
     );
 };
