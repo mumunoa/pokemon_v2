@@ -12,25 +12,22 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-  // Clerkのキーが 'pk_' で始まらない場合は無効（プレースホルダ）とみなす
+  // Clerkのパブリッシャブルキーを取得。存在しない場合はビルドエラー回避用のプレースホルダを使用。
+  const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "pk_test_Y2xlcmsuYXBwJA";
   const isKeyValid = !!(clerkKey && clerkKey.startsWith('pk_'));
 
-  const content = (
+  return (
     <html lang="ja">
       <body className="antialiased font-sans">
-        {children}
+        {/*
+          isKeyValid が false の場合でも ClerkProvider で包むことで、
+          内包されるコンポーネントが useUser() 等を呼んだ際のランタイムエラー（Build Error）を回避します。
+          ただし、有効なキーがない場合はサインイン等の機能は動作しません。
+        */}
+        <ClerkProvider publishableKey={clerkKey}>
+          {children}
+        </ClerkProvider>
       </body>
     </html>
   );
-
-  if (isKeyValid) {
-    return (
-      <ClerkProvider publishableKey={clerkKey}>
-        {content}
-      </ClerkProvider>
-    );
-  }
-
-  return content;
 }
