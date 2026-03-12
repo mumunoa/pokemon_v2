@@ -3,9 +3,10 @@ import React from 'react';
 interface TicketLimitModalProps {
     isOpen: boolean;
     onClose: () => void;
+    errorMessage?: string;
 }
 
-export const TicketLimitModal: React.FC<TicketLimitModalProps> = ({ isOpen, onClose }) => {
+export const TicketLimitModal: React.FC<TicketLimitModalProps> = ({ isOpen, onClose, errorMessage }) => {
     if (!isOpen) return null;
 
     return (
@@ -30,8 +31,10 @@ export const TicketLimitModal: React.FC<TicketLimitModalProps> = ({ isOpen, onCl
 
                 {/* Content Area */}
                 <div className="p-6 space-y-6">
-                    <p className="text-slate-300 text-sm leading-relaxed text-center">
-                        本日の無料分のAI分析チケットをすべて消費しました。チケットは<span className="text-yellow-400 font-bold">毎日回復</span>します。
+                    <p className="text-slate-300 text-sm leading-relaxed text-center font-bold">
+                        {errorMessage || (
+                            <>本日の無料分のAI分析チケットをすべて消費しました。チケットは<span className="text-yellow-400 font-bold">毎日回復</span>します。</>
+                        )}
                     </p>
 
                     <div className="bg-[#1e1430]/40 border border-purple-500/20 p-5 rounded-2xl">

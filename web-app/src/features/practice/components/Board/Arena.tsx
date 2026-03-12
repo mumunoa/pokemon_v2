@@ -97,6 +97,7 @@ export const Arena: React.FC = () => {
     const [isToolbarOpen, setIsToolbarOpen] = useState(true);
     const [isAiAnalysisModalOpen, setIsAiAnalysisModalOpen] = useState(false);
     const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
+    const [ticketModalError, setTicketModalError] = useState<string | undefined>(undefined);
     const [tickets, setTickets] = useState<number | null>(null);
     const [isPro, setIsPro] = useState(false);
 
@@ -127,6 +128,7 @@ export const Arena: React.FC = () => {
             // ローカルモードまたは未ログイン時はデモ用に通すかログインを促す
             alert("AI分析の利用にはログインが必要です。（デモ環境ではそのまま実行します）");
         } else if (!isPro && tickets !== null && tickets <= 0) {
+            setTicketModalError(undefined);
             setIsTicketModalOpen(true);
             return;
         }
@@ -137,6 +139,10 @@ export const Arena: React.FC = () => {
         if (analysisResult?.errorType === 'TICKETS_EMPTY') {
             setTickets(0);
             setIsAiAnalysisModalOpen(false);
+
+            // analysisResultにmessageが含まれている場合はそれを渡す
+            // API側で「この端末または...」を返す設計になっている
+            setTicketModalError(useGameStore.getState().aiAnalysis?.description);
             setIsTicketModalOpen(true);
             return;
         }
@@ -1330,6 +1336,7 @@ export const Arena: React.FC = () => {
             <TicketLimitModal
                 isOpen={isTicketModalOpen}
                 onClose={() => setIsTicketModalOpen(false)}
+                errorMessage={ticketModalError}
             />
 
             {/* Drag Overlay for smooth card visual out of hidden overflow areas (like Popup) */}
