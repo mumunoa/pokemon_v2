@@ -21,6 +21,7 @@ import { Card } from './Card';
 import { CardActionModal } from './CardActionModal';
 import { ZonePopupModal, PopupState } from './ZonePopupModal';
 import { AnalysisOverlay } from '../Modals/AnalysisOverlay';
+import { TicketLimitModal } from '../Modals/TicketLimitModal';
 import { UserButton, SignInButton } from "@clerk/nextjs";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from '@/lib/supabase';
@@ -95,6 +96,24 @@ export const Arena: React.FC = () => {
     const [isStartGameModalOpen, setIsStartGameModalOpen] = useState(false);
     const [isToolbarOpen, setIsToolbarOpen] = useState(true);
     const [isAiAnalysisModalOpen, setIsAiAnalysisModalOpen] = useState(false);
+    const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
+    const [tickets, setTickets] = useState<number | null>(null);
+    const [isPro, setIsPro] = useState(false);
+
+    useEffect(() => {
+        if (isClerkEnabled && isSignedIn && user) {
+            fetch('/api/user/profile')
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.ai_tickets !== undefined) {
+                        setTickets(data.ai_tickets);
+                        const trialUntil = data.pro_trial_until ? new Date(data.pro_trial_until) : null;
+                        setIsPro(trialUntil !== null && trialUntil > new Date());
+                    }
+                })
+                .catch(err => console.error('Failed to fetch profile', err));
+        }
+    }, [isClerkEnabled, isSignedIn, user]);
 
     // 初期起動時、カードが1枚もない場合にサンプルデータを投入
     useEffect(() => {
@@ -104,6 +123,14 @@ export const Arena: React.FC = () => {
     }, [cards, initializeDeck]);
 
     const handleAnalyzeGame = async () => {
+        if (!isClerkEnabled || !isSignedIn) {
+            // ローカルモードまたは未ログイン時はデモ用に通すかログインを促す
+            alert("AI分析の利用にはログインが必要です。（デモ環境ではそのまま実行します）");
+        } else if (!isPro && tickets !== null && tickets <= 0) {
+            setIsTicketModalOpen(true);
+            return;
+        }
+
         analyzeGame();
         setIsAiAnalysisModalOpen(true);
 
@@ -112,6 +139,11 @@ export const Arena: React.FC = () => {
                 const token = await getToken({ template: 'supabase' });
                 if (token) {
                     syncToSupabase(user.id, token);
+                }
+
+                // Optimistic UI update
+                if (!isPro && tickets !== null && tickets > 0) {
+                    setTickets(tickets - 1);
                 }
             } catch (e) {
                 console.error('Failed to get Supabase token:', e);
@@ -1139,10 +1171,20 @@ export const Arena: React.FC = () => {
                         {useGameStore.getState().currentTurnPlayer === (isOpponentView ? 'player2' : 'player1') && (
                             <>
                                 <button
-                                    className="bg-purple-700 hover:bg-purple-600 text-white rounded shadow-md font-bold border border-purple-500 transition-colors responsive-btn"
+                                    className="bg-purple-700 hover:bg-purple-600 text-white rounded shadow-md font-bold border border-purple-500 transition-colors responsive-btn relative flex items-center justify-center gap-1"
                                     onClick={handleAnalyzeGame}
                                 >
                                     AI分析
+                                    {(isClerkEnabled && isSignedIn && !isPro && tickets !== null) && (
+                                        <span className="absolute -top-2 -right-2 bg-yellow-500 text-black text-[10px] sm:text-xs font-black px-1.5 py-0.5 rounded-full border border-yellow-300 shadow-md transform scale-90 sm:scale-100">
+                                            ⚡️{tickets}
+                                        </span>
+                                    )}
+                                    {(isClerkEnabled && isSignedIn && isPro) && (
+                                        <span className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md border border-yellow-300 shadow-md">
+                                            PRO
+                                        </span>
+                                    )}
                                 </button>
                                 <button
                                     className={`text-white rounded shadow-md font-bold border transition-colors responsive-btn ${isGameStarted ? 'bg-red-700 hover:bg-red-600 border-red-500' : 'bg-blue-700 hover:bg-blue-600 border-blue-500'}`}
@@ -1275,6 +1317,12 @@ export const Arena: React.FC = () => {
                 analysis={aiAnalysis}
                 onClose={() => setIsAiAnalysisModalOpen(false)}
                 onFeedback={handleFeedback}
+            />
+
+            {/* Ticket Limitation Modal */}
+            <TicketLimitModal
+                isOpen={isTicketModalOpen}
+                onClose={() => setIsTicketModalOpen(false)}
             />
 
             {/* Drag Overlay for smooth card visual out of hidden overflow areas (like Popup) */}

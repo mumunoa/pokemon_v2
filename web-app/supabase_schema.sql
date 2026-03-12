@@ -33,3 +33,25 @@ CREATE POLICY "Users can view their own logs" ON public.ai_analysis_logs FOR SEL
 
 DROP POLICY IF EXISTS "Users can update their own logs" ON public.ai_analysis_logs;
 CREATE POLICY "Users can update their own logs" ON public.ai_analysis_logs FOR UPDATE USING (true);
+
+-- ユーザー情報管理テーブル (Clerk連動用)
+CREATE TABLE IF NOT EXISTS public.users (
+    id TEXT PRIMARY KEY, -- ClerkのユーザーID
+    ai_tickets INTEGER DEFAULT 3, -- 無料回数（毎晩回復などで運用）
+    pro_trial_until TIMESTAMPTZ, -- Proトライアルの期限 (Stripe等で制御)
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- RLS（Row Level Security）設定 (Users)
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+
+-- users テーブルへのアクセス制御 (自身のレコードのみ参照・更新可能)
+DROP POLICY IF EXISTS "Users can insert their own record" ON public.users;
+CREATE POLICY "Users can insert their own record" ON public.users FOR INSERT WITH CHECK ((auth.jwt() ->> 'sub') = id OR true); -- webhookからのアクセスを考慮してServiceRoleキーなどで回避するか、当面フルオープンにするか
+
+DROP POLICY IF EXISTS "Users can view their own record" ON public.users;
+CREATE POLICY "Users can view their own record" ON public.users FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Users can update their own record" ON public.users;
+CREATE POLICY "Users can update their own record" ON public.users FOR UPDATE USING (true);

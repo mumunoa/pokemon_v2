@@ -16,6 +16,44 @@ export async function POST(req: Request) {
         console.log(`AI Coach: API Key prefix is [${apiKey.substring(0, 10)}] (length: ${apiKey.length})`);
         console.log(`AI Coach: Prompt length: ${prompt?.length || 0} characters`);
 
+        // --- チケット残量チェック ---
+        let canProceed = true;
+        let isPro = false;
+
+        try {
+            const { createSupabaseClient } = await import('@/lib/supabase');
+            const supabase = createSupabaseClient();
+
+            if (supabase && userId && userId !== 'anonymous') {
+                const { data: userRecord, error: fetchError } = await supabase
+                    .from('users')
+                    .select('ai_tickets, pro_trial_until')
+                    .eq('id', userId)
+                    .single();
+
+                if (!fetchError && userRecord) {
+                    const now = new Date();
+                    const trialUntil = userRecord.pro_trial_until ? new Date(userRecord.pro_trial_until) : null;
+                    isPro = trialUntil !== null && trialUntil > now;
+
+                    if (!isPro && userRecord.ai_tickets <= 0) {
+                        canProceed = false;
+                    }
+                }
+            }
+        } catch (checkErr) {
+            console.error('AI Coach Ticket Check Failed:', checkErr);
+            // サーバーエラー時はフェイルセーフで通すかブロックするか。今回は通す
+        }
+
+        if (!canProceed && !isPro) {
+            return NextResponse.json(
+                { error: 'TICKETS_EMPTY', details: 'AI分析のチケットが不足しています。本日の無料分を使い切ったか、ログインが必要です。' },
+                { status: 403 }
+            );
+        }
+        // -----------------------
+
         const anthropic = new Anthropic({ apiKey });
 
         // Workbenchで成功が確認されたモデル名を使用
@@ -64,6 +102,27 @@ export async function POST(req: Request) {
 
                 if (dbError) console.error('AI Coach Sync Error:', dbError);
                 else console.log('AI Coach: Analysis log saved to database.');
+
+                // --- チケット消費 (Proでないユーザーのみ) ---
+                if (userId && userId !== 'anonymous' && !isPro) {
+                    // Fetch current tickets first and deduct 1
+                    const { data: currentUser } = await supabase
+                        .from('users')
+                        .select('ai_tickets')
+                        .eq('id', userId)
+                        .single();
+
+                    if (currentUser && currentUser.ai_tickets > 0) {
+                        const { error: updateError } = await supabase
+                            .from('users')
+                            .update({ ai_tickets: currentUser.ai_tickets - 1 })
+                            .eq('id', userId);
+
+                        if (updateError) console.error('Error deducting ticket:', updateError);
+                        else console.log(`AI Coach: Deducted 1 ticket for user ${userId}. Remaining: ${currentUser.ai_tickets - 1}`);
+                    }
+                }
+                // ----------------------------------------
             }
         } catch (dbErr) {
             console.error('AI Coach Logging Failed (Non-critical):', dbErr);
