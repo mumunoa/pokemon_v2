@@ -48,7 +48,7 @@ export async function GET() {
     } catch (error: any) {
         console.error('User profile API Error:', error);
         return NextResponse.json(
-            { error: 'Failed to fetch user profile' },
+            { error: 'Failed to fetch user profile', details: error?.message || String(error) },
             { status: 500 }
         );
     }
