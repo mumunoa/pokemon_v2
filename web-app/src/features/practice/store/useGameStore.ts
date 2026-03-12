@@ -884,7 +884,10 @@ export const useGameStore = create<GameState>((set, get) => ({
 
             const data = await response.json();
 
-            if (data.error) throw new Error(data.details || data.error);
+            if (data.error) {
+                // Return structured error so UI knows if it needs to empty tickets
+                throw { message: data.details || data.error, type: data.error };
+            }
 
             set({
                 isAnalyzing: false,
@@ -898,6 +901,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
             // 分析履歴保存（スナップショット）
             get().takeSnapshot('main');
+            return { success: true };
 
         } catch (error: any) {
             console.error('AI Analysis Failed:', error);
@@ -907,9 +911,10 @@ export const useGameStore = create<GameState>((set, get) => ({
                     accidentRate,
                     setupRate,
                     recommendedAction: "分析エラー",
-                    description: "AIとの通信に失敗しました。APIキーの設定を確認してください。"
+                    description: error.message || "AIとの通信に失敗しました。APIキーの設定を確認してください。"
                 }
             });
+            return { success: false, errorType: error.type || 'UNKNOWN' };
         }
     },
 

@@ -181,6 +181,6 @@ export interface GameState {
     endTurn: () => void;
     setOpponentView: (isOpponent: boolean) => void;
     setDisplayMode: (mode: 'text' | 'compact' | 'local-image') => void;
-    analyzeGame: () => void;
+    analyzeGame: () => Promise<{ success: boolean; errorType?: string }>;
     syncToSupabase: (userId: string, clerkToken?: string) => Promise<{ success: boolean; error?: string }>;
 }

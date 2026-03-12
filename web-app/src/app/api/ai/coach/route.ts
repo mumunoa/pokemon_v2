@@ -85,6 +85,16 @@ export async function POST(req: Request) {
                         // 1日あたりの無料利用制限を3回とする（アカウントを新規作成してもここではじく）
                         if (count >= 3) {
                             console.warn(`Abuse Prevention Block: Device/IP rate limit exceeded (${count} usages). IP=${ipAddress}`);
+
+                            // 同一端末・ネットワークでの制限に引っかかった場合、
+                            // 現在ログイン中の量産アカウントのチケット枚数を直ちにDB上でも0にする
+                            if (clerkUserId && userTickets > 0) {
+                                await supabase
+                                    .from('users')
+                                    .update({ ai_tickets: 0 })
+                                    .eq('id', clerkUserId);
+                            }
+
                             return NextResponse.json(
                                 { error: 'TICKETS_EMPTY', details: 'この端末またはネットワークからの本日の無料利用回数（3回）を超過しました。再度利用するには明日までお待ちください。' },
                                 { status: 403 }

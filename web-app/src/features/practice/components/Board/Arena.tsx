@@ -131,8 +131,15 @@ export const Arena: React.FC = () => {
             return;
         }
 
-        analyzeGame();
         setIsAiAnalysisModalOpen(true);
+        const analysisResult = await analyzeGame();
+
+        if (analysisResult?.errorType === 'TICKETS_EMPTY') {
+            setTickets(0);
+            setIsAiAnalysisModalOpen(false);
+            setIsTicketModalOpen(true);
+            return;
+        }
 
         if (isClerkEnabled && isSignedIn && user) {
             try {
