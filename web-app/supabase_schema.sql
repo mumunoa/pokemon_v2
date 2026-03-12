@@ -11,11 +11,17 @@ CREATE TABLE IF NOT EXISTS public.ai_analysis_logs (
     accident_rate INTEGER, -- 抽出された事故率
     setup_rate INTEGER, -- 抽出された理想展開率
     model_name TEXT DEFAULT 'claude-sonnet-4-6',
-    user_feedback TEXT -- 'good', 'bad', null
+    user_feedback TEXT, -- 'good', 'bad', null
+    ip_address TEXT,
+    fingerprint_id TEXT,
+    local_storage_id TEXT
 );
 
 -- カラム追加予備 (既にテーブルが存在する場合)
 ALTER TABLE public.ai_analysis_logs ADD COLUMN IF NOT EXISTS user_feedback TEXT;
+ALTER TABLE public.ai_analysis_logs ADD COLUMN IF NOT EXISTS ip_address TEXT;
+ALTER TABLE public.ai_analysis_logs ADD COLUMN IF NOT EXISTS fingerprint_id TEXT;
+ALTER TABLE public.ai_analysis_logs ADD COLUMN IF NOT EXISTS local_storage_id TEXT;
 
 -- インデックス作成
 CREATE INDEX IF NOT EXISTS idx_ai_logs_user_id ON public.ai_analysis_logs(user_id);

@@ -847,6 +847,26 @@ export const useGameStore = create<GameState>((set, get) => ({
             // プロンプト生成
             const prompt = generateGameStatusContext(state);
 
+            // デバイスフィンガープリント＆ローカルストレージIDの取得（不正利用対策）
+            let fingerprintId = 'unknown';
+            try {
+                const fpPromise = import('@fingerprintjs/fingerprintjs').then(FingerprintJS => FingerprintJS.load());
+                const fp = await fpPromise;
+                const result = await fp.get();
+                fingerprintId = result.visitorId;
+            } catch (e) {
+                console.warn('Failed to load fingerprintjs', e);
+            }
+
+            const localStorageId = typeof window !== 'undefined' ? (
+                localStorage.getItem('guest_ai_id') ||
+                (() => {
+                    const newId = 'ls_' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+                    localStorage.setItem('guest_ai_id', newId);
+                    return newId;
+                })()
+            ) : 'unknown';
+
             // API呼び出し (盤面データとメタデータを送信)
             const response = await fetch('/api/ai/coach', {
                 method: 'POST',
@@ -856,13 +876,15 @@ export const useGameStore = create<GameState>((set, get) => ({
                     boardState: buildAIInput(state), // 正規化された盤面データ
                     turnCount: state.turnCount,
                     gameId: state.gameId,
-                    userId: 'user_dummy' // 将来的にClerk等のIDを渡す拡張性
+                    userId: 'user_dummy', // サーバー側でClerkから取得するためダミーでOK
+                    fingerprintId,
+                    localStorageId
                 }),
             });
 
             const data = await response.json();
 
-            if (data.error) throw new Error(data.error);
+            if (data.error) throw new Error(data.details || data.error);
 
             set({
                 isAnalyzing: false,
