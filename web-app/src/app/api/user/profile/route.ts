@@ -10,7 +10,13 @@ export async function GET() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const supabaseToken = await getToken({ template: 'supabase' });
+        let supabaseToken: string | null = null;
+        try {
+            supabaseToken = await getToken({ template: 'supabase' });
+        } catch (e) {
+            console.warn('Clerk: Supabase JWT template not configured or error fetching token:', e);
+        }
+
         const supabase = createSupabaseClient(supabaseToken || undefined);
 
         if (!supabase) {
