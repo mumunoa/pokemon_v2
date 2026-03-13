@@ -1,20 +1,70 @@
 import React, { useEffect, useRef } from 'react';
 import { useGameStore } from '@/features/practice/store/useGameStore';
+import { StructuredLog, CardInstance } from '@/types/game';
 
 interface Props {
     isOpen: boolean;
     onClose: () => void;
 }
 
+const getActionIcon = (actionType: string) => {
+    switch (actionType) {
+        case 'game_initialize': return '🎮';
+        case 'move_card': return '🔄';
+        case 'attach_energy': return '⚡';
+        case 'detach_energy': return '🗑️';
+        case 'draw_cards': return '🎴';
+        case 'discard_hand_and_draw': return '♻️';
+        case 'shuffle_hand_and_draw': return '🌪️';
+        case 'judge_man': return '⚖️';
+        case 'return_hand_to_deck': return '📥';
+        case 'end_turn': return '⏱️';
+        default: return '📝';
+    }
+};
+
+const formatLogMessage = (log: StructuredLog, cards: Record<string, CardInstance>) => {
+    const pName = log.playerId === 'player1' ? 'P1' : 'P2';
+    const cardName = log.cardInstanceId ? cards[log.cardInstanceId]?.name : null;
+
+    switch (log.actionType) {
+        case 'game_initialize':
+            return `ゲーム開始 (デッキP1: ${log.payload?.deckCounts?.player1}枚, P2: ${log.payload?.deckCounts?.player2}枚)`;
+        case 'move_card':
+            return cardName 
+                ? `${cardName}を移動 (${log.sourceZone} ➡️ ${log.targetZone})`
+                : `カードを移動 (${log.sourceZone} ➡️ ${log.targetZone})`;
+        case 'attach_energy':
+            const targetPokemon = log.payload?.pokemonId ? cards[log.payload.pokemonId as string]?.name : 'ポケモン';
+            return cardName ? `${targetPokemon}に${cardName}をつける` : 'エネルギーをつける';
+        case 'detach_energy':
+            return cardName ? `${cardName}をトラッシュ` : 'エネルギーをトラッシュ';
+        case 'draw_cards':
+            return `${pName}が ${log.payload?.count}枚 引く`;
+        case 'discard_hand_and_draw':
+            return `${pName}が手札をトラッシュし、${log.payload?.count}枚引く`;
+        case 'shuffle_hand_and_draw':
+            return `${pName}が手札を山札に戻し、${log.payload?.count}枚引く`;
+        case 'judge_man':
+            return `ジャッジマン (お互い4枚引く)`;
+        case 'return_hand_to_deck':
+            return `${pName}が手札を山札に戻す`;
+        case 'end_turn':
+            return `ターン終了 ➡️ ${log.payload?.nextPlayer === 'player1' ? 'P1' : 'P2'}の番 (Turn ${log.payload?.nextTurnCount})`;
+        default:
+            return `${log.actionType} を実行`;
+    }
+};
+
 export const LogSidePanel: React.FC<Props> = ({ isOpen, onClose }) => {
-    const { logs } = useGameStore();
+    const { structuredLogs, cards } = useGameStore();
     const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
-    }, [logs, isOpen]);
+    }, [structuredLogs, isOpen]);
 
     if (!isOpen) return null;
 
@@ -35,30 +85,40 @@ export const LogSidePanel: React.FC<Props> = ({ isOpen, onClose }) => {
 
             <div
                 ref={scrollRef}
-                className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-thin scrollbar-thumb-slate-700"
+                className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-slate-700"
             >
-                {logs.length === 0 ? (
+                {structuredLogs.length === 0 ? (
                     <div className="h-full flex items-center justify-center text-slate-600 text-sm italic">
                         履歴がありません
                     </div>
                 ) : (
-                    logs.map((log, i) => {
-                        const isSystem = log.includes('開始') || log.includes('リセット');
-                        const isTurn = log.includes('ターン終了');
+                    structuredLogs.map((log, i) => {
+                        const isTurn = log.actionType === 'end_turn';
+                        const message = formatLogMessage(log, cards);
+                        const icon = getActionIcon(log.actionType);
 
                         return (
                             <div
-                                key={i}
+                                key={log.id}
                                 className={`text-[12px] p-2.5 rounded-lg border leading-relaxed transition-all ${isTurn
-                                        ? 'bg-blue-500/10 border-blue-500/30 text-blue-100 font-bold'
-                                        : isSystem
-                                            ? 'bg-slate-800 border-slate-700 text-slate-400 italic'
-                                            : 'bg-slate-800/40 border-slate-700/50 text-slate-200'
+                                        ? 'bg-blue-500/10 border-blue-500/30 text-blue-100 font-bold mt-4'
+                                        : 'bg-slate-800/40 border-slate-700/50 text-slate-200'
                                     }`}
                             >
-                                <div className="flex gap-2">
-                                    <span className="text-slate-600 shrink-0 font-mono">{i + 1}</span>
-                                    <span>{log}</span>
+                                <div className="flex gap-2 items-start">
+                                    <span className="text-slate-500 text-[10px] shrink-0 font-mono mt-0.5 w-4">{i + 1}</span>
+                                    <span className="shrink-0 text-sm">{icon}</span>
+                                    <div className="flex-1 drop-shadow-sm">
+                                        <span className={log.cardInstanceId ? "text-yellow-100 font-medium" : ""}>
+                                            {message}
+                                        </span>
+                                        {/* Optional Payload Debug view for advanced tracking */}
+                                        {log.actionType === 'move_card' && (
+                                            <div className="text-[9px] text-slate-500 mt-1 font-mono">
+                                                ID: {log.baseCardId}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -67,8 +127,9 @@ export const LogSidePanel: React.FC<Props> = ({ isOpen, onClose }) => {
             </div>
 
             <div className="p-4 border-t border-slate-800 bg-slate-900/50">
-                <p className="text-[10px] text-slate-500 text-center">
-                    ※ 盤面操作はすべて自動的に記録されます
+                <p className="text-[10px] text-slate-400 text-center flex flex-col gap-1">
+                    <span>※ AI向け構造化ログを表示しています</span>
+                    <span className="text-slate-600">このデータがAIの分析基盤になります</span>
                 </p>
             </div>
         </div>

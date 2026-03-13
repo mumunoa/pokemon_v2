@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { CardInstance, DeckCard, GameState, ZoneType, PlayerId } from '@/types/game';
-import { buildAIInput } from '../utils/ai-schema';
+import { buildAIInput } from '@/lib/ai/buildAIInput';
 import { supabase, createSupabaseClient } from '@/lib/supabase';
 import { generateGameStatusContext } from '@/lib/ai/promptGenerator';
 
@@ -57,6 +57,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     isAnalyzing: false,
 
     // Actions
+    getGameState: () => get(),
     pastStates: [],
     futureStates: [],
 
@@ -105,6 +106,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                 isOpponentView: state.isOpponentView,
                 displayMode: state.displayMode,
                 logs: state.logs,
+                structuredLogs: state.structuredLogs,
+                stateSnapshots: state.stateSnapshots,
                 deckHistory: state.deckHistory,
                 isGameStarted: state.isGameStarted,
             }));
@@ -134,6 +137,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                 isOpponentView: state.isOpponentView,
                 displayMode: state.displayMode,
                 logs: state.logs,
+                structuredLogs: state.structuredLogs,
+                stateSnapshots: state.stateSnapshots,
                 deckHistory: state.deckHistory,
                 isGameStarted: state.isGameStarted,
             }));
@@ -161,6 +166,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                 isOpponentView: state.isOpponentView,
                 displayMode: state.displayMode,
                 logs: state.logs,
+                structuredLogs: state.structuredLogs,
+                stateSnapshots: state.stateSnapshots,
                 deckHistory: state.deckHistory,
                 isGameStarted: state.isGameStarted,
             }));
@@ -736,6 +743,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                 isOpponentView: state.isOpponentView,
                 displayMode: state.displayMode,
                 logs: state.logs,
+                structuredLogs: state.structuredLogs,
+                stateSnapshots: state.stateSnapshots,
                 deckHistory: state.deckHistory,
                 isGameStarted: state.isGameStarted,
             }));
@@ -763,6 +772,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                 isOpponentView: state.isOpponentView,
                 displayMode: state.displayMode,
                 logs: state.logs,
+                structuredLogs: state.structuredLogs,
+                stateSnapshots: state.stateSnapshots,
                 deckHistory: state.deckHistory,
                 isGameStarted: state.isGameStarted,
             }));

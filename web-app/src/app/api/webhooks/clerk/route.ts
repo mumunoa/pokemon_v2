@@ -64,7 +64,11 @@ export async function POST(req: Request) {
         try {
             const { error } = await supabase
                 .from('users')
-                .insert([{ id: id, ai_tickets: 3 }]);
+                .insert([{ 
+                    id: id, 
+                    ai_tickets: 3,
+                    plan_type: 'free',
+                }]);
 
             if (error) {
                 console.error('Error inserting user to Supabase:', error);
@@ -72,7 +76,7 @@ export async function POST(req: Request) {
                 return new Response('Database error', { status: 500 });
             }
 
-            console.log(`Successfully initialized user ${id} with 3 AI tickets.`);
+            console.log(`Successfully initialized user ${id} with 3 AI tickets and free plan.`);
         } catch (dbErr) {
             console.error('Failed to sync user to Supabase:', dbErr);
             return new Response('Database error', { status: 500 });

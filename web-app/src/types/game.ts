@@ -129,6 +129,8 @@ export interface GameState {
         currentTurnPlayer: PlayerId;
         isOpponentView: boolean;
         logs: string[];
+        structuredLogs: StructuredLog[];
+        stateSnapshots: StateSnapshot[];
         deckHistory: string[];
         isGameStarted: boolean;
     }[];
@@ -139,11 +141,14 @@ export interface GameState {
         currentTurnPlayer: PlayerId;
         isOpponentView: boolean;
         logs: string[];
+        structuredLogs: StructuredLog[];
+        stateSnapshots: StateSnapshot[];
         deckHistory: string[];
         isGameStarted: boolean;
     }[];
 
     // Actions
+    getGameState: () => GameState;
     saveState: () => void;
     pushHistory: (snapshot: {
         cards: Record<string, CardInstance>;
@@ -152,6 +157,8 @@ export interface GameState {
         currentTurnPlayer: PlayerId;
         isOpponentView: boolean;
         logs: string[];
+        structuredLogs: StructuredLog[];
+        stateSnapshots: StateSnapshot[];
         deckHistory: string[];
         isGameStarted: boolean;
     }) => void;

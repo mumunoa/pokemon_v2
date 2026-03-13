@@ -15,13 +15,14 @@ import {
     DragCancelEvent
 } from '@dnd-kit/core';
 import { useGameStore } from '@/features/practice/store/useGameStore';
-import { ZoneType, CardInstance, DeckCard, PlayerId } from '@/types/game';
+import { ZoneType, CardInstance, DeckCard, PlayerId, StructuredLog, StateSnapshot } from '@/types/game';
 import { Zone } from './Zone';
 import { Card } from './Card';
 import { CardActionModal } from './CardActionModal';
 import { ZonePopupModal, PopupState } from './ZonePopupModal';
 import { AnalysisOverlay } from '../Modals/AnalysisOverlay';
 import { TicketLimitModal } from '../Modals/TicketLimitModal';
+import { AiAnalysisDrawer } from './AiAnalysisDrawer';
 import { UserButton, SignInButton } from "@clerk/nextjs";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from '@/lib/supabase';
@@ -58,6 +59,8 @@ export const Arena: React.FC = () => {
         currentTurnPlayer: PlayerId;
         isOpponentView: boolean;
         logs: string[];
+        structuredLogs: StructuredLog[];
+        stateSnapshots: StateSnapshot[];
     } | null>(null);
 
     const handleFeedback = async (rating: 'good' | 'bad') => {
@@ -96,6 +99,7 @@ export const Arena: React.FC = () => {
     const [isStartGameModalOpen, setIsStartGameModalOpen] = useState(false);
     const [isToolbarOpen, setIsToolbarOpen] = useState(true);
     const [isAiAnalysisModalOpen, setIsAiAnalysisModalOpen] = useState(false);
+    const [isAiDrawerOpen, setIsAiDrawerOpen] = useState(false);
     const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
     const [ticketModalError, setTicketModalError] = useState<string | undefined>(undefined);
     const [tickets, setTickets] = useState<number | null>(null);
@@ -124,44 +128,8 @@ export const Arena: React.FC = () => {
     }, [cards, initializeDeck]);
 
     const handleAnalyzeGame = async () => {
-        if (!isClerkEnabled || !isSignedIn) {
-            // ローカルモードまたは未ログイン時はデモ用に通すかログインを促す
-            alert("AI分析の利用にはログインが必要です。（デモ環境ではそのまま実行します）");
-        } else if (!isPro && tickets !== null && tickets <= 0) {
-            setTicketModalError(undefined);
-            setIsTicketModalOpen(true);
-            return;
-        }
-
-        setIsAiAnalysisModalOpen(true);
-        const analysisResult = await analyzeGame();
-
-        if (analysisResult?.errorType === 'TICKETS_EMPTY') {
-            setTickets(0);
-            setIsAiAnalysisModalOpen(false);
-
-            // analysisResultにmessageが含まれている場合はそれを渡す
-            // API側で「この端末または...」を返す設計になっている
-            setTicketModalError(useGameStore.getState().aiAnalysis?.description);
-            setIsTicketModalOpen(true);
-            return;
-        }
-
-        if (isClerkEnabled && isSignedIn && user) {
-            try {
-                const token = await getToken({ template: 'supabase' });
-                if (token) {
-                    syncToSupabase(user.id, token);
-                }
-
-                // Optimistic UI update
-                if (!isPro && tickets !== null && tickets > 0) {
-                    setTickets(tickets - 1);
-                }
-            } catch (e) {
-                console.error('Failed to get Supabase token:', e);
-            }
-        }
+        // Freeプラン向けのローカル解析ドロワーを開く
+        setIsAiDrawerOpen(true);
     };
 
     const handleConfirmEndTurn = async () => {
@@ -317,6 +285,8 @@ export const Arena: React.FC = () => {
             currentTurnPlayer: useGameStore.getState().currentTurnPlayer,
             isOpponentView: useGameStore.getState().isOpponentView,
             logs: useGameStore.getState().logs,
+            structuredLogs: useGameStore.getState().structuredLogs,
+            stateSnapshots: useGameStore.getState().stateSnapshots,
         }));
 
         const activeIdStr = event.active.id as string;
@@ -1323,13 +1293,19 @@ export const Arena: React.FC = () => {
                 </div>
             )}
 
-            {/* AI Analysis Overlay (Stylish) */}
+            {/* AI Analysis Overlay (Stylish) - Pro feature placeholder */}
             <AnalysisOverlay
                 isOpen={isAiAnalysisModalOpen}
                 isAnalyzing={isAnalyzing}
                 analysis={aiAnalysis}
                 onClose={() => setIsAiAnalysisModalOpen(false)}
                 onFeedback={handleFeedback}
+            />
+
+            {/* Free Tier AI Analysis Drawer */}
+            <AiAnalysisDrawer 
+                isOpen={isAiDrawerOpen}
+                onClose={() => setIsAiDrawerOpen(false)}
             />
 
             {/* Ticket Limitation Modal */}
