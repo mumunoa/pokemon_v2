@@ -7,8 +7,12 @@ import { CandidateMove } from '@/types/ai';
 export function dedupeMoves(moves: CandidateMove[]): CandidateMove[] {
     const seen = new Set<string>();
     return moves.filter(move => {
-        // キー：タイプ + ソースカード + ターゲットカード
-        const key = `${move.type}_${move.sourceCardInstanceId || ''}_${move.targetCardInstanceId || ''}`;
+        // キー：タイプ + ベースカードID + ターゲット + ラベル
+        // インスタンスIDではなくベースカードIDを使うことで、同じカードが複数ある場合の重複を防ぐ
+        const sourceId = move.sourceBaseCardId || move.sourceCardInstanceId || '';
+        const targetId = move.targetCardInstanceId || move.targetZone || '';
+        const key = `${move.type}_${sourceId}_${targetId}_${move.label}`;
+        
         if (seen.has(key)) return false;
         seen.add(key);
         return true;

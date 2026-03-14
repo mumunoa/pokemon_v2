@@ -80,6 +80,7 @@ export function buildAIInput(state: GameState): AIInput {
             deckCount: (state.zones[`${selfId}-deck` as ZoneType] || []).length,
             prizeCount: (state.zones[`${selfId}-prizes` as ZoneType] || []).length,
             discardCount: (state.zones[`${selfId}-trash` as ZoneType] || []).length,
+            discardCards: getCardsFromZone(`${selfId}-trash` as ZoneType),
             supporterUsedThisTurn: supporterUsed,
             energyAttachedThisTurn: energyAttached
         },
@@ -89,7 +90,15 @@ export function buildAIInput(state: GameState): AIInput {
             handCount: (state.zones[`${opponentId}-hand` as ZoneType] || []).length,
             deckCount: (state.zones[`${opponentId}-deck` as ZoneType] || []).length,
             prizeCount: (state.zones[`${opponentId}-prizes` as ZoneType] || []).length,
-            discardCount: (state.zones[`${opponentId}-trash` as ZoneType] || []).length
+            discardCount: (state.zones[`${opponentId}-trash` as ZoneType] || []).length,
+            discardCards: getCardsFromZone(`${opponentId}-trash` as ZoneType),
+            resourcesConsumed: {
+                // 特定カードのトラッシュ枚数をカウント
+                bossOrders: getCardsFromZone(`${opponentId}-trash` as ZoneType).filter(c => c.name.includes('ボスの指令')).length,
+                energySwitch: getCardsFromZone(`${opponentId}-trash` as ZoneType).filter(c => c.name.includes('エネルギーつけかえ')).length,
+                superRod: getCardsFromZone(`${opponentId}-trash` as ZoneType).filter(c => c.name.includes('すごいつりざお')).length,
+                switch: getCardsFromZone(`${opponentId}-trash` as ZoneType).filter(c => c.name.includes('ポケモンいれかえ')).length,
+            }
         },
         recentActions: state.structuredLogs.slice(-20).map(log => ({
             actionType: log.actionType,

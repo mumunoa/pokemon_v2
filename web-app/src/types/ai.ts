@@ -64,6 +64,7 @@ export type AIInput = {
         discardCount: number;
         supporterUsedThisTurn: boolean;
         energyAttachedThisTurn: boolean;
+        discardCards: AICard[];
     };
     opponent: {
         active?: AIPokemon;
@@ -72,6 +73,13 @@ export type AIInput = {
         deckCount: number;
         prizeCount: number;
         discardCount: number;
+        discardCards: AICard[];
+        resourcesConsumed: {
+            bossOrders: number;
+            energySwitch: number;
+            superRod: number;
+            switch: number;
+        };
     };
     recentActions: AIStructuredAction[];
     deckPlan?: DeckPlanSummary;
