@@ -1393,12 +1393,12 @@ const AuthStatus: React.FC = () => {
         <>
             {isSignedIn && isClerkEnabled ? (
                 <div className="flex items-center space-x-2 bg-slate-900/50 p-1 px-2 rounded-full border border-slate-700">
-                    <span className="text-[10px] text-slate-400 mr-1">Sync ON</span>
+                    <span className="text-[10px] text-slate-400 mr-1">ログイン中</span>
                     <UserButton appearance={{ elements: { userButtonAvatarBox: 'w-6 h-6' } }} />
                 </div>
             ) : isClerkEnabled ? (
                 <div className="bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold px-3 py-1 rounded-full transition-colors cursor-pointer border border-blue-400/30">
-                    <SignInButton mode="modal">Login to Sync</SignInButton>
+                    <SignInButton mode="modal">ログイン</SignInButton>
                 </div>
             ) : (
                 <div className="bg-slate-800 text-slate-500 text-[10px] font-bold px-3 py-1 rounded-full border border-slate-700">

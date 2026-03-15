@@ -18,7 +18,7 @@ export function useAiCoach() {
     const [latestAnalysis, setLatestAnalysis] = useState<CoachCommentary | null>(null);
 
     // ユーザーのプラン判定
-    const planType = profile?.plan_type || 'free';
+    const planType = (profile?.plan_type || 'free').toLowerCase();
 
     useEffect(() => {
         // 1. デバウンス処理（頻繁な再計算を避けるため、最後の変更から500ms待つ）
@@ -31,7 +31,8 @@ export function useAiCoach() {
         gameState.zones, 
         gameState.cards, 
         gameState.turnCount, 
-        gameState.currentTurnPlayer
+        gameState.currentTurnPlayer,
+        gameState.isGameStarted
     ]);
 
     const performInference = async () => {
@@ -84,6 +85,7 @@ export function useAiCoach() {
     return {
         isThinking,
         commentary: filteredCommentary,
-        planType
+        planType,
+        refresh: performInference
     };
 }

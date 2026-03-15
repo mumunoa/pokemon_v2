@@ -11,7 +11,7 @@ export function buildCoachCommentary(
     searchResult: SearchResult
 ): CoachCommentary {
     const bestExplanation = explainMove(initialState, {
-        state: searchResult.bestSequence ? searchResult.alternatives[0]?.state : initialState, // 暫定
+        state: searchResult.bestNode?.state || initialState,
         sequence: searchResult.bestSequence,
         score: searchResult.bestScore,
         depth: 1

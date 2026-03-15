@@ -13,11 +13,9 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
     const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
     const isPro = planType === 'pro' || planType === 'elite';
 
-    if (!isOpen) return null;
-
     return (
         <div
-            className="fixed inset-y-0 right-0 w-[350px] bg-slate-900/95 backdrop-blur-xl border-l border-indigo-500/30 shadow-2xl shadow-indigo-500/20 z-[6000] flex flex-col animate-in slide-in-from-right duration-300"
+            className={`fixed inset-y-0 right-0 w-[350px] bg-slate-900/95 backdrop-blur-xl border-l border-indigo-500/30 shadow-2xl shadow-indigo-500/20 z-[6000] flex flex-col transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
             onClick={e => e.stopPropagation()}
         >
             {/* Header */}

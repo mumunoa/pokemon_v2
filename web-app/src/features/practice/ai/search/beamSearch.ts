@@ -56,6 +56,7 @@ export function beamSearch(
     return {
         bestSequence: best.sequence,
         bestScore: best.score,
+        bestNode: best,
         totalNodesExplored: initialSequences.length,
         depthReached: 1,
         alternatives: topNodes.slice(1)

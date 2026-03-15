@@ -27,6 +27,7 @@ export interface SearchOptions {
 export interface SearchResult {
     bestSequence: ActionSequence;
     bestScore: number;
+    bestNode?: SearchNode; // 追加
     totalNodesExplored: number;
     depthReached: number;
     alternatives: SearchNode[];
