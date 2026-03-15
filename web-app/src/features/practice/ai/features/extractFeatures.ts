@@ -115,8 +115,10 @@ function extractPrizeFeatures(state: CanonicalGameState): PrizeFeatures {
  */
 function extractOpponentBoardFeatures(state: CanonicalGameState): OpponentBoardFeatures {
     const opp = state.opponent;
+    const activeThreat = opp.active ? (opp.active.maxHp - opp.active.damage > 0 ? (opp.active.maxHp - opp.active.damage) / 10 : 0) : 0;
+    
     return {
-        oppImmediateThreatScore: opp.active ? 10 : 0,
+        oppImmediateThreatScore: activeThreat,
         oppNextThreatScore: opp.bench.length * 5,
         oppSystemValueScore: 10,
         oppBenchLiabilityScore: opp.bench.length >= 4 ? 15 : 0,

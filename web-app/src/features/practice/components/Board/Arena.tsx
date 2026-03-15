@@ -128,6 +128,10 @@ export const Arena: React.FC = () => {
     }, [cards, initializeDeck]);
 
     const handleAnalyzeGame = async () => {
+        if (isClerkEnabled && !isSignedIn) {
+            alert('AI分析機能を利用するにはログインが必要です。');
+            return;
+        }
         // Freeプラン向けのローカル解析ドロワーを開く
         setIsAiDrawerOpen(true);
     };

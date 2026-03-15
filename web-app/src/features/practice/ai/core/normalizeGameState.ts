@@ -25,7 +25,7 @@ export function normalizeGameState(state: GameState): CanonicalGameState {
     const opponent = extractOpponentState(state, opponentId);
 
     // 3. フェーズの判定
-    const phase = detectPhase(turn, self.prizeCount, opponent.prizeCount);
+    const phase = detectPhase(state.isGameStarted, turn, self.prizeCount, opponent.prizeCount);
 
     // 4. 公開情報の集計
     const seenCards = countSeenCards(state);
@@ -51,7 +51,8 @@ export function normalizeGameState(state: GameState): CanonicalGameState {
         meta: {
             winConditions: ['相手のサイドを0にする', '相手の山札を切らす'],
             riskTolerance: 0.5
-        }
+        },
+        isGameStarted: state.isGameStarted
     };
 }
 
@@ -151,10 +152,10 @@ function mapToAIBoardPokemon(card: CardInstance, ownerId: PlayerId): AIBoardPoke
     };
 }
 
-function detectPhase(turn: number, selfPrizes: number, opponentPrizes: number): GamePhase {
-    if (turn <= 1) return 'PREPARE';
+function detectPhase(isGameStarted: boolean, turn: number, selfPrizes: number, opponentPrizes: number): GamePhase {
+    if (!isGameStarted) return 'PREPARE';
     if (selfPrizes <= 2 || opponentPrizes <= 2) return 'LATE';
-    if (turn <= 3) return 'EARLY';
+    if (turn <= 2) return 'EARLY';
     return 'MID';
 }
 

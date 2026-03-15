@@ -17,6 +17,8 @@ export interface CanonicalGameState {
     knownInfo: KnownInfoState;
     hiddenInfo: HiddenInfoState;
     meta: MetaContext;
+    isGameStarted: boolean;
+    unproductiveTurn?: boolean;
 }
 
 export type GamePhase = 'PREPARE' | 'EARLY' | 'MID' | 'LATE';

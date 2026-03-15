@@ -2,7 +2,7 @@
  * AIが検討する単一の原子行動
  */
 export type ActionAtom =
-  | { type: 'PLAY_BASIC'; cardId: string; toBench: boolean }
+  | { type: 'PLAY_BASIC'; cardId: string; toBench: boolean; toActive?: boolean }
   | { type: 'EVOLVE'; fromId: string; toCardId: string }
   | { type: 'PLAY_ITEM'; cardId: string; target?: string; choice?: string[] }
   | { type: 'PLAY_SUPPORTER'; cardId: string; target?: string; choice?: string[] }

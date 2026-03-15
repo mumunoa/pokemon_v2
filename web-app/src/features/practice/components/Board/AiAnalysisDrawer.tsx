@@ -67,7 +67,7 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                         <div className="space-y-3">
                             <h4 className="text-white text-xs font-bold flex items-center gap-2">
                                 <span className="w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center text-[10px]">1</span>
-                                推奨される行動シーケンス
+                                おすすめの一手
                             </h4>
                             
                             {commentary.bestActions.map((action, idx) => (

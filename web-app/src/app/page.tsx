@@ -8,7 +8,7 @@ import { LogSidePanel } from '@/features/practice/components/Board/LogSidePanel'
 import './styles/app.css'; // Future implementation of customized non-tailwind CSS if needed
 
 export default function Home() {
-  const { turnCount, currentTurnPlayer, logs } = useGameStore();
+  const { turnCount, currentTurnPlayer, logs, isGameStarted } = useGameStore();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLogOpen, setIsLogOpen] = useState(false);
 
@@ -22,7 +22,9 @@ export default function Home() {
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
           設定
         </button>
-        <div className="turn-indicator font-bold text-sm sm:text-lg text-white">TURN {turnCount} : {currentTurnPlayer === 'player1' ? 'プレイヤー1' : 'プレイヤー2'}</div>
+        <div className="turn-indicator font-bold text-sm sm:text-lg text-white">
+          {isGameStarted ? `TURN ${turnCount} : ${currentTurnPlayer === 'player1' ? 'プレイヤー1' : 'プレイヤー2'}` : '対戦準備中'}
+        </div>
         <button
           onClick={(e) => { e.stopPropagation(); setIsLogOpen(!isLogOpen); }}
           className="primary-btn menu-btn text-white bg-slate-800 px-4 py-2 rounded-md hover:bg-slate-700 flex items-center gap-2 relative transition-all"

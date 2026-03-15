@@ -152,5 +152,10 @@ function calculateAdjustments(state: CanonicalGameState, features: CombinedFeatu
         adj += 50;
     }
 
+    // 行動なし（PASS）へのペナルティ
+    if (state.unproductiveTurn) {
+        adj -= 100;
+    }
+
     return adj;
 }
