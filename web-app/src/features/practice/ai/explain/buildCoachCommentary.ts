@@ -21,21 +21,22 @@ export function buildCoachCommentary(
         explainMove(initialState, node)
     );
 
-    // 5段階の思考プロセスを反映
+    // 5段階の思考プロセスを反映（より実戦的な内容に強化）
     let gameContext = '';
     const phase = initialState.phase;
     
     if (phase === 'PREPARE') {
-        gameContext = '【思考1: 盤面確認】対戦準備中です。まずはバトル場を確定させ、相手に情報を与えすぎないようにベンチ展開を最小限に抑えます。';
+        gameContext = '【思考1: 局面分析】現在は対戦準備段階です。バトル場の選定と、相手に手の内を見せない最小限の展開を検討中...';
     } else {
-        gameContext = `【思考1: 勝ち筋確認】現在のフェーズは${phase}です。勝利への最短ルートを計算中...
-【思考2: 負け筋回避】相手の次ターンの最大打点を警戒し、リソースの配分を最適化します。`;
+        gameContext = `【思考1: 勝利条件の確認】${phase}です。サイドの取り切りに向けた最短ルートを計算しています。
+【思考2: 盤面の守備力チェック】相手の次ターンの最大打点から、気絶のリスクを算出中...
+【思考3: リソース管理】終盤のナンジャモやツツジに備え、山札の厚みと手札の質を最適化します。`;
     }
 
     const advice = bestExplanation.pros.length > 0 
-        ? `【おすすめ次の一手】
-${bestExplanation.title}: ${bestExplanation.pros[0]}
-定石の順序（山札圧縮→展開→エネ→サポート）に沿った行動を推奨します。`
+        ? `【最善の行動】
+${bestExplanation.title}: ${bestExplanation.description}
+${bestExplanation.pros[0]}を含む、複数の行動を組み合わせた最適ルートを提案します。`
         : '【戦況分析】現時点ではリソースを温存し、相手の動きを待つのが最善と判断しました。';
 
     return {

@@ -31,7 +31,7 @@ export default function BillingPage() {
 
             const { error } = await supabase
                 .from('users')
-                .update({ 
+                .update({
                     plan_type: plan,
                     updated_at: new Date().toISOString()
                 })
@@ -94,7 +94,7 @@ export default function BillingPage() {
                 'Claude 3.5 高度相談室',
                 'プレイ履歴ミス解析',
             ],
-            buttonText: 'エリートプランを契約',
+            buttonText: 'エリートへアップグレード',
             isCurrent: profile?.plan_type === 'elite',
             gradient: 'from-amber-500 to-orange-700'
         }
@@ -141,7 +141,7 @@ export default function BillingPage() {
 
                 <div className="flex md:grid md:grid-cols-3 gap-6 md:gap-8 items-start overflow-x-auto md:overflow-x-visible pt-6 pb-8 md:pb-0 px-4 -mx-4 snap-x snap-mandatory hide-scrollbar">
                     {plans.map((plan) => (
-                        <div 
+                        <div
                             key={plan.id}
                             className={`relative group bg-slate-900/40 rounded-[32px] p-8 border hover:scale-[1.02] transition-all duration-300 min-w-[280px] sm:min-w-[320px] md:min-w-0 snap-center ${plan.highlight ? 'border-purple-500/50 shadow-2xl shadow-purple-500/10' : 'border-slate-800'}`}
                         >
@@ -189,7 +189,7 @@ export default function BillingPage() {
 
                 <div className="mt-20 p-10 bg-slate-900/20 border border-slate-800/50 rounded-[40px] text-left max-w-4xl mx-auto">
                     <h4 className="text-xl font-bold mb-6 flex items-center gap-3">
-                        <span className="text-2xl">🛡️</span> 
+                        <span className="text-2xl">🛡️</span>
                         安心のサポート
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 text-sm">

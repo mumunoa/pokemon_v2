@@ -22,8 +22,8 @@ export function explainMove(
     let strategicValue: string = 'SETUP';
 
     // 1. 成果（Pros）の抽出
-    if (finalState.opponent.prizeCount < initialState.opponent.prizeCount) {
-        const diff = initialState.opponent.prizeCount - finalState.opponent.prizeCount;
+    if (finalState.self.prizeCount < initialState.self.prizeCount) {
+        const diff = initialState.self.prizeCount - finalState.self.prizeCount;
         pros.push(`相手のサイドを ${diff} 枚取りました。`);
         strategicValue = 'ATTACK';
     }
@@ -32,22 +32,25 @@ export function explainMove(
         pros.push('ベンチを広げて盤面を形成しました。');
     }
 
-    if (finalState.self.active?.name !== initialState.self.active?.name) {
+    if (finalState.self.active?.name !== initialState.self.active?.name && initialState.self.active) {
         pros.push(`バトル場を ${finalState.self.active?.name} に交代しました。`);
     }
 
-    const energyDiff = finalFeatures.board.energySpreadScore - initialFeatures.board.energySpreadScore;
-    if (energyDiff > 0) {
+    // 実際にエネルギーが増えたか、またはそのターンに新しく付けたか
+    const initialEnergyCount = [initialState.self.active, ...initialState.self.bench].reduce((sum, p) => sum + (p?.attachedEnergyIds.length || 0), 0);
+    const finalEnergyCount = [finalState.self.active, ...finalState.self.bench].reduce((sum, p) => sum + (p?.attachedEnergyIds.length || 0), 0);
+    if (finalEnergyCount > initialEnergyCount) {
         pros.push('エネルギーを付けて攻撃の準備を整えました。');
     }
 
     // 2. リスク（Cons）の抽出
-    if (finalState.self.deckCount < initialState.self.deckCount - 5) {
-        cons.push('山札を多く消費しました、リソース切れに注意が必要です。');
+    // 手札が減り、かつ3枚以下になった場合のみ警告
+    if (finalState.self.hand.length < initialState.self.hand.length && finalState.self.hand.length <= 2) {
+        cons.push('手札が少なくなりました、次ターンのナンジャモ等が致命的になる可能性があります。');
     }
 
-    if (finalState.self.hand.length < 3) {
-        cons.push('手札が少なくなりました、次ターンのナンジャモ等が致命的になる可能性があります。');
+    if (finalState.self.deckCount < initialState.self.deckCount - 10) {
+        cons.push('山札を急激に消費しました、リソース切れに注意が必要です。');
     }
 
     return {
