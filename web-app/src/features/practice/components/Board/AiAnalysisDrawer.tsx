@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
-import { useGameStore } from '@/features/practice/store/useGameStore';
-import { buildAIInput } from '@/lib/ai/buildAIInput';
-import { generateCandidateMoves } from '@/lib/ai/move-generator';
-import { CandidateMove } from '@/types/ai';
 import { useAuth } from '@/hooks/useAuth';
+import { useAiCoach } from '@/hooks/useAiCoach';
+import { UpgradePrompt } from '../Coach/UpgradePrompt';
+import React, { useState } from 'react';
 
 interface Props {
     isOpen: boolean;
@@ -11,77 +9,9 @@ interface Props {
 }
 
 export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
-    const { getGameState } = useGameStore();
-    const [candidates, setCandidates] = useState<CandidateMove[] | null>(null);
-    const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [proAnalysis, setProAnalysis] = useState<string | null>(null);
-    const [isParsingPro, setIsParsingPro] = useState(false);
-    const { isPro, user, getToken } = useAuth();
-
-    // AI分析を実行（フロントエンドロジックのみ）
-    const handleAnalyze = () => {
-        setIsAnalyzing(true);
-        setProAnalysis(null);
-        // UIのブロックを防ぐため非同期で少し遅らせる（ローディング演出）
-        setTimeout(() => {
-            const state = getGameState();
-            const aiInput = buildAIInput(state);
-            const moves = generateCandidateMoves(aiInput);
-            setCandidates(moves);
-            setIsAnalyzing(false);
-
-            // If user is Pro, automatically trigger deep analysis in background
-            if (isPro) {
-                handleAnalyzePro(moves);
-            }
-        }, 600);
-    };
-
-    const handleAnalyzePro = async (moves: CandidateMove[]) => {
-        if (!moves || moves.length === 0) return;
-        setIsParsingPro(true);
-        try {
-            const state = getGameState();
-            const token = await getToken({ template: 'supabase' });
-            
-            const activeZone = state.currentTurnPlayer === 'player1' ? 'player1-active' : 'player2-active';
-            const handZone = state.currentTurnPlayer === 'player1' ? 'player1-hand' : 'player2-hand';
-            const benchZones = ['1', '2', '3', '4', '5'].map(n => `${state.currentTurnPlayer}-bench-${n}` as import('@/types/game').ZoneType);
-
-            const activePokemonId = state.zones[activeZone][0];
-            const activePokemon = activePokemonId ? state.cards[activePokemonId]?.name : null;
-            const handCount = state.zones[handZone].length;
-            const benchCount = benchZones.filter(z => state.zones[z]?.length > 0).length;
-
-            const response = await fetch('/api/ai/pro-coach', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    candidates: moves,
-                    activePokemon,
-                    handCount,
-                    benchCount,
-                    isEliteAnalysis: false
-                })
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setProAnalysis(data.analysis);
-            } else {
-                console.error("Pro analysis failed", response.statusText);
-                setProAnalysis("詳細なプロアシストの取得に失敗しました。");
-            }
-        } catch (error) {
-            console.error(error);
-            setProAnalysis("詳細なプロアシストの取得中にエラーが発生しました。");
-        } finally {
-            setIsParsingPro(false);
-        }
-    };
+    const { isThinking, commentary, planType } = useAiCoach();
+    const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
+    const isPro = planType === 'pro' || planType === 'elite';
 
     if (!isOpen) return null;
 
@@ -92,129 +22,122 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
         >
             {/* Header */}
             <div className="p-4 border-b border-indigo-500/20 flex justify-between items-center bg-indigo-950/30">
-                <h3 className="text-indigo-300 font-bold flex items-center gap-2">
-                    <span className="text-xl">🔥</span>
-                    ポケカAIコーチ（Free版）
-                </h3>
+                <div className="flex flex-col">
+                    <h3 className="text-indigo-300 font-bold flex items-center gap-2">
+                        <span className="text-xl">🎓</span>
+                        AIプロコーチ
+                        {!isPro && <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-500/30">FREE</span>}
+                    </h3>
+                    <p className="text-[10px] text-slate-500 mt-0.5">8レイヤー推論エンジン稼働中</p>
+                </div>
                 <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto p-5 pb-0">
-                {!candidates && !isAnalyzing && (
-                    <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
-                        <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center text-2xl shadow-inner">
-                            🤔
-                        </div>
-                        <div>
-                            <p className="text-slate-300 font-medium">現在の盤面を分析しますか？</p>
-                            <p className="text-slate-500 text-xs mt-1">Freeプランは回数無制限で候補手を何度でも確認できます。</p>
-                        </div>
-                        <button
-                            onClick={handleAnalyze}
-                            className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 px-6 rounded-full shadow-lg shadow-indigo-500/30 transition-all active:scale-95 flex items-center gap-2"
-                        >
-                            <span>✨ 今の盤面を分析する</span>
-                        </button>
+            <div className="flex-1 overflow-y-auto p-5 space-y-6">
+                {/* Status Indicator */}
+                {isThinking && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
+                        <div className="w-3 h-3 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
+                        <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest animate-pulse">
+                            Thinking...
+                        </span>
                     </div>
                 )}
 
-                {isAnalyzing && (
-                    <div className="flex flex-col items-center justify-center h-full space-y-4">
-                        <div className="w-8 h-8 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
-                        <p className="text-indigo-300 text-sm animate-pulse">盤面を解析中...</p>
+                {!commentary && !isThinking && (
+                    <div className="text-center py-10 text-slate-500 text-sm">
+                        盤面に変化があると自動で分析を開始します。
                     </div>
                 )}
 
-                {candidates && !isAnalyzing && (
-                    <div className="space-y-4">
-                        <h4 className="text-white text-sm font-bold flex items-center gap-2 mb-3">
-                            🎯 AI推奨の行動候補
-                        </h4>
-                        
-                        {candidates.length === 0 ? (
-                            <div className="bg-slate-800/50 rounded-lg p-4 text-center border border-slate-700">
-                                <p className="text-slate-400 text-sm">
-                                    現在実行できる有効な行動が見つかりません。
-                                    <br/>ターンを終了するか、場の状況を見直してください。
-                                </p>
-                            </div>
-                        ) : (
-                            candidates.map((move, index) => (
-                                <div 
-                                    key={move.id} 
-                                    className={`relative p-4 rounded-xl border ${
-                                        index === 0 
-                                            ? 'bg-gradient-to-br from-indigo-900/50 to-slate-900 border-indigo-500/50 shadow-lg shadow-indigo-500/10' 
-                                            : 'bg-slate-800/40 border-slate-700/50'
-                                    }`}
-                                >
-                                    {index === 0 && (
-                                        <div className="absolute -top-2.5 -left-2.5 w-7 h-7 bg-yellow-400 text-yellow-900 rounded-full flex items-center justify-center font-black text-xs shadow-md border-2 border-slate-900 transform -rotate-6">
-                                            1位
-                                        </div>
-                                    )}
-                                    {index === 1 && <span className="absolute top-3 right-3 text-slate-500 text-xs font-bold">2位</span>}
-                                    {index === 2 && <span className="absolute top-3 right-3 text-slate-500 text-xs font-bold">3位</span>}
-                                    
-                                    <div className={`font-bold ${index === 0 ? 'text-indigo-200 text-base ml-2' : 'text-slate-200 text-sm'}`}>
-                                        {move.label}
+                {commentary && (
+                    <>
+                        {/* Game Context Advice */}
+                        <div className="bg-indigo-900/20 border border-indigo-500/10 rounded-xl p-4">
+                            <h4 className="text-indigo-400 text-[10px] font-black uppercase mb-2 tracking-tighter">現在の局面診断</h4>
+                            <p className="text-slate-200 text-xs italic leading-relaxed">
+                                "{commentary.gameContext}"
+                            </p>
+                        </div>
+
+                        {/* Best Action */}
+                        <div className="space-y-3">
+                            <h4 className="text-white text-xs font-bold flex items-center gap-2">
+                                <span className="w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center text-[10px]">1</span>
+                                推奨される行動シーケンス
+                            </h4>
+                            
+                            {commentary.bestActions.map((action, idx) => (
+                                <div key={idx} className="bg-gradient-to-br from-indigo-900/40 to-slate-900 border border-indigo-500/40 rounded-xl p-4 shadow-xl overflow-hidden relative">
+                                    <div className="absolute top-0 right-0 p-2 opacity-10">
+                                        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                                     </div>
-                                    
-                                    {move.reasons && move.reasons.length > 0 && (
-                                        <div className={`mt-2 ${index === 0 ? 'ml-2' : ''}`}>
-                                            <span className="inline-block px-2 py-0.5 bg-slate-950/50 rounded text-xs text-slate-400 font-medium">
-                                                💡 理由: {move.reasons[0]}
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                            ))
-                        )}
+                                    <div className="text-indigo-200 font-bold text-sm mb-1">{action.title}</div>
+                                    <p className="text-slate-400 text-[10px] mb-3">{action.description}</p>
 
-                        <div className="pt-4 flex justify-center">
-                            <button
-                                onClick={handleAnalyze}
-                                className="text-indigo-400 text-xs font-medium hover:text-indigo-300 mb-4"
-                            >
-                                🔄 盤面が変わったら再分析
-                            </button>
+                                    {/* Pros & Cons (Plan dependent) */}
+                                    <div className="space-y-2">
+                                        {isPro ? (
+                                            <>
+                                                {action.pros.map((pro, pIdx) => (
+                                                    <div key={pIdx} className="flex gap-2 text-[10px] text-green-400">
+                                                        <span>✅</span>
+                                                        <span>{pro}</span>
+                                                    </div>
+                                                ))}
+                                                {action.cons.map((con, cIdx) => (
+                                                    <div key={cIdx} className="flex gap-2 text-[10px] text-orange-400">
+                                                        <span>⚠️</span>
+                                                        <span>{con}</span>
+                                                    </div>
+                                                ))}
+                                            </>
+                                        ) : (
+                                            <div 
+                                                className="mt-3 p-3 bg-slate-950/50 rounded-lg border border-slate-800 flex flex-col items-center gap-2 group cursor-pointer hover:border-purple-500/30 transition-colors"
+                                                onClick={() => setIsUpgradeOpen(true)}
+                                            >
+                                                <div className="text-[10px] text-slate-500 font-medium">理由は Pro プランで公開中</div>
+                                                <div className="flex gap-1">
+                                                    <div className="w-12 h-1.5 bg-slate-800 rounded-full animate-pulse"></div>
+                                                    <div className="w-8 h-1.5 bg-slate-800 rounded-full animate-pulse delay-75"></div>
+                                                    <div className="w-10 h-1.5 bg-slate-800 rounded-full animate-pulse delay-150"></div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    </div>
+
+                        {/* Alternatives (Pro only) */}
+                        {isPro && commentary.alternatives.length > 0 && (
+                            <div className="space-y-3 pt-4 border-t border-slate-800">
+                                <h4 className="text-slate-400 text-[10px] font-bold uppercase tracking-widest px-1">その他の有力な候補</h4>
+                                <div className="space-y-2">
+                                    {commentary.alternatives.map((alt, aIdx) => (
+                                        <div key={aIdx} className="bg-slate-800/30 border border-slate-700/50 rounded-lg p-3">
+                                            <div className="text-slate-300 text-xs font-bold">{alt.title}</div>
+                                            <div className="text-slate-500 text-[9px] mt-0.5 italic">{alt.description}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 
-            {/* Footer / Upsell or Pro Analysis display */}
-            <div className="p-4 border-t border-slate-800 bg-gradient-to-t from-slate-950 to-slate-900 shrink-0">
-                {isPro ? (
-                    <div className="bg-slate-800/80 border border-indigo-500/30 rounded-lg p-4 shadow-inner">
-                        <div className="flex items-center gap-2 mb-2">
-                            <span className="text-xs font-black text-indigo-300">⚡️ PRO 分析結果</span>
-                        </div>
-                        {isParsingPro ? (
-                            <div className="flex items-center gap-2 text-slate-400 text-xs py-2">
-                                <div className="w-4 h-4 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
-                                AIコーチが詳細を検討中...
-                            </div>
-                        ) : proAnalysis ? (
-                            <p className="text-xs text-slate-300 leading-relaxed max-w-full break-words whitespace-pre-wrap">
-                                {proAnalysis}
-                            </p>
-                        ) : (
-                            <div className="flex justify-center">
-                                <button
-                                    onClick={() => candidates && handleAnalyzePro(candidates)}
-                                    className="bg-indigo-600/50 hover:bg-indigo-600 text-white text-xs font-bold py-2 px-4 rounded w-full transition-colors"
-                                >
-                                    詳細な戦略解説を聞く
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                ) : (
-                    <div className="bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-500/20 rounded-lg p-3 relative overflow-hidden group hover:border-purple-500/40 transition-colors cursor-pointer">
+            {/* Footer / Upsell */}
+            {!isPro && (
+                <div className="p-4 border-t border-slate-800 bg-gradient-to-t from-slate-950 to-slate-900 shrink-0">
+                    <div 
+                        className="bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-500/20 rounded-lg p-3 relative overflow-hidden group hover:border-purple-500/40 transition-colors cursor-pointer"
+                        onClick={() => setIsUpgradeOpen(true)}
+                    >
                         <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-purple-500/20 to-transparent rounded-bl-full"></div>
                         <div className="flex items-center gap-2 mb-1 relative z-10">
                             <span className="text-xs font-black bg-gradient-to-r from-purple-400 to-indigo-400 text-transparent bg-clip-text">PRO プラン</span>
@@ -224,11 +147,14 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                             「なぜこの手が最善なのか」深い解説と、相手の動きを予測した次ターンのリスク分析を解禁します。
                         </p>
                         <div className="flex justify-end relative z-10">
-                            <span className="text-xs text-purple-300 font-bold group-hover:underline">詳しく見る 🚀</span>
+                            <span className="text-xs text-purple-300 font-bold group-hover:underline">アップグレードして理由を確認 🚀</span>
                         </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
+
+            {/* Modals */}
+            <UpgradePrompt isOpen={isUpgradeOpen} onClose={() => setIsUpgradeOpen(false)} />
         </div>
     );
 };
