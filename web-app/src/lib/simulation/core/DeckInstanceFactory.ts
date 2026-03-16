@@ -5,6 +5,8 @@ export type SimCardInstance = {
   baseId: string
   name: string
   countIndex: number
+  type?: string
+  kinds?: string
 }
 
 export class DeckInstanceFactory {
@@ -18,6 +20,8 @@ export class DeckInstanceFactory {
           baseId: deckCard.id,
           name: deckCard.name,
           countIndex: i + 1,
+          type: deckCard.type,
+          kinds: deckCard.kinds,
         })
       }
     }

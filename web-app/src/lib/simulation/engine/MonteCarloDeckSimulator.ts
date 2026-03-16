@@ -128,8 +128,8 @@ export class MonteCarloDeckSimulator {
           handCount: board.hand.length,
           supporterUsed: board.supporterUsed,
           energyAttachedToActive: board.attachedEnergyToActive,
-          playableSupporters: board.hand.filter(c => CardRoleCatalog.hasRole(c.name, 'draw_supporter')).map(c => c.name),
-          playableSearchItems: board.hand.filter(c => CardRoleCatalog.hasRole(c.name, 'search_basic_item')).map(c => c.name),
+          playableSupporters: board.hand.filter(c => CardRoleCatalog.hasRole(c, 'draw_supporter')).map(c => c.name),
+          playableSearchItems: board.hand.filter(c => CardRoleCatalog.hasRole(c, 'search_basic_item')).map(c => c.name),
           notableCardsInHand: board.hand.slice(0, 3).map(c => c.name),
           archetype: board.archetype
       }
@@ -155,8 +155,8 @@ export class MonteCarloDeckSimulator {
 
       // 進化ライン判定（簡易）
       if (config.requireEvolutionLineReady) {
-          const hasEvolutionInHandOrBench = board.hand.some(c => CardRoleCatalog.hasRole(c.name, 'evolution_pokemon')) || 
-                                           board.bench.some(c => CardRoleCatalog.hasRole(c.name, 'evolution_pokemon'))
+          const hasEvolutionInHandOrBench = board.hand.some(c => CardRoleCatalog.hasRole(c, 'evolution_pokemon')) || 
+                                           board.bench.some(c => CardRoleCatalog.hasRole(c, 'evolution_pokemon'))
           if (!hasEvolutionInHandOrBench) {
               isSuccess = false
               reasons.push('NO_EVOLUTION_LINE')

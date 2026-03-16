@@ -52,7 +52,7 @@ export class TurnActionPolicy {
     const next = structuredClone(board)
 
     while (true) {
-      const basic = next.hand.find((card) => CardRoleCatalog.hasRole(card.name, 'basic_pokemon'))
+      const basic = next.hand.find((card) => CardRoleCatalog.hasRole(card, 'basic_pokemon'))
       if (!basic) break
 
       if (!next.active) {
@@ -77,10 +77,10 @@ export class TurnActionPolicy {
     while (itemLimit > 0) {
       itemLimit--
       const itemIdx = next.hand.findIndex(c => 
-        CardRoleCatalog.hasRole(c.name, 'search_basic_item') || 
-        CardRoleCatalog.hasRole(c.name, 'bench_setup_item') ||
-        CardRoleCatalog.hasRole(c.name, 'search_any_item') ||
-        CardRoleCatalog.hasRole(c.name, 'energy_search')
+        CardRoleCatalog.hasRole(c, 'search_basic_item') || 
+        CardRoleCatalog.hasRole(c, 'bench_setup_item') ||
+        CardRoleCatalog.hasRole(c, 'search_any_item') ||
+        CardRoleCatalog.hasRole(c, 'energy_search')
       )
       
       if (itemIdx === -1) break
@@ -89,19 +89,19 @@ export class TurnActionPolicy {
       next.hand.splice(itemIdx, 1)
       next.discard.push(item)
 
-      if (CardRoleCatalog.hasRole(item.name, 'search_basic_item') || CardRoleCatalog.hasRole(item.name, 'bench_setup_item')) {
+      if (CardRoleCatalog.hasRole(item, 'search_basic_item') || CardRoleCatalog.hasRole(item, 'bench_setup_item')) {
         const targetIdx = this.searchResolver.findBestBasicTarget(next.deck, next.archetype)
         if (targetIdx >= 0) {
           const [target] = next.deck.splice(targetIdx, 1)
           next.hand.push(target)
         }
-      } else if (CardRoleCatalog.hasRole(item.name, 'energy_search')) {
+      } else if (CardRoleCatalog.hasRole(item, 'energy_search')) {
         const targetIdx = this.searchResolver.findBestEnergyTarget(next.deck)
         if (targetIdx >= 0) {
           const [target] = next.deck.splice(targetIdx, 1)
           next.hand.push(target)
         }
-      } else if (CardRoleCatalog.hasRole(item.name, 'search_any_item')) {
+      } else if (CardRoleCatalog.hasRole(item, 'search_any_item')) {
         // デッキタイプに合わせて柔軟に（とりあえず基本はたね）
         const targetIdx = this.searchResolver.findBestBasicTarget(next.deck, next.archetype)
         if (targetIdx >= 0) {
@@ -118,7 +118,7 @@ export class TurnActionPolicy {
     const next = structuredClone(board)
     if (next.supporterUsed) return next
 
-    const supIdx = next.hand.findIndex(c => CardRoleCatalog.hasRole(c.name, 'draw_supporter') || CardRoleCatalog.hasRole(c.name, 'stabilizer_supporter'))
+    const supIdx = next.hand.findIndex(c => CardRoleCatalog.hasRole(c, 'draw_supporter') || CardRoleCatalog.hasRole(c, 'stabilizer_supporter'))
     if (supIdx === -1) return next
 
     const supporter = next.hand[supIdx]
@@ -127,11 +127,11 @@ export class TurnActionPolicy {
     next.supporterUsed = true
 
     // 簡易ドローロジック
-    if (CardRoleCatalog.hasRole(supporter.name, 'draw_supporter')) {
+    if (CardRoleCatalog.hasRole(supporter, 'draw_supporter')) {
       const drawCount = supporter.name.includes('博士') ? 7 : 4
       const drawn = next.deck.splice(0, drawCount)
       next.hand.push(...drawn)
-    } else if (CardRoleCatalog.hasRole(supporter.name, 'stabilizer_supporter')) {
+    } else if (CardRoleCatalog.hasRole(supporter, 'stabilizer_supporter')) {
       // ペパーのようなサーチ
       const targetIdx = this.searchResolver.findBestBasicTarget(next.deck, next.archetype)
       if (targetIdx >= 0) {
@@ -147,7 +147,7 @@ export class TurnActionPolicy {
     const next = structuredClone(board)
     if (next.energyAttachedThisTurn) return next
 
-    const eneIdx = next.hand.findIndex(c => CardRoleCatalog.hasRole(c.name, 'energy_basic') || CardRoleCatalog.hasRole(c.name, 'energy_special'))
+    const eneIdx = next.hand.findIndex(c => CardRoleCatalog.hasRole(c, 'energy_basic') || CardRoleCatalog.hasRole(c, 'energy_special'))
     if (eneIdx === -1) return next
 
     const energy = next.hand[eneIdx]

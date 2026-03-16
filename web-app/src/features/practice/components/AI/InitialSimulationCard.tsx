@@ -13,30 +13,21 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType }) => {
     const [summary, setSummary] = useState<InitialSimulationSummary | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const deckCards = useGameStore(state => state.cards);
-    const deckIds = useGameStore(state => state.zones['player1-deck']);
+    const player1Deck = useGameStore(state => state.player1Deck);
 
     const runSimulation = async () => {
+        if (!player1Deck || player1Deck.length === 0) {
+            setError('デッキが読み込まれていません');
+            return;
+        }
         setIsLoading(true);
         setError(null);
         try {
-            // 現在のデッキ構成を抽出
-            const cardsInDeck = deckIds.map(id => deckCards[id]);
-            // 重複をカウントして集計
-            const aggregatedDeck: any[] = [];
-            const counts: Record<string, number> = {};
-            cardsInDeck.forEach(c => {
-                counts[c.name] = (counts[c.name] || 0) + 1;
-            });
-            Object.entries(counts).forEach(([name, count]) => {
-                aggregatedDeck.push({ name, count, id: name });
-            });
-
             const response = await fetch('/api/ai/simulation', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    deck: aggregatedDeck,
+                    deck: player1Deck,
                     perspective: 'first',
                     planTier: planType.toLowerCase()
                 })
@@ -116,6 +107,24 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType }) => {
                         </ul>
                     </div>
 
+                    {/* Failure Breakdown */}
+                    <div className="space-y-3">
+                        <h4 className="text-white text-xs font-bold flex items-center gap-2">
+                            <span className="text-lg">📉</span> 失敗原因の内訳
+                        </h4>
+                        <div className="grid grid-cols-2 gap-2">
+                            {summary.failureBreakdown.map((f, i) => (
+                                <div key={i} className="bg-slate-950/40 border border-slate-800 rounded-lg p-2 flex justify-between items-center text-[10px]">
+                                    <div className="flex items-center gap-2">
+                                        <span>{getFailureIcon(f.type)}</span>
+                                        <span className="text-slate-400">{getFailureLabel(f.type)}</span>
+                                    </div>
+                                    <span className="text-slate-200 font-bold">{f.count}回</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
                     {/* Pro Feature: Suggestions */}
                     {isPro ? (
                         <div className="space-y-4">
@@ -181,4 +190,26 @@ const MetricBar: React.FC<{ label: string; rate: number }> = ({ label, rate }) =
             </div>
         </div>
     );
+};
+
+const getFailureIcon = (type: string) => {
+    switch (type) {
+        case 'NO_BASIC': return '🌱';
+        case 'NO_ENERGY': return '⚡';
+        case 'NO_SUPPORTER': return '📚';
+        case 'NO_BENCH_SETUP': return '🔍';
+        case 'NO_EVOLUTION_LINE': return '🧬';
+        default: return '❓';
+    }
+};
+
+const getFailureLabel = (type: string) => {
+    switch (type) {
+        case 'NO_BASIC': return 'たね不足';
+        case 'NO_ENERGY': return 'エネ不足';
+        case 'NO_SUPPORTER': return 'サポート不足';
+        case 'NO_BENCH_SETUP': return '展開不足';
+        case 'NO_EVOLUTION_LINE': return '進化ライン不足';
+        default: return 'その他';
+    }
 };

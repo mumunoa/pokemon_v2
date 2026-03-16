@@ -19,13 +19,13 @@ export class MulliganEngine {
   }
 
   hasBasic(hand: SimCardInstance[]): boolean {
-    return hand.some((card) => CardRoleCatalog.hasRole(card.name, 'basic_pokemon'))
+    return hand.some((card) => CardRoleCatalog.hasRole(card, 'basic_pokemon'))
   }
 
   pickStartingBasic(hand: SimCardInstance[]): SimCardInstance {
     return (
-      hand.find((card) => CardRoleCatalog.hasRole(card.name, 'main_attacker_basic')) ??
-      hand.find((card) => CardRoleCatalog.hasRole(card.name, 'basic_pokemon')) ??
+      hand.find((card) => CardRoleCatalog.hasRole(card, 'main_attacker_basic')) ??
+      hand.find((card) => CardRoleCatalog.hasRole(card, 'basic_pokemon')) ??
       hand[0]
     )
   }

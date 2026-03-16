@@ -4,26 +4,26 @@ import { DeckArchetype } from '@/types/deck-analysis'
 
 export class SearchResolver {
   findBestBasicTarget(deck: SimCardInstance[], _archetype: DeckArchetype): number {
-    const main = deck.findIndex((card) => CardRoleCatalog.hasRole(card.name, 'main_attacker_basic'))
+    const main = deck.findIndex((card) => CardRoleCatalog.hasRole(card, 'main_attacker_basic'))
     if (main >= 0) return main
-    return deck.findIndex((card) => CardRoleCatalog.hasRole(card.name, 'basic_pokemon'))
+    return deck.findIndex((card) => CardRoleCatalog.hasRole(card, 'basic_pokemon'))
   }
 
   findBestEvolutionTarget(deck: SimCardInstance[]): number {
-    return deck.findIndex((card) => CardRoleCatalog.hasRole(card.name, 'evolution_pokemon'))
+    return deck.findIndex((card) => CardRoleCatalog.hasRole(card, 'evolution_pokemon'))
   }
 
   findBestEnergyTarget(deck: SimCardInstance[]): number {
     return deck.findIndex((card) =>
-      CardRoleCatalog.hasRole(card.name, 'energy_basic') ||
-      CardRoleCatalog.hasRole(card.name, 'energy_special'),
+      CardRoleCatalog.hasRole(card, 'energy_basic') ||
+      CardRoleCatalog.hasRole(card, 'energy_special'),
     )
   }
 
   findBestSupporterTarget(deck: SimCardInstance[]): number {
     return deck.findIndex((card) =>
-      CardRoleCatalog.hasRole(card.name, 'draw_supporter') ||
-      CardRoleCatalog.hasRole(card.name, 'stabilizer_supporter'),
+      CardRoleCatalog.hasRole(card, 'draw_supporter') ||
+      CardRoleCatalog.hasRole(card, 'stabilizer_supporter'),
     )
   }
 }
