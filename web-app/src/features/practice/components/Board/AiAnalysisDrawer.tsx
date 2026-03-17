@@ -2,6 +2,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAiCoach } from '@/hooks/useAiCoach';
 import { UpgradePrompt } from '../Coach/UpgradePrompt';
 import { InitialSimulationCard } from '../AI/InitialSimulationCard';
+import { CoachPanel } from '../../ai-next';
+import { useGameStore } from '@/features/practice/store/useGameStore';
 import React, { useState } from 'react';
 
 interface Props {
@@ -11,12 +13,13 @@ interface Props {
 
 export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
     const { isThinking, commentary, planType } = useAiCoach();
+    const { runCoachAnalysis, coachResult, coachLoading } = useGameStore();
     const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
     const isPro = planType === 'pro' || planType === 'elite';
 
     return (
         <div
-            className={`fixed inset-y-0 right-0 w-[350px] bg-slate-900/95 backdrop-blur-xl border-l border-indigo-500/30 shadow-2xl shadow-indigo-500/20 z-[6000] flex flex-col transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+            className={`fixed inset-y-0 right-0 w-[400px] bg-slate-900/95 backdrop-blur-xl border-l border-indigo-500/30 shadow-2xl shadow-indigo-500/20 z-[6000] flex flex-col transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
             onClick={e => e.stopPropagation()}
         >
             {/* Header */}
@@ -36,6 +39,25 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto p-5 space-y-6">
+                {/* Professional Analysis Section */}
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                        <h4 className="text-white text-xs font-bold flex items-center gap-2">
+                            <span className="w-5 h-5 bg-emerald-600 rounded-full flex items-center justify-center text-[10px]">🔥</span>
+                            プロタクティカル分析
+                        </h4>
+                        {!coachResult && !coachLoading && (
+                             <button 
+                                onClick={() => runCoachAnalysis()}
+                                className="text-[10px] bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-full font-bold transition-all active:scale-95 shadow-lg shadow-emerald-500/20"
+                             >
+                                 深層分析を実行
+                             </button>
+                        )}
+                    </div>
+                   <CoachPanel result={coachResult} isLoading={coachLoading} />
+                </div>
+
                 {/* Status Indicator */}
                 {isThinking && (
                     <div className="flex items-center gap-2 px-3 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">

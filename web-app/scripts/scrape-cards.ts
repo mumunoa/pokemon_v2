@@ -1,74 +1,71 @@
 import fs from 'fs';
 import path from 'path';
 import { JSDOM } from 'jsdom';
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
 
-// ポケモン専用の検索URL
-const SEARCH_URL = 'https://www.pokemon-card.com/card-search/index.php?keyword=&se_ta=pokemon&regulation_sidebar_form=XY&sc_hp_s=&sc_hp_e=&sc_run_away_s=0&sc_run_away_e=&pg=';
+// 環境変数読み込み
+dotenv.config({ path: path.join(process.cwd(), '.env.local') });
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
 const DETAIL_BASE_URL = 'https://www.pokemon-card.com';
-const MASTER_JSON_PATH = path.join(process.cwd(), 'src/lib/simulation/catalog/card-master.json');
 
-// エネルギーアイコンのマッピング
 const TYPE_MAP: { [key: string]: string } = {
-  'icon-grass': 'grass',
-  'icon-fire': 'fire',
-  'icon-water': 'water',
-  'icon-electric': 'electric',
-  'icon-psychic': 'psychic',
-  'icon-fighting': 'fighting',
-  'icon-dark': 'dark',
-  'icon-steel': 'steel',
-  'icon-dragon': 'dragon',
-  'icon-none': 'none'
+  'icon-grass': 'grass', 'icon-fire': 'fire', 'icon-water': 'water',
+  'icon-electric': 'electric', 'icon-psychic': 'psychic', 'icon-fighting': 'fighting',
+  'icon-dark': 'dark', 'icon-steel': 'steel', 'icon-dragon': 'dragon', 'icon-none': 'none'
 };
 
-async function sleep(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+async function sleep(ms: number) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+async function fetchCardList(page: number, series: string = 'pokemon') {
+  const url = `https://www.pokemon-card.com/card-search/resultAPI.php?keyword=&se_ta=${series}&regulation_sidebar_form=XY&pg=&illust=&sm_and_keyword=true&page=${page}`;
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': 'https://www.pokemon-card.com/card-search/',
+      }
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) { return null; }
 }
 
 async function fetchHTML(url: string) {
   try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+    if (!response.ok) return null;
     return await response.text();
-  } catch (error) {
-    console.error(`Failed to fetch ${url}:`, error);
-    return null;
-  }
+  } catch (error) { return null; }
 }
 
-function parseCardDetail(html: string, url: string) {
+function parseCardDetail(html: string, cardID: string) {
   const dom = new JSDOM(html);
   const doc = dom.window.document;
-
   const leftBox = doc.querySelector('.LeftBox');
   const rightBoxInner = doc.querySelector('.RightBox-inner');
   const section = doc.querySelector('.Section');
 
   if (!leftBox || !rightBoxInner) return null;
 
-  const idText = leftBox.querySelector('.subtext.Text-fjalla')?.textContent?.trim() || 'none';
+  const noText = leftBox.querySelector('.subtext.Text-fjalla')?.textContent?.trim() || 'none';
   const name = section?.querySelector('.Heading1.mt20')?.textContent?.trim() || 'Unknown';
   const imgElement = leftBox.querySelector('.fit') as HTMLImageElement;
   const imageUrl = imgElement ? `${DETAIL_BASE_URL}${imgElement.getAttribute('src')}` : 'none';
 
-  let type = 'pokemon';
   let kinds = 'basic';
   const topInfo = rightBoxInner.querySelector('.TopInfo.Text-fjalla');
   const typeText = topInfo?.querySelector('.type')?.textContent?.trim() || '';
-
-  if (typeText.includes('たね')) {
-    type = 'pokemon';
-    kinds = 'basic';
-  } else if (typeText.includes('1進化')) {
-    type = 'pokemon';
-    kinds = 'stage1';
-  } else if (typeText.includes('2進化')) {
-    type = 'pokemon';
-    kinds = 'stage2';
-  }
+  if (typeText.includes('たね')) kinds = 'basic';
+  else if (typeText.includes('1進化')) kinds = 'stage1';
+  else if (typeText.includes('2進化')) kinds = 'stage2';
 
   const hp = topInfo?.querySelector('.hp-num')?.textContent?.trim() || 'none';
-
   const types: string[] = [];
   topInfo?.querySelectorAll('.icon').forEach(icon => {
     for (const [key, value] of Object.entries(TYPE_MAP)) {
@@ -93,15 +90,11 @@ function parseCardDetail(html: string, url: string) {
         const name = next.textContent?.trim() || '';
         const cost: string[] = [];
         next.querySelectorAll('.icon').forEach(icon => {
-          for (const [key, value] of Object.entries(TYPE_MAP)) {
-            if (icon.classList.contains(key)) cost.push(value);
-          }
+          for (const [key, value] of Object.entries(TYPE_MAP)) { if (icon.classList.contains(key)) cost.push(value); }
         });
         const damage = next.querySelector('.f_right.Text-fjalla')?.textContent?.trim() || 'none';
         let text = '';
-        if (next.nextElementSibling?.tagName === 'P') {
-          text = next.nextElementSibling.textContent?.trim() || '';
-        }
+        if (next.nextElementSibling?.tagName === 'P') text = next.nextElementSibling.textContent?.trim() || '';
         attacks.push({ name, cost, convertedEnergyCost: cost.length, damage, text });
       }
       next = next.nextElementSibling;
@@ -112,21 +105,22 @@ function parseCardDetail(html: string, url: string) {
   const rulesH2 = Array.from(doc.querySelectorAll('h2.mt20')).find(h2 => h2.textContent?.includes('特別なルール'));
   if (rulesH2) {
     const text = rulesH2.nextElementSibling?.tagName === 'P' ? rulesH2.nextElementSibling.textContent?.trim() : '';
+    const isAce = text?.includes('ACE SPEC');
     if (text) {
       const prizeMatch = text.match(/サイドを(\d+)枚とる/);
-      rules.push({ text, prize: prizeMatch ? prizeMatch[1] : "1" });
+      rules.push({ 
+        text, 
+        prize: prizeMatch ? prizeMatch[1] : "1",
+        ace: isAce ? true : undefined
+      });
     }
   }
 
   const packs: any[] = [];
-  doc.querySelectorAll('.PopupSub .List .List_item').forEach(item => {
-    packs.push({ pack1: item.textContent?.trim() || '' });
-  });
+  doc.querySelectorAll('.PopupSub .List .List_item').forEach(item => { packs.push({ pack1: item.textContent?.trim() || '' }); });
 
   const table = rightBoxInner.querySelector('table');
-  let weakness = 'none';
-  let resistance = 'none';
-  let retreat = 'none';
+  let weakness = 'none', resistance = 'none', retreat = 'none';
   if (table) {
     const rows = table.querySelectorAll('tr');
     if (rows.length >= 2) {
@@ -148,48 +142,33 @@ function parseCardDetail(html: string, url: string) {
     if (evName) evolves.push(evName);
   });
 
-  return {
-    id: idText, name, imageUrl, type, kinds, hp, types, weakness, resistance, retreat,
-    ability: abilities, attacks, rules, support: [], packs, evolves, roles: [], archetypes: []
-  };
+  return { id: cardID, no: noText, name, image_url: imageUrl, type: 'pokemon', kinds, hp, types, weakness, resistance, retreat, ability: abilities, attacks, rules, support: [], packs, evolves, roles: [], archetypes: [] };
 }
 
 async function main() {
-  console.log('Starting Pokemon card scraping...');
-  const allCardUrls: string[] = [];
-
-  for (let pg = 1; pg <= 80; pg++) {
-    console.log(`Fetching Pokemon page ${pg}...`);
-    const html = await fetchHTML(`${SEARCH_URL}${pg}`);
-    if (!html) break;
-
-    const dom = new JSDOM(html);
-    const links = dom.window.document.querySelectorAll('.SearchResultList-box a');
-    if (links.length === 0) break;
-
-    links.forEach(a => {
-      const href = a.getAttribute('href');
-      if (href && href.includes('details.php')) {
-        allCardUrls.push(`${DETAIL_BASE_URL}/card-search/${href.replace(/^\//, '')}`);
-      }
-    });
-    await sleep(1000);
+  console.log('--- Collecting Pokemon IDs via API (Pages 1-80) ---');
+  const cardIds: string[] = [];
+  for (let page = 1; page <= 80; page++) {
+    const data = await fetchCardList(page, 'pokemon');
+    if (!data || !data.cardList || data.cardList.length === 0) break;
+    data.cardList.forEach((c: any) => cardIds.push(c.cardID));
+    console.log(`Page ${page}: Added ${data.cardList.length} IDs`);
+    await sleep(500);
   }
 
-  for (let i = 0; i < allCardUrls.length; i++) {
-    const url = allCardUrls[i];
-    console.log(`[${i + 1}/${allCardUrls.length}] Scraping ${url}...`);
+  console.log(`Starting details scraping for ${cardIds.length} cards...`);
+  for (let i = 0; i < cardIds.length; i++) {
+    const cardID = cardIds[i];
+    const url = `${DETAIL_BASE_URL}/card-search/details.php/card/${cardID}/regu/XY`;
+    console.log(`[${i + 1}/${cardIds.length}] Scraping ${url}...`);
+    
     const html = await fetchHTML(url);
     if (!html) continue;
 
-    const cardData = parseCardDetail(html, url);
+    const cardData = parseCardDetail(html, cardID);
     if (cardData) {
-      const currentMaster = JSON.parse(fs.readFileSync(MASTER_JSON_PATH, 'utf-8'));
-      const exists = currentMaster.exactMatches.some((m: any) => m.name === cardData.name && m.id === cardData.id);
-      if (!exists) {
-        currentMaster.exactMatches.push(cardData);
-        fs.writeFileSync(MASTER_JSON_PATH, JSON.stringify(currentMaster, null, 2));
-      }
+      const { error } = await supabase.from('cards').upsert(cardData, { onConflict: 'id' });
+      if (error) console.error('Supabase Error:', error.message);
     }
     await sleep(800);
   }

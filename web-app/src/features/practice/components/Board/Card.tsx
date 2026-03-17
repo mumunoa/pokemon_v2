@@ -62,7 +62,9 @@ interface CardProps {
 }
 
 export const Card: React.FC<CardProps> = ({ card, style = {}, className = '', onClick, disableDrag = false, isOverlay = false, zoneName, forcedTransform }) => {
-    const { cards, displayMode } = useGameStore();
+    const { displayMode, coachResult } = useGameStore();
+    const isKeyCard = coachResult?.keyCards?.some((k: any) => k.cardName === card.name) ?? false;
+
     const { attributes, listeners, setNodeRef: setDraggableRef, transform, isDragging } = useDraggable({
         id: card.instanceId,
         data: { card },
@@ -176,6 +178,12 @@ export const Card: React.FC<CardProps> = ({ card, style = {}, className = '', on
             {card.hasUsedAbility && (
                 <div className="absolute top-1 right-1 bg-red-600 text-white text-[max(6px,0.8vw)] font-bold px-1 rounded shadow pointer-events-none z-[70]">
                     USED
+                </div>
+            )}
+
+            {isKeyCard && (
+                <div className="absolute top-1 left-1 bg-emerald-500 text-white text-[max(6px,0.8vw)] font-black px-1 rounded shadow-lg pointer-events-none z-[80] animate-bounce ring-1 ring-white">
+                    KEY
                 </div>
             )}
 

@@ -3,6 +3,13 @@ import { CardInstance, DeckCard, GameState, ZoneType, PlayerId } from '@/types/g
 import { buildAIInput } from '@/lib/ai/buildAIInput';
 import { supabase, createSupabaseClient } from '@/lib/supabase';
 import { generateGameStatusContext } from '@/lib/ai/promptGenerator';
+import { buildRecommendation, resolveArchetypePreset } from '@/features/practice/ai-next';
+import type { 
+    BoardState as AIBoardState, 
+    ActionCandidate, 
+    RecommendationResult,
+    BoardCardLite 
+} from '@/features/practice/ai-next';
 
 // Helper to shuffle an array
 const shuffleArray = <T>(array: T[]): T[] => {
@@ -55,6 +62,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     deckHistory: [],
     isGameStarted: false,
     isAnalyzing: false,
+    coachResult: null,
+    coachLoading: false,
 
     // Actions
     getGameState: () => get(),
@@ -237,7 +246,7 @@ export const useGameStore = create<GameState>((set, get) => ({
                         deckInstanceIds.push(instanceId);
                     }
                 });
-                return shuffleArray(deckInstanceIds);
+                return playerId === 'player1' ? deckInstanceIds : shuffleArray(deckInstanceIds); // Don't double shuffle if not needed, but initializeDeck shuffles below
             };
 
             const shuffledDeck1 = createPlayerDeck(deckList1, 'player1');
@@ -830,6 +839,37 @@ export const useGameStore = create<GameState>((set, get) => ({
         set({ displayMode: mode });
     },
 
+    runCoachAnalysis: async () => {
+        const state = get();
+        try {
+            set({ coachLoading: true });
+            const board = toAIBoardState(state);
+            const deck: any = {
+                name: state.player1Deck[0]?.name ? `${state.player1Deck[0].name} deck` : 'current deck',
+                archetype: 'generic', // TODO: Archetype detection
+                cards: Object.values(state.cards ?? {}).filter(c => c.ownerId === 'player1').map((card: any) => ({
+                    cardId: card.baseCardId,
+                    name: card.name,
+                    quantity: 1,
+                })),
+            };
+
+            const candidateActions = toCandidateActions(state);
+            const result = buildRecommendation({
+                cardsMaster: Object.values(state.cards ?? {}),
+                deck,
+                board,
+                candidateActions,
+            });
+
+            set({ coachResult: result });
+        } catch (e) {
+            console.error('Coach analysis failed:', e);
+        } finally {
+            set({ coachLoading: false });
+        }
+    },
+
     analyzeGame: async () => {
         const state = get();
         const playerId = state.currentTurnPlayer;
@@ -1002,3 +1042,119 @@ export const useGameStore = create<GameState>((set, get) => ({
         }
     }
 }));
+
+/**
+ * AI Store Adapters & Mappers
+ */
+
+const toAIBoardState = (state: GameState): AIBoardState => {
+  const getZoneCards = (zone: ZoneType) => (state.zones[zone] || []).map(id => state.cards[id]);
+
+  const mapToLite = (cards: any[]): BoardCardLite[] => cards.map(card => ({
+      cardId: card.instanceId,
+      name: card.name,
+      damage: card.damage || 0,
+      hp: card.hp || null,
+      retreat: card.retreat ? parseInt(card.retreat) : null,
+      energies: (card.attachedEnergyIds || []).length,
+      isSystem: !!(card.ability && card.ability.length > 0),
+      canAttack: !!(card.attacks && card.attacks.length > 0)
+  }));
+
+  const p1Hand = getZoneCards('player1-hand');
+  const p1Active = getZoneCards('player1-active')[0];
+  const p1Bench = [
+      ...getZoneCards('player1-bench-1'),
+      ...getZoneCards('player1-bench-2'),
+      ...getZoneCards('player1-bench-3'),
+      ...getZoneCards('player1-bench-4'),
+      ...getZoneCards('player1-bench-5'),
+  ];
+
+  const p2Active = getZoneCards('player2-active')[0];
+  const p2Bench = [
+      ...getZoneCards('player2-bench-1'),
+      ...getZoneCards('player2-bench-2'),
+      ...getZoneCards('player2-bench-3'),
+      ...getZoneCards('player2-bench-4'),
+      ...getZoneCards('player2-bench-5'),
+  ];
+  
+  const p1Discard = getZoneCards('player1-trash');
+
+  return {
+    turnCount: state.turnCount,
+    turn: state.turnCount,
+    playerGoingFirst: true, // Simplified
+    prizesTakenByPlayer: 6 - state.zones['player2-prizes'].length,
+    prizesTakenByOpponent: 6 - state.zones['player1-prizes'].length,
+    hand: p1Hand.map(c => c.name),
+    bench: mapToLite(p1Bench),
+    active: p1Active ? mapToLite([p1Active])[0] : null,
+    opponentBench: mapToLite(p2Bench),
+    opponentActive: p2Active ? mapToLite([p2Active])[0] : null,
+    discard: p1Discard.map(c => c.name),
+    deckRemaining: state.zones['player1-deck'].length,
+    availableSupporter: true, // Simplified
+    availableEnergyAttachment: true, // Simplified
+    knownOpponentSwitchOuts: 0
+  };
+};
+
+const toCandidateActions = (state: GameState): ActionCandidate[] => {
+    const actions: ActionCandidate[] = [];
+    const player1Hand = (state.zones['player1-hand'] || []).map(id => state.cards[id]);
+
+    player1Hand.forEach(card => {
+        if (!card) return;
+
+        if (card.name === 'ボスの指令') {
+            const p2Bench = [
+                ...state.zones['player2-bench-1'],
+                ...state.zones['player2-bench-2'],
+                ...state.zones['player2-bench-3'],
+                ...state.zones['player2-bench-4'],
+                ...state.zones['player2-bench-5']
+            ].map(id => state.cards[id]).filter(Boolean);
+
+            p2Bench.forEach(target => {
+                actions.push({
+                    id: `boss-${target.instanceId}`,
+                    cardName: 'ボスの指令',
+                    line: `${target.name} を呼び出す`,
+                    target: target.name,
+                    tags: ['gust', 'swing'],
+                    estimatedPrizeSwing: target.hp && target.hp >= 200 ? 2 : 1,
+                    estimatedSetupGain: 0,
+                    estimatedStabilityGain: 0
+                });
+            });
+        }
+
+        if (card.name === 'ネストボール' || card.name === 'なかよしポフィン') {
+            actions.push({
+                id: `search-${card.instanceId}`,
+                cardName: card.name,
+                line: 'たねポケモンを展開する',
+                tags: ['search', 'bench_setup'],
+                estimatedPrizeSwing: 0,
+                estimatedSetupGain: 2,
+                estimatedStabilityGain: 1
+            });
+        }
+
+        if (card.kinds === 'supporter' && card.name !== 'ボスの指令') {
+            actions.push({
+                id: `supporter-${card.instanceId}`,
+                cardName: card.name,
+                line: '手札を補充・更新する',
+                tags: ['draw', 'stabilize'],
+                estimatedPrizeSwing: 0,
+                estimatedSetupGain: 1,
+                estimatedStabilityGain: 2
+            });
+        }
+    });
+
+    return actions;
+};

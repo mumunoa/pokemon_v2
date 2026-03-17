@@ -163,6 +163,8 @@ export interface GameState {
     isGameStarted: boolean;
     isAnalyzing: boolean;
     aiAnalysis?: AiAnalysisResult;
+    coachResult?: any; // To allow lazy import from ai-next
+    coachLoading: boolean;
 
     // History
     pastStates: {
@@ -232,5 +234,6 @@ export interface GameState {
     setOpponentView: (isOpponent: boolean) => void;
     setDisplayMode: (mode: 'text' | 'compact' | 'local-image') => void;
     analyzeGame: () => Promise<{ success: boolean; errorType?: string }>;
+    runCoachAnalysis: () => Promise<void>;
     syncToSupabase: (userId: string, clerkToken?: string) => Promise<{ success: boolean; error?: string }>;
 }

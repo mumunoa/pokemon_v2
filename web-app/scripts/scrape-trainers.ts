@@ -1,58 +1,56 @@
 import fs from 'fs';
 import path from 'path';
 import { JSDOM } from 'jsdom';
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
 
-// 定数定義
-const SEARCH_URL = 'https://www.pokemon-card.com/card-search/index.php?keyword=&se_ta=trainer&regulation_sidebar_form=XY&sc_hp_s=&sc_hp_e=&sc_run_away_s=0&sc_run_away_e=&pg=';
+dotenv.config({ path: path.join(process.cwd(), '.env.local') });
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
 const DETAIL_BASE_URL = 'https://www.pokemon-card.com';
-const MASTER_JSON_PATH = path.join(process.cwd(), 'src/lib/simulation/catalog/card-master.json');
 
-// エネルギーアイコンのマッピング
-const TYPE_MAP: { [key: string]: string } = {
-  'icon-grass': 'grass',
-  'icon-fire': 'fire',
-  'icon-water': 'water',
-  'icon-electric': 'electric',
-  'icon-psychic': 'psychic',
-  'icon-fighting': 'fighting',
-  'icon-dark': 'dark',
-  'icon-steel': 'steel',
-  'icon-dragon': 'dragon',
-  'icon-none': 'none'
-};
+async function sleep(ms: number) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
-async function sleep(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+async function fetchCardList(page: number, series: string = 'trainer') {
+  const url = `https://www.pokemon-card.com/card-search/resultAPI.php?keyword=&se_ta=${series}&regulation_sidebar_form=XY&sc_hp_s=&sc_hp_e=&sc_run_away_s=0&sc_run_away_e=&pg=&illust=&sm_and_keyword=true&page=${page}`;
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0',
+        'Referer': 'https://www.pokemon-card.com/card-search/',
+      }
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) { return null; }
 }
 
 async function fetchHTML(url: string) {
   try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+    if (!response.ok) return null;
     return await response.text();
-  } catch (error) {
-    console.error(`Failed to fetch ${url}:`, error);
-    return null;
-  }
+  } catch (error) { return null; }
 }
 
-function parseCardDetail(html: string, url: string) {
+function parseCardDetail(html: string, cardID: string) {
   const dom = new JSDOM(html);
   const doc = dom.window.document;
-
   const leftBox = doc.querySelector('.LeftBox');
   const rightBoxInner = doc.querySelector('.RightBox-inner');
   const section = doc.querySelector('.Section');
 
   if (!leftBox || !rightBoxInner) return null;
 
-  const idText = leftBox.querySelector('.subtext.Text-fjalla')?.textContent?.trim() || 'none';
+  const noText = leftBox.querySelector('.subtext.Text-fjalla')?.textContent?.trim() || 'none';
   const name = section?.querySelector('.Heading1.mt20')?.textContent?.trim() || 'Unknown';
   const imgElement = leftBox.querySelector('.fit') as HTMLImageElement;
   const imageUrl = imgElement ? `${DETAIL_BASE_URL}${imgElement.getAttribute('src')}` : 'none';
 
-  // トレーナーズ判定
-  let type = 'trainers';
   let kinds = 'item';
   const h2Text = rightBoxInner.querySelector('h2.mt20')?.textContent?.trim() || '';
   if (h2Text.includes('スタジアム')) kinds = 'studium';
@@ -60,86 +58,54 @@ function parseCardDetail(html: string, url: string) {
   else if (h2Text.includes('グッズ')) kinds = 'item';
   else if (h2Text.includes('ポケモンのどうぐ')) kinds = 'tool';
 
-  // サポート情報テキスト
-  const support: any[] = [];
-  const p = rightBoxInner.querySelector('p');
-  if (p) {
-    support.push({ text: p.innerHTML.trim() });
+  // 特別なルール (rules) - ACE SPECなど
+  const rules: any[] = [];
+  const rulesH2 = Array.from(doc.querySelectorAll('h2.mt20')).find(h2 => h2.textContent?.includes('特別なルール'));
+  if (rulesH2) {
+    const text = rulesH2.nextElementSibling?.tagName === 'P' ? rulesH2.nextElementSibling.textContent?.trim() : '';
+    const isAce = text?.includes('ACE SPEC');
+    if (text) {
+      rules.push({ 
+        text, 
+        ace: isAce ? true : undefined 
+      });
+    }
   }
 
-  // パック情報
-  const packs: any[] = [];
-  doc.querySelectorAll('.PopupSub .List .List_item').forEach(item => {
-    packs.push({ pack1: item.textContent?.trim() || '' });
-  });
+  const support: any[] = [];
+  const p = rightBoxInner.querySelector('p');
+  if (p) { support.push({ text: p.innerHTML.trim() }); }
 
-  return {
-    id: idText,
-    name,
-    imageUrl,
-    type,
-    kinds,
-    hp: "none",
-    types: [],
-    weakness: "none",
-    resistance: "none",
-    retreat: "none",
-    ability: [],
-    attacks: [], 
-    rules: [],
-    support,
-    packs,
-    evolves: [],
-    roles: [],
-    archetypes: []
-  };
+  const packs: any[] = [];
+  doc.querySelectorAll('.PopupSub .List .List_item').forEach(item => { packs.push({ pack1: item.textContent?.trim() || '' }); });
+
+  return { id: cardID, no: noText, name, image_url: imageUrl, type: 'trainers', kinds, hp: "none", types: [], weakness: "none", resistance: "none", retreat: "none", ability: [], attacks: [], rules: rules, support, packs, evolves: [], roles: [], archetypes: [] };
 }
 
 async function main() {
-  console.log('Starting Trainers card scraping...');
-  const allCardUrls: string[] = [];
-
-  for (let pg = 1; pg <= 80; pg++) {
-    console.log(`Fetching Trainers search page ${pg}...`);
-    const html = await fetchHTML(`${SEARCH_URL}${pg}`);
-    if (!html) break;
-
-    const dom = new JSDOM(html);
-    const links = dom.window.document.querySelectorAll('.SearchResultList-box a');
-    if (links.length === 0) break;
-
-    links.forEach(a => {
-      const href = a.getAttribute('href');
-      if (href && href.includes('details.php')) {
-        allCardUrls.push(`${DETAIL_BASE_URL}/card-search/${href.replace(/^\//, '')}`);
-      }
-    });
-    await sleep(1000);
+  console.log('--- Collecting Trainer IDs via API (Pages 1-39) ---');
+  const cardIds: string[] = [];
+  for (let page = 1; page <= 39; page++) {
+    const data = await fetchCardList(page, 'trainer');
+    if (!data || !data.cardList || data.cardList.length === 0) break;
+    data.cardList.forEach((c: any) => cardIds.push(c.cardID));
+    console.log(`Page ${page}: Added ${data.cardList.length} IDs`);
+    await sleep(500);
   }
 
-  console.log(`Found ${allCardUrls.length} trainer card URLs.`);
-
-  for (let i = 0; i < allCardUrls.length; i++) {
-    const url = allCardUrls[i];
-    console.log(`[${i + 1}/${allCardUrls.length}] Scraping ${url}...`);
+  for (let i = 0; i < cardIds.length; i++) {
+    const cardID = cardIds[i];
+    const url = `${DETAIL_BASE_URL}/card-search/details.php/card/${cardID}/regu/XY`;
+    console.log(`[${i + 1}/${cardIds.length}] Scraping ${url}...`);
     const html = await fetchHTML(url);
     if (!html) continue;
-
-    const cardData = parseCardDetail(html, url);
+    const cardData = parseCardDetail(html, cardID);
     if (cardData) {
-      // 書き込み時の競合を避けるため、毎回ファイルから最新を読み込む
-      const currentMaster = JSON.parse(fs.readFileSync(MASTER_JSON_PATH, 'utf-8'));
-      const exists = currentMaster.exactMatches.some((m: any) => m.name === cardData.name && m.id === cardData.id);
-      
-      if (!exists) {
-        currentMaster.exactMatches.push(cardData);
-        fs.writeFileSync(MASTER_JSON_PATH, JSON.stringify(currentMaster, null, 2));
-      }
+      const { error } = await supabase.from('cards').upsert(cardData, { onConflict: 'id' });
+      if (error) console.error('Supabase Error:', error.message);
     }
     await sleep(800);
   }
-
-  console.log('Trainers scraping completed!');
 }
 
 main().catch(console.error);
