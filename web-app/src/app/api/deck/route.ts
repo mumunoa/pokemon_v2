@@ -36,11 +36,13 @@ export async function GET(request: Request) {
 
         const deckList: Array<{
             id: string;
+            no?: string;
             name: string;
             imageUrl: string;
             count: number;
             type: string;
             kinds?: CardKind;
+            hp?: number;
         }> = [];
 
         // Extract PCGDECK.searchItemName map (individual assignments)
@@ -121,6 +123,57 @@ export async function GET(request: Request) {
 
         for (const cat of categories) {
             parseInput(cat.id, cat.type, cat.kind);
+        }
+
+        // 3. Enrich with Supabase data
+        const uniqueIds = Array.from(new Set(deckList.map(c => c.id)));
+        const { supabase } = await import('@/lib/supabase');
+        
+        if (supabase && uniqueIds.length > 0) {
+            const { data: dbCards, error: dbError } = await supabase
+                .from('cards')
+                .select('*')
+                .in('id', uniqueIds);
+
+            if (!dbError && dbCards) {
+                // Map DB data back to the deck list
+                const dbMap: Record<string, any> = {};
+                dbCards.forEach(card => {
+                    dbMap[card.id] = card;
+                });
+
+                deckList.forEach(card => {
+                    const dbData = dbMap[card.id];
+                    if (dbData) {
+                        card.name = dbData.name || card.name;
+                        card.no = dbData.no;
+                        card.imageUrl = dbData.image_url || card.imageUrl;
+                        card.hp = dbData.hp !== 'none' ? parseInt(dbData.hp, 10) : undefined;
+                        // kinds may be more accurate in DB
+                        if (dbData.kinds) {
+                            if (dbData.type === 'pokemon') {
+                                if (dbData.kinds === 'stage1') card.kinds = 'non_rule'; // Simplified mapping for UI
+                                else if (dbData.kinds === 'stage2') card.kinds = 'non_rule';
+                                else if (dbData.kinds === 'basic') card.kinds = 'non_rule';
+                                // Special rules (EX, V, etc) are handled by the 'kinds' flag in DB if we want
+                            }
+                        }
+                        // Add all extra fields
+                        (card as any).types = dbData.types;
+                        (card as any).weakness = dbData.weakness;
+                        (card as any).resistance = dbData.resistance;
+                        (card as any).retreat = dbData.retreat;
+                        (card as any).ability = dbData.ability;
+                        (card as any).attacks = dbData.attacks;
+                        (card as any).rules = dbData.rules;
+                        (card as any).energy = dbData.energy;
+                        (card as any).support = dbData.support;
+                        (card as any).evolves = dbData.evolves;
+                        (card as any).roles = dbData.roles;
+                        (card as any).archetypes = dbData.archetypes;
+                    }
+                });
+            }
         }
 
         if (deckList.length === 0) {

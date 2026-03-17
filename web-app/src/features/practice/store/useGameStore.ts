@@ -213,6 +213,7 @@ export const useGameStore = create<GameState>((set, get) => ({
                         newCards[instanceId] = {
                             instanceId,
                             baseCardId: card.id,
+                            no: card.no,
                             name: card.name,
                             imageUrl: card.imageUrl,
                             type: detectedType,
@@ -223,6 +224,15 @@ export const useGameStore = create<GameState>((set, get) => ({
                             attachedEnergyIds: [],
                             ownerId: playerId,
                             hp: card.hp,
+
+                            // DB fields enrichment
+                            types: card.types,
+                            weakness: card.weakness,
+                            resistance: card.resistance,
+                            retreat: card.retreat,
+                            ability: card.ability,
+                            attacks: card.attacks,
+                            rules: card.rules,
                         };
                         deckInstanceIds.push(instanceId);
                     }

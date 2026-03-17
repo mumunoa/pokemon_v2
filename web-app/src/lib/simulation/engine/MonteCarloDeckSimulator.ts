@@ -128,7 +128,7 @@ export class MonteCarloDeckSimulator {
           handCount: board.hand.length,
           supporterUsed: board.supporterUsed,
           energyAttachedToActive: board.attachedEnergyToActive,
-          playableSupporters: board.hand.filter(c => CardRoleCatalog.hasRole(c, 'draw_supporter')).map(c => c.name),
+          playableSupporters: board.hand.filter(c => c.type === 'trainer' && c.kinds === 'supporter').map(c => c.name),
           playableSearchItems: board.hand.filter(c => CardRoleCatalog.hasRole(c, 'search_basic_item')).map(c => c.name),
           notableCardsInHand: board.hand.slice(0, 3).map(c => c.name),
           archetype: board.archetype

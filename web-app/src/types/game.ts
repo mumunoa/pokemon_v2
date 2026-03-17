@@ -4,20 +4,54 @@ export type CardKind =
     | 'grass' | 'fire' | 'water' | 'lightning' | 'psychic' | 'fighting' | 'darkness' | 'metal' | 'dragon' | 'colorless'
     | 'item' | 'tool' | 'supporter' | 'stadium';
 
+export interface Attack {
+    name: string;
+    cost: string[];
+    convertedEnergyCost: number;
+    damage: string;
+    text: string;
+}
+
+export interface Ability {
+    name: string;
+    text: string;
+}
+
+export interface Rule {
+    text: string;
+    prize?: string;
+    ace?: boolean;
+}
+
 export interface DeckCard {
     id: string; // The base image ID or identifier
+    no?: string; // Collection number
     name: string;
     imageUrl: string;
     count: number;
     type: CardType;
     kinds?: CardKind;
     hp?: number;
+    types?: string[];
+    weakness?: string;
+    resistance?: string;
+    retreat?: string;
+    ability?: Ability[];
+    attacks?: Attack[];
+    rules?: Rule[];
+    energy?: any[];
+    support?: any[];
+    packs?: any[];
+    evolves?: string[];
+    roles?: string[];
+    archetypes?: string[];
 }
 
 // Instance representing a single card in play
 export interface CardInstance {
     instanceId: string; // Unique ID for this specific copy of the card
     baseCardId: string;
+    no?: string;
     name: string;
     imageUrl: string;
     type: CardType;
@@ -32,6 +66,15 @@ export interface CardInstance {
     hasUsedAbility?: boolean;
     hp?: number;
     rotation?: number; // 0, 90, 180, 270 degrees
+
+    // DB fields carried over
+    types?: string[];
+    weakness?: string;
+    resistance?: string;
+    retreat?: string;
+    ability?: Ability[];
+    attacks?: Attack[];
+    rules?: Rule[];
 }
 
 export interface StructuredLog {

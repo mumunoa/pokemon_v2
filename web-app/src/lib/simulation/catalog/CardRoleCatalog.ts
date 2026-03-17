@@ -46,6 +46,15 @@ export class CardRoleCatalog {
     const name = typeof cardOrName === 'string' ? cardOrName : cardOrName.name
     const normalized = normalizeCardName(name)
 
+    // 0. オブジェクトに役割情報が既にある場合はそれを使用 (DBからの情報)
+    if (typeof cardOrName !== 'string' && (cardOrName.roles || cardOrName.archetypes)) {
+      return {
+        cardName: name,
+        roles: (cardOrName.roles as any[]) || ['unknown'],
+        archetypeHints: (cardOrName.archetypes as DeckArchetype[]) || [],
+      }
+    }
+
     // 1. 完全一致
     const exact = this.exactMap.get(normalized)
     if (exact) return exact

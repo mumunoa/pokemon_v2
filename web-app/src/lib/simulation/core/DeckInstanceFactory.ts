@@ -7,6 +7,8 @@ export type SimCardInstance = {
   countIndex: number
   type?: string
   kinds?: string
+  roles?: string[]
+  archetypes?: string[]
 }
 
 export class DeckInstanceFactory {
@@ -22,6 +24,8 @@ export class DeckInstanceFactory {
           countIndex: i + 1,
           type: deckCard.type,
           kinds: deckCard.kinds,
+          roles: deckCard.roles,
+          archetypes: deckCard.archetypes,
         })
       }
     }

@@ -6,7 +6,7 @@ export class SearchResolver {
   findBestBasicTarget(deck: SimCardInstance[], _archetype: DeckArchetype): number {
     const main = deck.findIndex((card) => CardRoleCatalog.hasRole(card, 'main_attacker_basic'))
     if (main >= 0) return main
-    return deck.findIndex((card) => CardRoleCatalog.hasRole(card, 'basic_pokemon'))
+    return deck.findIndex((card) => card.type === 'pokemon' && card.kinds === 'basic')
   }
 
   findBestEvolutionTarget(deck: SimCardInstance[]): number {
@@ -14,10 +14,7 @@ export class SearchResolver {
   }
 
   findBestEnergyTarget(deck: SimCardInstance[]): number {
-    return deck.findIndex((card) =>
-      CardRoleCatalog.hasRole(card, 'energy_basic') ||
-      CardRoleCatalog.hasRole(card, 'energy_special'),
-    )
+    return deck.findIndex((card) => card.type === 'energy')
   }
 
   findBestSupporterTarget(deck: SimCardInstance[]): number {

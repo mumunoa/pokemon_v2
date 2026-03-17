@@ -52,7 +52,7 @@ export class TurnActionPolicy {
     const next = structuredClone(board)
 
     while (true) {
-      const basic = next.hand.find((card) => CardRoleCatalog.hasRole(card, 'basic_pokemon'))
+      const basic = next.hand.find((card) => card.type === 'pokemon' && card.kinds === 'basic')
       if (!basic) break
 
       if (!next.active) {
@@ -118,7 +118,7 @@ export class TurnActionPolicy {
     const next = structuredClone(board)
     if (next.supporterUsed) return next
 
-    const supIdx = next.hand.findIndex(c => CardRoleCatalog.hasRole(c, 'draw_supporter') || CardRoleCatalog.hasRole(c, 'stabilizer_supporter'))
+    const supIdx = next.hand.findIndex(c => c.type === 'trainer' && c.kinds === 'supporter')
     if (supIdx === -1) return next
 
     const supporter = next.hand[supIdx]
@@ -147,7 +147,7 @@ export class TurnActionPolicy {
     const next = structuredClone(board)
     if (next.energyAttachedThisTurn) return next
 
-    const eneIdx = next.hand.findIndex(c => CardRoleCatalog.hasRole(c, 'energy_basic') || CardRoleCatalog.hasRole(c, 'energy_special'))
+    const eneIdx = next.hand.findIndex(c => c.type === 'energy')
     if (eneIdx === -1) return next
 
     const energy = next.hand[eneIdx]

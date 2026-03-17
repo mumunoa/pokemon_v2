@@ -140,11 +140,47 @@ export const CardActionModal: React.FC<Props> = ({ card: initialCard, onClose })
                                             })}
                                         </div>
                                     </div>
-                                ) || (
-                                        <div className="mt-4 p-3 bg-slate-900/50 rounded-lg border border-slate-700">
-                                            <p className="text-[10px] text-slate-500 italic">ベンチのポケモンには特殊状態は適用されません。</p>
-                                        </div>
-                                    )}
+                                )}
+
+                                {/* DB Details: Abilities, Attacks, Rules */}
+                                {(liveCard.ability || liveCard.attacks || liveCard.rules) && (
+                                    <div className="mt-6 border-t border-slate-700 pt-4 space-y-4">
+                                        <p className="text-xs text-blue-400 font-bold mb-2">カード詳細</p>
+                                        
+                                        {liveCard.ability?.map((a, i) => (
+                                            <div key={`ab-${i}`} className="bg-slate-900/40 p-2 rounded border border-slate-700">
+                                                <div className="flex items-center gap-1 mb-1">
+                                                    <span className="bg-red-600 text-[8px] px-1 rounded text-white">特性</span>
+                                                    <span className="text-[10px] font-bold text-white">{a.name}</span>
+                                                </div>
+                                                <p className="text-[9px] text-slate-300 leading-tight">{a.text}</p>
+                                            </div>
+                                        ))}
+
+                                        {liveCard.attacks?.map((a, i) => (
+                                            <div key={`at-${i}`} className="bg-slate-900/40 p-2 rounded border border-slate-700">
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <div className="flex items-center gap-1">
+                                                        <span className="text-[10px] font-bold text-white">{a.name}</span>
+                                                    </div>
+                                                    <span className="text-[10px] font-bold text-white">{a.damage}</span>
+                                                </div>
+                                                {a.text && <p className="text-[9px] text-slate-300 leading-tight">{a.text}</p>}
+                                                <div className="flex gap-0.5 mt-1">
+                                                    {a.cost.map((c, ci) => (
+                                                        <span key={ci} className="w-2.5 h-2.5 rounded-full bg-slate-500 border border-slate-400 block" title={c}></span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        {liveCard.rules?.map((r, i) => (
+                                            <div key={`rl-${i}`} className="border-l-2 border-yellow-500/50 pl-2">
+                                                <p className="text-[9px] text-slate-400 italic leading-tight">{r.text}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
