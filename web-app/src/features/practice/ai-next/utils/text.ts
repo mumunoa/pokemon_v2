@@ -1,5 +1,5 @@
-
 import { CardInstance } from '@/types/game';
+import { SectionInferenceInput } from '../domain/types';
 
 /**
  * Text processing utilities for AI inference.
@@ -13,13 +13,6 @@ export function normalizeText(text: string): string {
     .replace(/\(.*?\)/g, '')
     .trim();
 }
-
-export type SectionInferenceInput = {
-    cardId: string;
-    cardName: string;
-    text: string;
-    source: "ability" | "support" | "rule" | "attack" | "energy";
-};
 
 export function getSectionTexts(card: any): SectionInferenceInput[] {
     const sections: SectionInferenceInput[] = [];

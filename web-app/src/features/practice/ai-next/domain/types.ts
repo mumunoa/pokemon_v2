@@ -57,6 +57,13 @@ export type RoleEvidence = {
   confidence: number;
 };
 
+export type SectionInferenceInput = {
+    cardId: string;
+    cardName: string;
+    text: string;
+    source: "ability" | "support" | "rule" | "attack" | "energy";
+};
+
 export type CardRoleProfile = {
   cardId: string;
   cardName: string;
