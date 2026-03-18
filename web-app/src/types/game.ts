@@ -1,6 +1,6 @@
 export type CardType = 'pokemon' | 'energy' | 'trainer';
 export type CardKind =
-    | 'has_rule' | 'non_rule'
+    | 'has_rule' | 'non_rule' | 'basic' | 'stage1' | 'stage2'
     | 'grass' | 'fire' | 'water' | 'lightning' | 'psychic' | 'fighting' | 'darkness' | 'metal' | 'dragon' | 'colorless'
     | 'item' | 'tool' | 'supporter' | 'stadium';
 

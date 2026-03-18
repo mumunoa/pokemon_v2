@@ -129,7 +129,7 @@ export class MonteCarloDeckSimulator {
           supporterUsed: board.supporterUsed,
           energyAttachedToActive: board.attachedEnergyToActive,
           playableSupporters: board.hand.filter(c => c.type === 'trainer' && c.kinds === 'supporter').map(c => c.name),
-          playableSearchItems: board.hand.filter(c => CardRoleCatalog.hasRole(c, 'search_basic_item')).map(c => c.name),
+          playableSearchItems: board.hand.filter(c => c.type === 'trainer' && (c.kinds === 'item' || c.kinds === 'tool')).map(c => c.name),
           notableCardsInHand: board.hand.slice(0, 3).map(c => c.name),
           archetype: board.archetype
       }
@@ -138,28 +138,58 @@ export class MonteCarloDeckSimulator {
   private judgeSetupSuccess(board: SimBoardState, config: SetupTargetConfig, reasons: FailureReasonType[]): boolean {
       let isSuccess = true
 
+      // 1. ベンチ展開判定（役割ベースでの推論を含む）
       if (config.minBenchCount > board.bench.length) {
           isSuccess = false
           reasons.push('NO_BENCH_SETUP')
       }
 
-      if (config.requireEnergyAccess && board.attachedEnergyToActive === 0) {
+      // 2. エネルギーアクセス判定
+      if (config.requireEnergyAccess && board.attachedEnergyToActive === 0 && board.attachedEnergyToBench === 0) {
           isSuccess = false
           reasons.push('NO_ENERGY')
       }
 
+      // 3. サポートアクセス判定
       if (config.requireSupporterAccess && !board.supporterUsed) {
           isSuccess = false
           reasons.push('NO_SUPPORTER')
       }
 
-      // 進化ライン判定（簡易）
+      // 4. 進化ライン判定（推論エンジンによるロールを参照）
       if (config.requireEvolutionLineReady) {
-          const hasEvolutionInHandOrBench = board.hand.some(c => CardRoleCatalog.hasRole(c, 'evolution_pokemon')) || 
-                                           board.bench.some(c => CardRoleCatalog.hasRole(c, 'evolution_pokemon'))
-          if (!hasEvolutionInHandOrBench) {
+          const hasEvolutionReady = board.bench.some(c => CardRoleCatalog.hasRole(c, 'evolution_pokemon')) || 
+                                   board.hand.some(c => CardRoleCatalog.hasRole(c, 'evolution_pokemon')) ||
+                                   board.hand.some(c => CardRoleCatalog.hasRole(c, 'evolution_search'))
+          
+          if (!hasEvolutionReady) {
               isSuccess = false
               reasons.push('NO_EVOLUTION_LINE')
+          }
+      }
+
+      // 5. メインアタッカー準備判定（推論エンジンのロールを参照）
+      if (config.requireMainAttackerReady) {
+          const hasMainAttacker = board.active && CardRoleCatalog.hasRole(board.active, 'main_attacker') ||
+                                 board.bench.some(c => CardRoleCatalog.hasRole(c, 'main_attacker'))
+          
+          if (!hasMainAttacker) {
+              const hasSearchForMain = board.hand.some(c => CardRoleCatalog.hasRole(c, 'search'))
+              if (!hasSearchForMain) {
+                  isSuccess = false
+                  reasons.push('NO_MAIN_ATTACKER')
+              }
+          }
+      }
+
+      // 6. ドローエンジン準備判定（推論エンジンのロールを参照）
+      if (config.requireDrawEngineReady) {
+          const hasDrawEngine = board.bench.some(c => CardRoleCatalog.hasRole(c, 'draw')) ||
+                               board.bench.some(c => CardRoleCatalog.hasRole(c, 'consistency'))
+          
+          if (!hasDrawEngine) {
+              isSuccess = false
+              reasons.push('NO_DRAW_ENGINE')
           }
       }
 

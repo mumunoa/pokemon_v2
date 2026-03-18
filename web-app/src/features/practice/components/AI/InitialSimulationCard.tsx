@@ -199,6 +199,8 @@ const getFailureIcon = (type: string) => {
         case 'NO_SUPPORTER': return '📚';
         case 'NO_BENCH_SETUP': return '🔍';
         case 'NO_EVOLUTION_LINE': return '🧬';
+        case 'NO_MAIN_ATTACKER': return '⚔️';
+        case 'NO_DRAW_ENGINE': return '🎴';
         default: return '❓';
     }
 };
@@ -210,6 +212,8 @@ const getFailureLabel = (type: string) => {
         case 'NO_SUPPORTER': return 'サポート不足';
         case 'NO_BENCH_SETUP': return '展開不足';
         case 'NO_EVOLUTION_LINE': return '進化ライン不足';
+        case 'NO_MAIN_ATTACKER': return 'アタッカー不足';
+        case 'NO_DRAW_ENGINE': return 'ドローエンジン不足';
         default: return 'その他';
     }
 };

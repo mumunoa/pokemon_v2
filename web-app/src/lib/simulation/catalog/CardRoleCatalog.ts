@@ -71,14 +71,27 @@ export class CardRoleCatalog {
     // 3. メタデータによる推論（カタログ未登録時のセーフティネット）
     if (typeof cardOrName !== 'string') {
       const roles: any[] = []
-      if (cardOrName.type === 'pokemon') {
+      
+      // たねポケモン
+      if (cardOrName.kinds === 'basic') {
         roles.push('basic_pokemon')
-        if (cardOrName.kinds === 'has_rule') roles.push('main_attacker')
-      } else if (cardOrName.type === 'energy') {
+      }
+
+      if (cardOrName.type === 'energy') {
         roles.push('energy_basic')
       } else if (cardOrName.type === 'trainer') {
-        if (cardOrName.kinds === 'supporter') roles.push('draw_supporter')
-        if (cardOrName.kinds === 'item' || cardOrName.kinds === 'ball') roles.push('search_basic_item')
+        // グッズ
+        if (cardOrName.kinds === 'item') {
+          roles.push('search', 'search_basic_item') 
+        }
+        // サポート
+        if (cardOrName.kinds === 'supporter') {
+          roles.push('draw', 'draw_supporter', 'consistency')
+        }
+        // ポケモンのどうぐ
+        if (cardOrName.kinds === 'tool') {
+          roles.push('tool_item')
+        }
       }
 
       if (roles.length > 0) {

@@ -3,7 +3,12 @@ import { CardInstance, DeckCard, GameState, ZoneType, PlayerId } from '@/types/g
 import { buildAIInput } from '@/lib/ai/buildAIInput';
 import { supabase, createSupabaseClient } from '@/lib/supabase';
 import { generateGameStatusContext } from '@/lib/ai/promptGenerator';
-import { buildRecommendation, resolveArchetypePreset } from '@/features/practice/ai-next';
+import { 
+    buildRecommendationEngine,
+    createRoleProfile,
+    getSectionTexts,
+    resolveArchetypePreset 
+} from '@/features/practice/ai-next';
 import type { 
     BoardState as AIBoardState, 
     ActionCandidate, 
@@ -843,23 +848,23 @@ export const useGameStore = create<GameState>((set, get) => ({
         const state = get();
         try {
             set({ coachLoading: true });
+            
+            // 盤面状態の正規化
             const board = toAIBoardState(state);
-            const deck: any = {
-                name: state.player1Deck[0]?.name ? `${state.player1Deck[0].name} deck` : 'current deck',
-                archetype: 'generic', // TODO: Archetype detection
-                cards: Object.values(state.cards ?? {}).filter(c => c.ownerId === 'player1').map((card: any) => ({
-                    cardId: card.baseCardId,
-                    name: card.name,
-                    quantity: 1,
-                })),
-            };
-
-            const candidateActions = toCandidateActions(state);
-            const result = buildRecommendation({
-                cardsMaster: Object.values(state.cards ?? {}),
-                deck,
+            
+            // 手札カードのインスタンス
+            const p1Hand = (state.zones['player1-hand'] || []).map(id => state.cards[id]);
+            
+            // カードプロファイルの構築 (全カードを対象にするか手札のみにするかはエンジンに依存するが、ここでは全カードを渡す)
+            const cards = Object.values(state.cards ?? {});
+            const profiles = cards.map((card: any) => createRoleProfile(card, getSectionTexts(card)));
+            
+            // 新エンジンによるレコメンド生成
+            const result = buildRecommendationEngine({
                 board,
-                candidateActions,
+                handCards: p1Hand,
+                profiles,
+                archetype: 'generic', // TODO: Archetype detection
             });
 
             set({ coachResult: result });
