@@ -45,6 +45,7 @@ export interface DeckCard {
     evolves?: string[];
     roles?: string[];
     archetypes?: string[];
+    regulation?: string;
 }
 
 // Instance representing a single card in play
@@ -75,6 +76,7 @@ export interface CardInstance {
     ability?: Ability[];
     attacks?: Attack[];
     rules?: Rule[];
+    regulation?: string;
 }
 
 export interface StructuredLog {
@@ -239,5 +241,5 @@ export interface GameState {
 }
 
 export function isBasicPokemon(card: { type?: string; kinds?: string }) {
-    return card.type === 'pokemon' && (card.kinds === 'basic' || card.kinds === 'non_rule');
+    return card.type === 'pokemon' && card.kinds === 'basic';
 }

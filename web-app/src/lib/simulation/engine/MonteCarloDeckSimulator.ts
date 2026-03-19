@@ -13,6 +13,12 @@ import { DeckArchetypeInferencer } from '../catalog/DeckArchetypeInferencer'
 import { ArchetypePresetCatalog } from '../catalog/ArchetypePresetCatalog'
 import { CardRoleCatalog } from '../catalog/CardRoleCatalog'
 
+// role.complete.ts 由来の推論エンジンと型をインポート
+import { createRoleProfile } from '@/features/practice/ai-next/inference/sectionRoleInference'
+import { CardRoleProfile, StaticRole, SectionInferenceInput } from '@/features/practice/ai-next/domain/types'
+import { isBasicPokemon } from '@/types/game'
+import { CardRole } from '@/types/simulation'
+
 import { SetupTargetConfig, DeckArchetype } from '@/types/deck-analysis'
 
 export class MonteCarloDeckSimulator {
@@ -20,6 +26,7 @@ export class MonteCarloDeckSimulator {
   private mulliganEngine: MulliganEngine
   private actionPolicy: TurnActionPolicy
   private inferencer: DeckArchetypeInferencer
+  private roleProfileMap: Map<string, CardRoleProfile> = new Map()
 
   constructor(seed = Date.now()) {
     this.rng = new SeededRandom(seed)
@@ -33,6 +40,61 @@ export class MonteCarloDeckSimulator {
     const deckBase = DeckInstanceFactory.expand(request.deck)
     const archetype = request.deckArchetypeHint || this.inferencer.infer(request.deck)
     const setupConfig = ArchetypePresetCatalog.get(archetype, request.perspective || 'first')
+
+    // 1. 各カードのRoleProfileを事前計算 (role.complete.ts のロジックを流し込む)
+    this.roleProfileMap.clear()
+    for (const deckCard of request.deck) {
+      if (this.roleProfileMap.has(deckCard.id)) continue
+
+      const sections: SectionInferenceInput[] = []
+      if (deckCard.ability) {
+        deckCard.ability.forEach(a => sections.push({ 
+          cardId: deckCard.id, 
+          cardName: deckCard.name, 
+          text: a.text, 
+          source: 'ability' 
+        }))
+      }
+      if (deckCard.attacks) {
+        deckCard.attacks.forEach(a => sections.push({ 
+          cardId: deckCard.id, 
+          cardName: deckCard.name, 
+          text: a.text, 
+          source: 'attack' 
+        }))
+      }
+      if (deckCard.rules) {
+        deckCard.rules.forEach(r => sections.push({ 
+          cardId: deckCard.id, 
+          cardName: deckCard.name, 
+          text: r.text, 
+          source: 'rule' 
+        }))
+      }
+
+      const cardLike = {
+        id: deckCard.id,
+        name: deckCard.name,
+        type: deckCard.type,
+        kinds: deckCard.kinds,
+        hp: deckCard.hp,
+        retreat: deckCard.retreat,
+        evolvesTo: deckCard.evolves
+      }
+
+      const profile = createRoleProfile(cardLike, sections)
+      this.roleProfileMap.set(deckCard.id, profile)
+    }
+
+    // 2. SimCardInstanceに推論結果を反映（CardRoleCatalogが提供するRoleと互換性を持たせる）
+    deckBase.forEach(card => {
+        const profile = this.roleProfileMap.get(card.baseId)
+        if (profile) {
+            // StaticRole を既存の CardRole にマッピングして反映
+            const mappedRoles = this.mapStaticRolesToCardRoles(profile.staticRoles, card.kinds || '')
+            card.roles = mappedRoles
+        }
+    })
 
     const logs: SimulationTrialLog[] = []
 
@@ -100,8 +162,18 @@ export class MonteCarloDeckSimulator {
     const reachedSupporter = turn1Snapshot.supporterUsed || turn2Snapshot.supporterUsed
     const reachedEnergy = board.attachedEnergyToActive > 0 || board.attachedEnergyToBench > 0
     
-    // 簡易的な成功判定
-    const setupSuccess = this.judgeSetupSuccess(board, setupConfig, failureReasons)
+    // role.complete.ts 由来の解析結果を取得
+    const handProfiles = board.hand.map(c => this.roleProfileMap.get(c.baseId)).filter(p => !!p) as CardRoleProfile[]
+    const boardProfiles = [
+        board.active ? this.roleProfileMap.get(board.active.baseId) : undefined,
+        ...board.bench.map(c => this.roleProfileMap.get(c.baseId))
+    ].filter(p => !!p) as CardRoleProfile[]
+
+    const reachedDrawEngine = boardProfiles.some(p => p.staticRoles.includes('draw') || p.staticRoles.includes('consistency'))
+    const reachedMainAttackerLine = boardProfiles.some(p => p.staticRoles.includes('main_attacker'))
+
+    // 重み付きスコアによる成功判定
+    const setupSuccess = this.judgeSetupSuccess(board, handProfiles, archetype, failureReasons)
 
     return {
         trialIndex: index,
@@ -113,8 +185,8 @@ export class MonteCarloDeckSimulator {
         reachedBasic,
         reachedSupporter,
         reachedEnergy,
-        reachedDrawEngine: false, // 将来的に実装
-        reachedMainAttackerLine: false, // 将来的に実装
+        reachedDrawEngine,
+        reachedMainAttackerLine,
         setupSuccess,
         failureReasons
     }
@@ -135,64 +207,139 @@ export class MonteCarloDeckSimulator {
       }
   }
 
-  private judgeSetupSuccess(board: SimBoardState, config: SetupTargetConfig, reasons: FailureReasonType[]): boolean {
-      let isSuccess = true
+  private judgeSetupSuccess(
+    board: SimBoardState, 
+    handProfiles: CardRoleProfile[], 
+    archetype: DeckArchetype,
+    reasons: FailureReasonType[]
+  ): boolean {
+      const hasBasic = board.active !== undefined || board.bench.length > 0
+      const benchCount = board.bench.length
+      const hasSupporter = board.supporterUsed
+      
+      const hasDrawRole = handProfiles.some(p => p.staticRoles.includes('draw'))
+      const hasSearchRole = handProfiles.some(p => 
+        p.staticRoles.some(r => ['basic_search', 'pokemon_search', 'evolution_search', 'bench_setup'].includes(r))
+      )
+      
+      const hasAttackerReady = board.active && this.roleProfileMap.get(board.active.baseId)?.staticRoles.includes('main_attacker')
+      const hasEnergyReady = board.attachedEnergyToActive > 0 || board.attachedEnergyToBench > 0
+      const hasEvolutionLine = handProfiles.some(p => 
+        p.staticRoles.includes('evolution_search') || p.staticRoles.includes('setup_cheat')
+      )
 
-      // 1. ベンチ展開判定（役割ベースでの推論を含む）
-      if (config.minBenchCount > board.bench.length) {
-          isSuccess = false
-          reasons.push('NO_BENCH_SETUP')
+      const roleDrivenProgress = this.calcRoleDrivenProgress(handProfiles)
+
+      const score = this.calcOpeningSetupScore({
+          hasBasic,
+          benchCount,
+          hasSupporter,
+          hasDrawRole,
+          hasSearchRole,
+          hasAttackerReady: !!hasAttackerReady,
+          hasEnergyReady,
+          hasEvolutionLine,
+          roleDrivenProgress
+      })
+
+      const threshold = this.resolveOpeningThreshold(archetype)
+      const success = score >= threshold
+
+      if (!success) {
+          if (!hasBasic) reasons.push('NO_BASIC')
+          if (benchCount === 0) reasons.push('NO_BENCH_SETUP')
+          if (!hasSupporter && !hasDrawRole) reasons.push('NO_SUPPORTER')
+          if (!hasEnergyReady) reasons.push('NO_ENERGY')
+          if (!hasEvolutionLine && archetype.includes('ex')) reasons.push('NO_EVOLUTION_LINE')
+          if (score < 40) reasons.push('HAND_BRICK')
       }
 
-      // 2. エネルギーアクセス判定
-      if (config.requireEnergyAccess && board.attachedEnergyToActive === 0 && board.attachedEnergyToBench === 0) {
-          isSuccess = false
-          reasons.push('NO_ENERGY')
-      }
+      return success
+  }
 
-      // 3. サポートアクセス判定
-      if (config.requireSupporterAccess && !board.supporterUsed) {
-          isSuccess = false
-          reasons.push('NO_SUPPORTER')
-      }
+  private calcRoleDrivenProgress(handProfiles: CardRoleProfile[]): number {
+    let score = 0
+    for (const profile of handProfiles) {
+      if (profile.staticRoles.includes('basic_search')) score += 0.20
+      if (profile.staticRoles.includes('bench_setup')) score += 0.20
+      if (profile.staticRoles.includes('draw')) score += 0.15
+      if (profile.staticRoles.includes('hand_refresh')) score += 0.15
+      if (profile.staticRoles.includes('pokemon_search')) score += 0.15
+      if (profile.staticRoles.includes('evolution_search')) score += 0.10
+      if (profile.staticRoles.includes('energy_accel')) score += 0.10
+      if (profile.staticRoles.includes('setup_cheat')) score += 0.10
+      if (profile.staticRoles.includes('consistency')) score += 0.10
+    }
+    return Math.min(score, 1)
+  }
 
-      // 4. 進化ライン判定（推論エンジンによるロールを参照）
-      if (config.requireEvolutionLineReady) {
-          const hasEvolutionReady = board.bench.some(c => CardRoleCatalog.hasRole(c, 'evolution_pokemon')) || 
-                                   board.hand.some(c => CardRoleCatalog.hasRole(c, 'evolution_pokemon')) ||
-                                   board.hand.some(c => CardRoleCatalog.hasRole(c, 'evolution_search'))
-          
-          if (!hasEvolutionReady) {
-              isSuccess = false
-              reasons.push('NO_EVOLUTION_LINE')
-          }
-      }
+  private calcOpeningSetupScore(input: {
+    hasBasic: boolean
+    benchCount: number
+    hasSupporter: boolean
+    hasDrawRole: boolean
+    hasSearchRole: boolean
+    hasAttackerReady: boolean
+    hasEnergyReady: boolean
+    hasEvolutionLine: boolean
+    roleDrivenProgress: number
+  }): number {
+    let score = 0
+    if (input.hasBasic) score += 25
+    score += Math.min(input.benchCount, 3) * 10
+    if (input.hasSupporter) score += 12
+    if (input.hasDrawRole) score += 10
+    if (input.hasSearchRole) score += 12
+    if (input.hasAttackerReady) score += 12
+    if (input.hasEnergyReady) score += 8
+    if (input.hasEvolutionLine) score += 8
+    score += input.roleDrivenProgress * 13
+    return Math.min(score, 100)
+  }
 
-      // 5. メインアタッカー準備判定（推論エンジンのロールを参照）
-      if (config.requireMainAttackerReady) {
-          const hasMainAttacker = board.active && CardRoleCatalog.hasRole(board.active, 'main_attacker') ||
-                                 board.bench.some(c => CardRoleCatalog.hasRole(c, 'main_attacker'))
-          
-          if (!hasMainAttacker) {
-              const hasSearchForMain = board.hand.some(c => CardRoleCatalog.hasRole(c, 'search'))
-              if (!hasSearchForMain) {
-                  isSuccess = false
-                  reasons.push('NO_MAIN_ATTACKER')
-              }
-          }
-      }
+  private resolveOpeningThreshold(archetype: string): number {
+    switch (archetype) {
+      case 'charizard_ex': return 68
+      case 'dragapult_ex': return 66
+      case 'gardevoir_ex': return 67
+      default: return 65
+    }
+  }
 
-      // 6. ドローエンジン準備判定（推論エンジンのロールを参照）
-      if (config.requireDrawEngineReady) {
-          const hasDrawEngine = board.bench.some(c => CardRoleCatalog.hasRole(c, 'draw')) ||
-                               board.bench.some(c => CardRoleCatalog.hasRole(c, 'consistency'))
-          
-          if (!hasDrawEngine) {
-              isSuccess = false
-              reasons.push('NO_DRAW_ENGINE')
-          }
-      }
-
-      return isSuccess
+  /**
+   * StaticRole を、既存のシミュレーションロジックが期待する CardRole に変換します。
+   * これにより、TurnActionPolicyやSearchResolverを書き換えることなく推論結果を流し込めます。
+   */
+  private mapStaticRolesToCardRoles(staticRoles: StaticRole[], kinds: string): CardRole[] {
+    const roles: Set<CardRole> = new Set()
+    
+    staticRoles.forEach(r => {
+        // 基本的な役割の継承
+        if (r === 'draw') roles.add('draw')
+        if (r === 'bench_setup') roles.add('bench_setup')
+        if (r === 'consistency') roles.add('consistency')
+        if (r === 'energy_search') roles.add('energy_search')
+        
+        // シミュレーター固有の役割への詳細マッピング
+        if (r === 'basic_search' || r === 'pokemon_search') {
+            if (kinds === 'item') roles.add('search_basic_item')
+            roles.add('search')
+        }
+        if (r === 'evolution_search') {
+            if (kinds === 'item') roles.add('search_evolution_item')
+            roles.add('evolution_pokemon') // 進化先として認識
+        }
+        if (r === 'main_attacker') {
+            roles.add('main_attacker')
+            if (kinds === 'basic') roles.add('main_attacker_basic')
+        }
+        if (r === 'draw' || r === 'hand_refresh') {
+            if (kinds === 'supporter') roles.add('draw_supporter')
+            if (kinds === 'item') roles.add('draw_item')
+        }
+        if (r === 'energy_accel') roles.add('energy_accel_piece')
+    })
+    
+    return Array.from(roles)
   }
 }

@@ -41,14 +41,17 @@ export async function POST(req: Request) {
             if (clerkUserId) {
                 const { data: userRecord, error: fetchError } = await supabase
                     .from('users')
-                    .select('ai_tickets, pro_trial_until')
+                    .select('ai_tickets, pro_trial_until, plan_type')
                     .eq('id', clerkUserId)
                     .single();
 
                 if (!fetchError && userRecord) {
                     const now = new Date();
                     const trialUntil = userRecord.pro_trial_until ? new Date(userRecord.pro_trial_until) : null;
-                    isPro = trialUntil !== null && trialUntil > now;
+                    const isTrialActive = trialUntil !== null && trialUntil > now;
+                    
+                    const actualPlan = userRecord.plan_type || 'free';
+                    isPro = actualPlan === 'pro' || actualPlan === 'elite' || isTrialActive;
                     userTickets = userRecord.ai_tickets;
 
                     if (!isPro && userRecord.ai_tickets <= 0) {

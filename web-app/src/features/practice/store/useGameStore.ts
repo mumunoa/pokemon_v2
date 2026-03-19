@@ -19,6 +19,21 @@ import type {
     CardRoleProfile 
 } from '@/features/practice/ai-next';
 
+/**
+ * 法的リスク（著作権画像URLのDB保存）を避けるためのサニタイズ
+ */
+const sanitizeSnapshotState = (state: any) => {
+    if (!state || !state.cards) return state;
+    const sanitizedCards = { ...state.cards };
+    for (const id in sanitizedCards) {
+        if (sanitizedCards[id]) {
+            const { imageUrl, ...rest } = sanitizedCards[id];
+            sanitizedCards[id] = rest;
+        }
+    }
+    return { ...state, cards: sanitizedCards };
+};
+
 // Helper to shuffle an array
 const shuffleArray = <T>(array: T[]): T[] => {
     const newArray = [...array];
@@ -62,7 +77,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     turnCount: 1,
     currentTurnPlayer: 'player1',
     isOpponentView: false,
-    displayMode: 'compact',
+    displayMode: 'local-image',
     logs: [],
     structuredLogs: [],
     stateSnapshots: [],
@@ -102,11 +117,11 @@ export const useGameStore = create<GameState>((set, get) => ({
                 gameId: state.gameId,
                 turn: state.turnCount,
                 phase,
-                state: JSON.parse(JSON.stringify({
+                state: sanitizeSnapshotState({
                     cards: state.cards,
                     zones: state.zones,
                     currentTurnPlayer: state.currentTurnPlayer
-                })),
+                }),
                 createdAt: new Date().toISOString()
             };
             return { stateSnapshots: [...state.stateSnapshots, snapshot] };
@@ -254,7 +269,7 @@ export const useGameStore = create<GameState>((set, get) => ({
                         deckInstanceIds.push(instanceId);
                     }
                 });
-                return playerId === 'player1' ? deckInstanceIds : shuffleArray(deckInstanceIds); // Don't double shuffle if not needed, but initializeDeck shuffles below
+                return shuffleArray(deckInstanceIds);
             };
 
             const shuffledDeck1 = createPlayerDeck(deckList1, 'player1');
@@ -291,7 +306,7 @@ export const useGameStore = create<GameState>((set, get) => ({
                 gameId: state.gameId,
                 turn: 1,
                 phase: 'setup' as const,
-                state: JSON.parse(JSON.stringify({
+                state: sanitizeSnapshotState({
                     cards: newCards,
                     zones: {
                         ...defaultZones,
@@ -303,7 +318,7 @@ export const useGameStore = create<GameState>((set, get) => ({
                         'player2-prizes': prizes2,
                     },
                     currentTurnPlayer: 'player1'
-                })),
+                }),
                 createdAt: new Date().toISOString()
             };
 
@@ -720,7 +735,7 @@ export const useGameStore = create<GameState>((set, get) => ({
             turnCount: 1,
             currentTurnPlayer: 'player1',
             isOpponentView: false,
-            displayMode: 'compact',
+            displayMode: 'local-image',
             logs: ['ゲームをリセットしました。'],
             structuredLogs: [],
             stateSnapshots: [],
@@ -754,11 +769,11 @@ export const useGameStore = create<GameState>((set, get) => ({
                 gameId: state.gameId,
                 turn: state.turnCount,
                 phase: 'end' as const,
-                state: JSON.parse(JSON.stringify({
+                state: sanitizeSnapshotState({
                     cards: state.cards,
                     zones: state.zones,
                     currentTurnPlayer: state.currentTurnPlayer
-                })),
+                }),
                 createdAt: new Date().toISOString()
             };
 

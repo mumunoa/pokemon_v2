@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { useGameStore } from '@/features/practice/store/useGameStore';
 import { CardInstance } from '@/types/game';
@@ -60,10 +60,13 @@ interface CardProps {
     forcedTransform?: string;
 }
 
-export const Card: React.FC<CardProps> = ({ card, style = {}, className = '', onClick, disableDrag = false, isOverlay = false, zoneName, forcedTransform }) => {
+export const Card: React.FC<CardProps> = React.memo(({ card, style = {}, className = '', onClick, disableDrag = false, isOverlay = false, zoneName, forcedTransform }) => {
     const displayMode = useGameStore(s => s.displayMode);
-    const coachResult = useGameStore(s => s.coachResult);
-    const isKeyCard = coachResult?.keyCards?.some((k: any) => k.cardName === card.name) ?? false;
+    
+    // セレクタを最適化: coachResult全体ではなく、このカードがKeyCardかどうかのみを監視
+    const isKeyCard = useGameStore(s => 
+        s.coachResult?.keyCards?.some((k: any) => k.cardName === card.name) ?? false
+    );
 
     const { attributes, listeners, setNodeRef: setDraggableRef, transform, isDragging } = useDraggable({
         id: card.instanceId,
@@ -214,4 +217,4 @@ export const Card: React.FC<CardProps> = ({ card, style = {}, className = '', on
             )}
         </div>
     );
-};
+});

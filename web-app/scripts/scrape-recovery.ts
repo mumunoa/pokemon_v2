@@ -27,41 +27,6 @@ const ENERGY_KIND_MAP: { [key: string]: string } = {
 
 async function sleep(ms: number) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
-/**
- * 公式APIから1ページ分のカードリスト(ID)を取得
- */
-async function fetchCardList(page: number, series: string) {
-  // ユーザー指定のURL形式（XYレギュレーション）
-  const baseUrl = 'https://www.pokemon-card.com/card-search/resultAPI.php';
-  const query = new URLSearchParams({
-    keyword: '',
-    se_ta: series, // pokemon | trainer | energy
-    regulation_sidebar_form: 'XY',
-    sc_hp_s: '',
-    sc_hp_e: '',
-    sc_run_away_s: series === 'energy' ? '0' : '',
-    sc_run_away_e: '',
-    pg: '',
-    illust: '',
-    sm_and_keyword: 'true',
-    page: page.toString()
-  });
-
-  try {
-    const response = await fetch(`${baseUrl}?${query.toString()}`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Referer': 'https://www.pokemon-card.com/card-search/',
-      }
-    });
-    if (!response.ok) return null;
-    return await response.json();
-  } catch (error) {
-    console.error(`API Fetch Error (${series} pg:${page}):`, error);
-    return null;
-  }
-}
-
 async function fetchHTML(url: string) {
   try {
     const response = await fetch(url, {
@@ -76,7 +41,7 @@ async function fetchHTML(url: string) {
 
 function parseCardDetail(html: string, cardID: string) {
   const virtualConsole = new VirtualConsole();
-  virtualConsole.on("error", () => { }); // CSS errors etc. are ignored
+  virtualConsole.on("error", () => { });
   const dom = new JSDOM(html, { virtualConsole });
   const doc = dom.window.document;
   const leftBox = doc.querySelector('.LeftBox');
@@ -90,7 +55,6 @@ function parseCardDetail(html: string, cardID: string) {
   const imgElement = leftBox.querySelector('.fit') as HTMLImageElement;
   const imageUrl = imgElement ? `${DETAIL_BASE_URL}${imgElement.getAttribute('src')}` : 'none';
 
-  // 基本カテゴリー判定
   let type = 'trainer';
   let kinds = 'item';
 
@@ -100,7 +64,6 @@ function parseCardDetail(html: string, cardID: string) {
   const h2Texts = h2Elements.map(h2 => h2.textContent?.trim() || '');
 
   if (name.includes('エネルギー')) {
-    // 1. エネルギー判定
     type = 'energy';
     kinds = 'none';
     for (const [key, value] of Object.entries(ENERGY_KIND_MAP)) {
@@ -110,22 +73,19 @@ function parseCardDetail(html: string, cardID: string) {
       kinds = 'special';
     }
   } else if (topInfo && (typeText.includes('たね') || typeText.includes('1進化') || typeText.includes('2進化'))) {
-    // 2. ポケモン判定
     type = 'pokemon';
     if (typeText.includes('たね')) kinds = 'basic';
     else if (typeText.includes('1進化')) kinds = 'stage1';
     else if (typeText.includes('2進化')) kinds = 'stage2';
   } else {
-    // 3. トレーナーズ判定
     type = 'trainer';
     const mainH2 = h2Texts.find(t => t.includes('サポート') || t.includes('グッズ') || t.includes('スタジアム') || t.includes('ポケモンのどうぐ'));
-    if (mainH2?.includes('スタジアム')) kinds = 'stadium'; // stadium misspelled as studium previously
-    else if (mainH2?.includes('サポート')) kinds = 'supporter'; // support vs supporter
+    if (mainH2?.includes('スタジアム')) kinds = 'stadium';
+    else if (mainH2?.includes('サポート')) kinds = 'supporter';
     else if (mainH2?.includes('ポケモンのどうぐ')) kinds = 'tool';
     else kinds = 'item';
   }
 
-  // HP & 属性
   const hp = topInfo?.querySelector('.hp-num')?.textContent?.trim() || 'none';
   const types: string[] = [];
   topInfo?.querySelectorAll('.icon').forEach(icon => {
@@ -134,7 +94,6 @@ function parseCardDetail(html: string, cardID: string) {
     }
   });
 
-  // 特性
   const ability: any[] = [];
   const abilityH2 = h2Elements.find(h2 => h2.textContent?.includes('特性'));
   if (abilityH2) {
@@ -143,7 +102,6 @@ function parseCardDetail(html: string, cardID: string) {
     ability.push({ name: abName, text: abText });
   }
 
-  // ワザ
   const attacks: any[] = [];
   const attackH2s = h2Elements.filter(h2 => h2.textContent?.includes('ワザ'));
   attackH2s.forEach(h2 => {
@@ -163,7 +121,6 @@ function parseCardDetail(html: string, cardID: string) {
     }
   });
 
-  // 特別なルール (ACE SPEC含有)
   const rules: any[] = [];
   const rulesH2 = h2Elements.find(h2 => h2.textContent?.includes('特別なルール'));
   if (rulesH2) {
@@ -173,7 +130,6 @@ function parseCardDetail(html: string, cardID: string) {
     rules.push({ text: rText, prize: prizeMatch ? prizeMatch[1] : "1", ace: isAce || undefined });
   }
 
-  // 特殊エネルギー情報
   const energy: any[] = [];
   const specialEnergyH2 = h2Elements.find(h2 => h2.textContent?.includes('特殊エネルギー'));
   if (specialEnergyH2) {
@@ -181,7 +137,6 @@ function parseCardDetail(html: string, cardID: string) {
     energy.push({ text: eText });
   }
 
-  // サポート・テキスト
   const support: any[] = [];
   const supportPs = rightBoxInner.querySelectorAll('p');
   if (type === 'trainer' && kinds === 'supporter' && supportPs.length > 0) {
@@ -195,7 +150,6 @@ function parseCardDetail(html: string, cardID: string) {
   const evolves: string[] = [];
   doc.querySelectorAll('.evolution.in-box.ev_off').forEach(ev => { evolves.push(ev.textContent?.trim() || ''); });
 
-  // 弱点・抵抗力・にげる
   const table = rightBoxInner.querySelector('table');
   let weakness = 'none', resistance = 'none', retreat = 'none';
   if (table) {
@@ -214,104 +168,54 @@ function parseCardDetail(html: string, cardID: string) {
   }
 
   return {
-    id: cardID, no: noText, name, image_url: imageUrl, type, kinds, hp, types,
+    id: cardID, no: noText, name, image_url: imageUrl, type, kinds, hp, types, 
     weakness, resistance, retreat, ability, attacks, rules, energy, support, packs, evolves,
     roles: [], archetypes: [], updated_at: new Date(), regulation: 'standard'
   };
 }
 
-async function scrapeCategory(series: string, maxPage: number) {
-  console.log(`\n--- Starting ${series} Scraping (${maxPage} pages) ---`);
-  const cardIds: string[] = [];
-
-  for (let p = 1; p <= maxPage; p++) {
-    console.log(`[${series}] Fetching ID list pg:${p}...`);
-    const data = await fetchCardList(p, series);
-    if (!data || !data.cardList || data.cardList.length === 0) break;
-    data.cardList.forEach((c: any) => cardIds.push(c.cardID));
-    await sleep(500);
+async function main() {
+  const args = process.argv.slice(2);
+  let idInput = '';
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--ids') idInput = args[++i];
   }
 
-  console.log(`Collected ${cardIds.length} IDs for ${series}. Fetching details...`);
+  if (!idInput) {
+    console.log('Usage: npx tsx scripts/scrape-recovery.ts --ids <ID1,ID2,...>');
+    return;
+  }
+
+  const cardIds = idInput.split(',').map(id => id.trim()).filter(id => id);
+  console.log(`Starting recovery for ${cardIds.length} cards...`);
 
   for (let i = 0; i < cardIds.length; i++) {
     const cardID = cardIds[i];
+    // XYレギュレーションで固定（scrape-all.tsに合わせる）
     const url = `${DETAIL_BASE_URL}/card-search/details.php/card/${cardID}/regu/XY`;
-    process.stdout.write(`[${series}] Scraping ${i + 1}/${cardIds.length} (ID:${cardID})...\r`);
+    console.log(`[${i + 1}/${cardIds.length}] Recovery Scraping ID:${cardID}...`);
 
     const html = await fetchHTML(url);
     if (!html) {
-      process.stdout.write(`\n[ID:${cardID}] Failed to fetch HTML\n`);
+      console.error(`[ID:${cardID}] Failed to fetch HTML`);
       continue;
     }
 
     const cardData = parseCardDetail(html, cardID);
     if (cardData) {
-      // 全ての取得データは 'standard' として保存 (updated_at も更新される)
       const { error } = await supabase.from('cards').upsert(cardData, { onConflict: 'id' });
-
       if (error) {
-        process.stdout.write(`\n[ID:${cardID}] Upsert failed: ${error.message}\n`);
+        console.error(`[ID:${cardID}] Upsert failed: ${error.message}`);
       } else {
-        // 成功ログ
+        console.log(`[ID:${cardID}] Successfully recovered as standard.`);
       }
     } else {
-      process.stdout.write(`\n[ID:${cardID}] Parse Error (Empty Data)\n`);
+      console.error(`[ID:${cardID}] Parse Error (Empty Data)`);
     }
-    await sleep(700);
-  }
-  console.log(`\nFinished ${series} scraping.`);
-}
-
-async function main() {
-  const args = process.argv.slice(2);
-  const params: { [key: string]: number } = { pokemon: 0, trainer: 0, energy: 0 };
-
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--pokemon') params.pokemon = parseInt(args[++i]);
-    if (args[i] === '--trainer') params.trainer = parseInt(args[++i]);
-    if (args[i] === '--energy') params.energy = parseInt(args[++i]);
+    await sleep(1000); // 念のため少し長めに待機
   }
 
-  if (params.pokemon === 0 && params.trainer === 0 && params.energy === 0) {
-    console.log('Usage: npx tsx scripts/scrape-all.ts --pokemon <pages> --trainer <pages> --energy <pages>');
-    return;
-  }
-
-  const startTime = new Date().toISOString();
-  console.log(`\nStarting process at: ${startTime}`);
-
-  const activeCategories: string[] = [];
-  if (params.pokemon > 0) {
-    await scrapeCategory('pokemon', params.pokemon);
-    activeCategories.push('pokemon');
-  }
-  if (params.trainer > 0) {
-    await scrapeCategory('trainer', params.trainer);
-    activeCategories.push('trainer');
-  }
-  if (params.energy > 0) {
-    await scrapeCategory('energy', params.energy);
-    activeCategories.push('energy');
-  }
-
-  console.log('\nScraping tasks completed. Updating non-matching cards to "extra" (Selected Categories Only)...');
-
-  for (const category of activeCategories) {
-    console.log(`Updating ${category} records...`);
-    // 指定されたカテゴリかつ最新ではないレコードを extra に更新
-    const { error: updateError } = await supabase
-      .from('cards')
-      .update({ regulation: 'extra' })
-      .eq('type', category)
-      .lt('updated_at', startTime);
-
-    if (updateError) {
-      console.error(`Update Error for ${category}:`, updateError.message);
-    }
-  }
-
-  console.log('\nAll processes completed!');
+  console.log('\nRecovery completed!');
 }
 
 main().catch(console.error);

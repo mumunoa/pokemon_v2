@@ -56,12 +56,14 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
     const p2Count = player2Deck.reduce((s, c) => s + c.count, 0);
 
     const modes: { id: 'text' | 'compact' | 'local-image', label: string, labelEn: string, description: string }[] = [
+/*
         {
             id: 'text',
             label: 'テキストモード',
             labelEn: 'Text Mode',
             description: 'カード名とHPのみの超軽量表示です。'
         },
+*/
         {
             id: 'compact',
             label: 'コンパクトモード',

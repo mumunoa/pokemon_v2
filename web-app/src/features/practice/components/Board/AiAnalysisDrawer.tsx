@@ -19,7 +19,7 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
 
     return (
         <div
-            className={`fixed inset-y-0 right-0 w-[400px] bg-slate-900/95 backdrop-blur-xl border-l border-indigo-500/30 shadow-2xl shadow-indigo-500/20 z-[6000] flex flex-col transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+            className={`fixed inset-y-0 right-0 w-[400px] bg-slate-900/95 backdrop-blur-xl border-l border-indigo-500/30 shadow-2xl shadow-indigo-500/20 z-[9500] flex flex-col transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
             onClick={e => e.stopPropagation()}
         >
             {/* Header */}
