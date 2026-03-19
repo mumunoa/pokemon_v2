@@ -10,6 +10,7 @@ import {
     OpponentHandFeatures, 
     OpponentDiscardFeatures 
 } from './types';
+import { isBasicPokemon } from '@/types/game';
 
 /**
  * CanonicalGameStateから全8領域の特徴量を抽出します。
@@ -36,8 +37,8 @@ function extractHandFeatures(state: CanonicalGameState): HandFeatures {
     const countByKind = (name: string) => hand.filter(c => c.name.includes(name)).length;
     
     return {
-        playableBasics: hand.filter(c => c.type === 'pokemon' && c.kinds === 'non_rule').length,
-        playableEvolutionPieces: hand.filter(c => c.type === 'pokemon' && c.kinds !== 'non_rule').length, // 暫定
+        playableBasics: hand.filter(c => isBasicPokemon(c)).length,
+        playableEvolutionPieces: hand.filter(c => c.type === 'pokemon' && !isBasicPokemon(c)).length,
         playableSearchCards: hand.filter(c => ['ボール', 'ネスト', 'ハイパー'].some(k => c.name.includes(k))).length,
         playableDrawCards: hand.filter(c => ['博士', 'ナンジャモ', 'ジャッジマン', 'ドロー'].some(k => c.name.includes(k))).length,
         playableSwitchCards: hand.filter(c => ['いれかえ', 'あなぬけ', 'カート'].some(k => c.name.includes(k))).length,

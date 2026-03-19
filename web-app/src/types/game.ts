@@ -1,8 +1,8 @@
 export type CardType = 'pokemon' | 'energy' | 'trainer';
 export type CardKind =
-    | 'has_rule' | 'non_rule' | 'basic' | 'stage1' | 'stage2'
-    | 'grass' | 'fire' | 'water' | 'lightning' | 'psychic' | 'fighting' | 'darkness' | 'metal' | 'dragon' | 'colorless'
-    | 'item' | 'tool' | 'supporter' | 'stadium';
+    | 'basic' | 'stage1' | 'stage2' | 'ex' | 'item' | 'tool' | 'supporter' | 'stadium' | 'energy'
+    | 'has_rule' | 'non_rule' // 保守用
+    | 'grass' | 'fire' | 'water' | 'lightning' | 'psychic' | 'fighting' | 'darkness' | 'metal' | 'dragon' | 'colorless';
 
 export interface Attack {
     name: string;
@@ -236,4 +236,8 @@ export interface GameState {
     analyzeGame: () => Promise<{ success: boolean; errorType?: string }>;
     runCoachAnalysis: () => Promise<void>;
     syncToSupabase: (userId: string, clerkToken?: string) => Promise<{ success: boolean; error?: string }>;
+}
+
+export function isBasicPokemon(card: { type?: string; kinds?: string }) {
+    return card.type === 'pokemon' && (card.kinds === 'basic' || card.kinds === 'non_rule');
 }

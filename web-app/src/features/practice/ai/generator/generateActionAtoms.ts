@@ -1,5 +1,6 @@
 import { ActionAtom } from './types';
 import { CanonicalGameState } from '../core/types';
+import { isBasicPokemon } from '@/types/game';
 
 /**
  * 実行可能な原子行動（ActionAtom）をすべて列挙します。
@@ -11,14 +12,14 @@ export function generateActionAtoms(state: CanonicalGameState): ActionAtom[] {
     if (!self) return atoms;
 
     // 1. たねポケモンを出す
-    self.hand.filter(c => c.type === 'pokemon' && c.kinds === 'non_rule').forEach(card => {
+    self.hand.filter(c => isBasicPokemon(c)).forEach(card => {
         if (self.bench.length < 5) {
             atoms.push({ type: 'PLAY_BASIC', cardId: card.instanceId, toBench: true });
         }
     });
 
     // 2. 進化
-    self.hand.filter(c => c.type === 'pokemon' && c.kinds !== 'non_rule').forEach(card => {
+    self.hand.filter(c => c.type === 'pokemon' && !isBasicPokemon(c)).forEach(card => {
         // バトル場
         if (self.active) {
             atoms.push({ type: 'EVOLVE', fromId: self.active.instanceId, toCardId: card.instanceId });
@@ -41,6 +42,17 @@ export function generateActionAtoms(state: CanonicalGameState): ActionAtom[] {
             atoms.push({ type: 'PLAY_ITEM', cardId: card.instanceId });
         } else if (card.kinds === 'stadium') {
             atoms.push({ type: 'PLAY_STADIUM', cardId: card.instanceId });
+        } else if (card.kinds === 'tool') {
+            // バトル場
+            if (self.active) {
+                atoms.push({ type: 'PLAY_TOOL', cardId: card.instanceId, toPokemonId: self.active.instanceId });
+            }
+            // ベンチ
+            self.bench.forEach(p => {
+                if (p) {
+                    atoms.push({ type: 'PLAY_TOOL', cardId: card.instanceId, toPokemonId: p.instanceId });
+                }
+            });
         }
     });
 

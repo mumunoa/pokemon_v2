@@ -1,6 +1,7 @@
 import { ActionAtom, ActionSequence } from './types';
 import { CanonicalGameState } from '../core/types';
 import { generateActionAtoms } from './generateActionAtoms';
+import { isBasicPokemon } from '@/types/game';
 
 /**
  * 原子行動を組み合わせて、戦略的な候補シーケンスを生成します。
@@ -133,7 +134,7 @@ function generatePrepareSequences(state: CanonicalGameState): ActionSequence[] {
         } else {
             // 2枚以上の場合のヒューリスティック
             const rulePokemon = handBasics.filter(c => c.kinds === 'has_rule');
-            const nonRulePokemon = handBasics.filter(c => c.kinds === 'non_rule');
+            const nonRulePokemon = handBasics.filter(c => isBasicPokemon(c));
 
             // 優先順位: 
             // 1. 非ルールのたねポケモン（サイド取リを抑える）

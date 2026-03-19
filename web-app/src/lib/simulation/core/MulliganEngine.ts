@@ -1,6 +1,7 @@
 import { SimCardInstance } from './DeckInstanceFactory'
 import { CardRoleCatalog } from '../catalog/CardRoleCatalog'
 import { SeededRandom } from '../engine/SeededRandom'
+import { isBasicPokemon } from '@/types/game'
 
 export class MulliganEngine {
   drawOpeningHand(deck: SimCardInstance[], rng: SeededRandom) {
@@ -19,7 +20,7 @@ export class MulliganEngine {
   }
 
   hasBasic(hand: SimCardInstance[]): boolean {
-    return hand.some((card) => card.kinds === 'basic')
+    return hand.some((card) => isBasicPokemon(card))
   }
 
   pickStartingBasic(hand: SimCardInstance[]): SimCardInstance {

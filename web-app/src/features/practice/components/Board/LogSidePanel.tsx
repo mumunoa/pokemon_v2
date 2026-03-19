@@ -57,7 +57,8 @@ const formatLogMessage = (log: StructuredLog, cards: Record<string, CardInstance
 };
 
 export const LogSidePanel: React.FC<Props> = ({ isOpen, onClose }) => {
-    const { structuredLogs, cards } = useGameStore();
+    const structuredLogs = useGameStore(s => s.structuredLogs);
+    const cards = useGameStore(s => s.cards);
     const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {

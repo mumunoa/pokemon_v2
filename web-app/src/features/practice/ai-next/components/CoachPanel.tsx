@@ -41,7 +41,7 @@ export function CoachPanel({ result, isLoading, onRun }: CoachPanelProps) {
     );
   }
 
-  const { bestAction, alternatives, keyCards, analysis, boardStateSummary } = result;
+  const { bestAction, alternatives, keyCards, analysis, boardStateSummary, boardDiff, openingEvaluation } = result;
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-white">
@@ -59,6 +59,41 @@ export function CoachPanel({ result, isLoading, onRun }: CoachPanelProps) {
           </button>
         ) : null}
       </div>
+
+      {openingEvaluation && (
+        <div className={`mb-4 rounded-2xl border p-4 ${openingEvaluation.stability === 'stable' ? 'border-emerald-400/25 bg-emerald-400/10' :
+            openingEvaluation.stability === 'average' ? 'border-blue-400/25 bg-blue-400/10' :
+              'border-orange-400/25 bg-orange-400/10'
+          }`}>
+          <div className="mb-1 text-xs font-semibold uppercase tracking-wide opacity-70">
+            初動手札評価 / Opening Evaluation
+          </div>
+          <div className="flex items-center gap-3">
+            <div className={`text-2xl font-bold ${openingEvaluation.stability === 'stable' ? 'text-emerald-400' :
+                openingEvaluation.stability === 'average' ? 'text-blue-400' :
+                  'text-orange-400'
+              }`}>
+              {openingEvaluation.score} <span className="text-sm">pts</span>
+            </div>
+            <div className="text-sm font-medium">
+              [{openingEvaluation.stability.toUpperCase()}] {openingEvaluation.reason}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {boardDiff && !boardDiff.isIdeal && (
+        <div className="mb-4 rounded-2xl border border-blue-400/25 bg-blue-400/10 p-4">
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-200">
+            理想盤面とのギャップ / Board Strategy Gap
+          </div>
+          <ul className="space-y-1 text-sm text-white/80 list-disc list-inside">
+            {boardDiff.missingBench > 0 && <li>ベンチにあと {boardDiff.missingBench} 体ポケモンが必要です。</li>}
+            {boardDiff.missingEnergy > 0 && <li>バトル場にエネルギーを貼る必要があります。</li>}
+            {boardDiff.missingEvolution && <li>アタッカーの進化準備が不足しています。</li>}
+          </ul>
+        </div>
+      )}
 
       <div className="mb-4 rounded-2xl border border-emerald-400/25 bg-emerald-400/10 p-4">
         <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-200">

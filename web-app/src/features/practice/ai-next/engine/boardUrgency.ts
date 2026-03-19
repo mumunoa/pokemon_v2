@@ -1,6 +1,17 @@
 import type { BoardState } from "../domain/types";
 
+export type GamePhase = "opening" | "midgame" | "endgame";
+
+export type PrizeMapPressure = {
+  playerPrizesRemaining: number;
+  opponentPrizesRemaining: number;
+  canTakeOnePrizeNow: boolean;
+  canTakeTwoPrizeNow: boolean;
+  opponentCanTakeTwoPrizeNext: boolean;
+};
+
 export type BoardUrgencyProfile = {
+  phase: GamePhase;
   needSetupNow: number;
   needDrawNow: number;
   needGustNow: number;
@@ -9,54 +20,103 @@ export type BoardUrgencyProfile = {
   needStallNow: number;
   needEnergyNow: number;
   canPushPrizeNow: number;
-  setupDeficit: number;
-  prizePressure: number;
-  trapOpportunity: number;
-  systemTargetValue: number;
-  handStability: number;
-  resourceRisk: number;
-  attackReadiness: number;
+  protectTwoPrizeNow: number;
+  systemPunishValue: number;
+  tempoCatchupValue: number;
+  prizeMap: PrizeMapPressure;
 };
 
 function clamp(value: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, value));
 }
 
-export function buildBoardUrgencyProfile(board: BoardState): BoardUrgencyProfile {
-  const benchCount = board.bench.length;
-  const activeReady = board.active ? (board.active.canAttack ? 1 : 0) : 0;
-  const activeEnergy = board.active?.energies ?? 0;
-  const heavyRetreatOpponent = board.opponentBench.some((card) => (card.retreat ?? 0) >= 2);
-  const systemTargets = board.opponentBench.filter((card) => card.isSystem).length;
-  const drawLikeInHand = board.hand.filter((name) =>
-    ["博士の研究", "ナンジャモ", "ジャッジマン", "リーリエの決心", "暗号マニアの解読"].includes(name),
-  ).length;
+function inferPhase(board: BoardState): GamePhase {
+  const totalTaken = board.prizesTakenByPlayer + board.prizesTakenByOpponent;
+  if (totalTaken <= 2) return "opening";
+  if (totalTaken <= 7) return "midgame";
+  return "endgame";
+}
 
-  const setupDeficit = clamp((3 - benchCount) * 20 + (activeReady ? 0 : 20));
-  const prizePressure = clamp(
-    (board.opponentActive?.damage ?? 0) > 0 ? 60 : 30 + board.prizesTakenByPlayer * 5,
-  );
-  const trapOpportunity = clamp((heavyRetreatOpponent ? 55 : 15) + (board.knownOpponentSwitchOuts === 0 ? 20 : 0));
-  const systemTargetValue = clamp(systemTargets * 25);
-  const handStability = clamp(100 - drawLikeInHand * 20 - board.hand.length * 5);
-  const resourceRisk = clamp((10 - board.deckRemaining) * 6 + board.discard.length);
-  const attackReadiness = clamp(activeReady * 70 + activeEnergy * 10);
+export function buildPrizeMap(board: BoardState): PrizeMapPressure {
+  const playerRemaining = 6 - board.prizesTakenByPlayer;
+  const opponentRemaining = 6 - board.prizesTakenByOpponent;
+  const opponentActiveDamage = board.opponentActive?.damage ?? 0;
+  const opponentActiveHp = board.opponentActive?.hp ?? 999;
+  const canTakeOnePrizeNow = opponentActiveHp - opponentActiveDamage <= 120;
+  const canTakeTwoPrizeNow = opponentActiveHp - opponentActiveDamage <= 240;
+  const opponentCanTakeTwoPrizeNext =
+    !!board.active && ((board.active.hp ?? 999) - board.active.damage <= 240);
 
   return {
-    needSetupNow: clamp(setupDeficit + (benchCount <= 1 ? 20 : 0)),
-    needDrawNow: clamp(handStability + (board.hand.length <= 3 ? 20 : 0)),
-    needGustNow: clamp(prizePressure + systemTargetValue / 2),
-    needRecoveryNow: clamp(resourceRisk / 2 + (board.active && board.active.damage > 80 ? 25 : 0)),
-    needSwitchNow: clamp((board.active && (board.active.retreat ?? 0) >= 2 ? 45 : 10) + (activeReady ? 0 : 20)),
-    needStallNow: clamp(trapOpportunity + (board.prizesTakenByOpponent > board.prizesTakenByPlayer ? 15 : 0)),
-    needEnergyNow: clamp(activeEnergy === 0 ? 70 : activeEnergy === 1 ? 45 : 20),
-    canPushPrizeNow: clamp(prizePressure + attackReadiness / 2),
-    setupDeficit,
-    prizePressure,
-    trapOpportunity,
-    systemTargetValue,
-    handStability,
-    resourceRisk,
-    attackReadiness,
+    playerPrizesRemaining: playerRemaining,
+    opponentPrizesRemaining: opponentRemaining,
+    canTakeOnePrizeNow,
+    canTakeTwoPrizeNow,
+    opponentCanTakeTwoPrizeNext,
+  };
+}
+
+export function buildBoardUrgencyProfile(board: BoardState): BoardUrgencyProfile {
+  const phase = inferPhase(board);
+  const prizeMap = buildPrizeMap(board);
+  const benchCount = board.bench.length;
+  const activeReady = board.active?.canAttack ? 1 : 0;
+  const activeEnergy = board.active?.energies ?? 0;
+  const heavyRetreatTargets = board.opponentBench.filter((p) => (p.retreat ?? 0) >= 2).length;
+  const systemTargets = board.opponentBench.filter((p) => p.isSystem).length;
+  const drawNeed = board.hand.length <= 3 ? 75 : board.hand.length <= 5 ? 48 : 20;
+
+  const setupNeedBase =
+    phase === "opening"
+      ? (benchCount <= 1 ? 80 : benchCount === 2 ? 55 : 25)
+      : (activeReady ? 20 : 45);
+
+  const needSetupNow = clamp(setupNeedBase + (activeReady ? 0 : 15));
+  const needDrawNow = clamp(drawNeed + (board.deckRemaining <= 10 ? 10 : 0));
+  const needGustNow = clamp(
+    (prizeMap.canTakeTwoPrizeNow ? 65 : prizeMap.canTakeOnePrizeNow ? 35 : 10) +
+      systemTargets * 12 +
+      (phase === "endgame" ? 20 : 0),
+  );
+  const needRecoveryNow = clamp(
+    (board.active && board.active.damage >= 100 ? 45 : 10) +
+      (board.discard.length >= 8 ? 15 : 0) +
+      (phase === "midgame" ? 10 : 0),
+  );
+  const needSwitchNow = clamp(
+    (!!board.active && (board.active.retreat ?? 0) >= 2 ? 45 : 10) +
+      (!activeReady ? 20 : 0),
+  );
+  const needStallNow = clamp(
+    heavyRetreatTargets * 15 +
+      (board.prizesTakenByOpponent > board.prizesTakenByPlayer ? 20 : 5) +
+      (phase === "endgame" ? 18 : 0),
+  );
+  const needEnergyNow = clamp(activeEnergy === 0 ? 70 : activeEnergy === 1 ? 45 : 20);
+  const canPushPrizeNow = clamp(
+    (prizeMap.canTakeTwoPrizeNow ? 90 : prizeMap.canTakeOnePrizeNow ? 65 : 20) +
+      systemTargets * 8,
+  );
+  const protectTwoPrizeNow = clamp(prizeMap.opponentCanTakeTwoPrizeNext ? 80 : 25);
+  const systemPunishValue = clamp(systemTargets * 22);
+  const tempoCatchupValue = clamp(
+    (board.prizesTakenByOpponent > board.prizesTakenByPlayer ? 45 : 15) +
+      heavyRetreatTargets * 10,
+  );
+
+  return {
+    phase,
+    needSetupNow,
+    needDrawNow,
+    needGustNow,
+    needRecoveryNow,
+    needSwitchNow,
+    needStallNow,
+    needEnergyNow,
+    canPushPrizeNow,
+    protectTwoPrizeNow,
+    systemPunishValue,
+    tempoCatchupValue,
+    prizeMap,
   };
 }

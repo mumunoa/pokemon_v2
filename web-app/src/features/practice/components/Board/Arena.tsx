@@ -37,12 +37,29 @@ const sampleDeck: DeckCard[] = [
 ];
 
 export const Arena: React.FC = () => {
-    const {
-        cards, zones, turnCount, currentTurnPlayer, isOpponentView,
-        isGameStarted, startGame,
-        endTurn, setOpponentView, initializeDeck, moveCard, attachEnergy, detachEnergy, drawCards, shuffleDeck, tossCoin, coinFlips,
-        aiAnalysis, isAnalyzing, analyzeGame, syncToSupabase
-    } = useGameStore();
+    const cards = useGameStore(s => s.cards);
+    const zones = useGameStore(s => s.zones);
+    const turnCount = useGameStore(s => s.turnCount);
+    const currentTurnPlayer = useGameStore(s => s.currentTurnPlayer);
+    const isOpponentView = useGameStore(s => s.isOpponentView);
+    const isGameStarted = useGameStore(s => s.isGameStarted);
+    
+    // Actions
+    const startGame = useGameStore(s => s.startGame);
+    const endTurn = useGameStore(s => s.endTurn);
+    const setOpponentView = useGameStore(s => s.setOpponentView);
+    const initializeDeck = useGameStore(s => s.initializeDeck);
+    const moveCard = useGameStore(s => s.moveCard);
+    const attachEnergy = useGameStore(s => s.attachEnergy);
+    const detachEnergy = useGameStore(s => s.detachEnergy);
+    const drawCards = useGameStore(s => s.drawCards);
+    const shuffleDeck = useGameStore(s => s.shuffleDeck);
+    const tossCoin = useGameStore(s => s.tossCoin);
+    const coinFlips = useGameStore(s => s.coinFlips);
+    const aiAnalysis = useGameStore(s => s.aiAnalysis);
+    const isAnalyzing = useGameStore(s => s.isAnalyzing);
+    const analyzeGame = useGameStore(s => s.analyzeGame);
+    const syncToSupabase = useGameStore(s => s.syncToSupabase);
 
     // カスタムフックを使用してClerkの状態を安全に取得
     const { user, isSignedIn, getToken } = useAuth();

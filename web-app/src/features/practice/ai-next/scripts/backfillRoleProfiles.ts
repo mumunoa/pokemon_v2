@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import { getSectionTexts } from '../utils/text';
 import { createRoleProfile } from '../inference/sectionRoleInference';
+import { CardRoleProfile } from '../domain/types';
 import { RoleProfileRepo } from '../storage/roleProfileRepo';
 
 /**
@@ -48,18 +49,30 @@ async function backfill() {
   
   console.log(`Starting backfill for ${allCards.length} cards...`);
   
-  for (const card of allCards) {
-    try {
+  const CHUNK_SIZE = 50;
+  for (let i = 0; i < allCards.length; i += CHUNK_SIZE) {
+    const chunk = allCards.slice(i, i + CHUNK_SIZE);
+    const profiles: CardRoleProfile[] = [];
+
+    for (const card of chunk) {
+      try {
         const sections = getSectionTexts(card);
         const profile = createRoleProfile(card, sections);
-        await repo.upsert(profile);
-        // console.log(`Backfilled: ${card.name} (${card.id})`);
+        profiles.push(profile);
+      } catch (e) {
+        console.error(`Inference failed for: ${card.name} (${card.id})`, e);
+      }
+    }
+
+    try {
+      await repo.upsertMany(profiles);
+      console.log(`Synced: ${i + chunk.length} / ${allCards.length} profiles...`);
     } catch (e) {
-        console.error(`Failed: ${card.name} (${card.id}):`, e);
+      console.error(`Batch upsert failed at index ${i}`, e);
     }
   }
-  
-  console.log('Backfill process completed.');
+
+  console.log('Backfill process completed successfully.');
 }
 
 backfill();

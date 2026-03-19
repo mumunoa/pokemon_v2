@@ -201,6 +201,7 @@ export type BoardState = {
   opponentBench: BoardCardLite[];
   opponentActive: BoardCardLite | null;
   discard: string[];
+  opponentDiscard: string[];
   deckRemaining: number;
   availableSupporter: boolean;
   availableEnergyAttachment: boolean;
@@ -231,12 +232,27 @@ export type KeyCard = {
   reason: string;
 };
 
+export type BoardDiff = {
+  missingBench: number;
+  missingEnergy: number;
+  missingEvolution: boolean;
+  isIdeal: boolean;
+};
+
+export type OpeningEvaluation = {
+  score: number;
+  stability: 'stable' | 'average' | 'risky';
+  reason: string;
+};
+
 export type RecommendationResult = {
   bestAction: ScoredAction | null;
   alternatives: ScoredAction[];
   keyCards: KeyCard[];
   analysis: string;
   boardStateSummary: string;
+  boardDiff?: BoardDiff;
+  openingEvaluation?: OpeningEvaluation;
   timestamp: string;
   version: string;
 };

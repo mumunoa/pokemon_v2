@@ -18,8 +18,7 @@ export const getEnergyIcon = (energyName: string) => {
 };
 
 const AttachedEnergyIcon: React.FC<{ energyId: string, zIndex: number }> = ({ energyId, zIndex }) => {
-    const { cards } = useGameStore();
-    const energyCard = cards[energyId];
+    const energyCard = useGameStore(s => s.cards[energyId]);
 
     const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
         id: energyId,
@@ -62,7 +61,8 @@ interface CardProps {
 }
 
 export const Card: React.FC<CardProps> = ({ card, style = {}, className = '', onClick, disableDrag = false, isOverlay = false, zoneName, forcedTransform }) => {
-    const { displayMode, coachResult } = useGameStore();
+    const displayMode = useGameStore(s => s.displayMode);
+    const coachResult = useGameStore(s => s.coachResult);
     const isKeyCard = coachResult?.keyCards?.some((k: any) => k.cardName === card.name) ?? false;
 
     const { attributes, listeners, setNodeRef: setDraggableRef, transform, isDragging } = useDraggable({

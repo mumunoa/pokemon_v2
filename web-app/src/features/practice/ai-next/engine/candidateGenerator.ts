@@ -1,231 +1,100 @@
 import type { ActionCandidate, BoardState, CardRoleProfile, DynamicRole } from "../domain/types";
 import type { BoardUrgencyProfile } from "./boardUrgency";
+import { buildTemplateCandidates } from "./candidateTemplates";
 
-type CardInstanceLike = {
-  instanceId?: string;
-  name: string;
-  type?: string;
-};
+type HandCardLike = { instanceId?: string; name: string };
 
-type DeckContext = {
-  archetype?: string;
-  preferredAttackers?: string[];
-};
-
-function createCandidate(
-  id: string,
-  cardName: string,
-  line: string,
-  tags: string[],
-  target: string | undefined,
-  estimatedPrizeSwing: number,
-  estimatedSetupGain: number,
-  estimatedStabilityGain: number,
-): ActionCandidate {
-  return {
-    id,
-    cardName,
-    line,
-    tags,
-    target,
-    estimatedPrizeSwing,
-    estimatedSetupGain,
-    estimatedStabilityGain,
-  };
-}
-
-function hasRole(profile: CardRoleProfile | undefined, role: string): boolean {
-  return !!profile?.staticRoles?.includes(role as never);
+function actionId(cardName: string, seed: string): string {
+  return `${cardName}:${seed}`;
 }
 
 export function buildActionCandidatesFromProfiles(
   board: BoardState,
-  handCards: CardInstanceLike[],
+  handCards: HandCardLike[],
   profiles: CardRoleProfile[],
   urgency: BoardUrgencyProfile,
-  deckContext: DeckContext,
 ): ActionCandidate[] {
-  const candidates: ActionCandidate[] = [];
+  const actions: ActionCandidate[] = [];
 
   for (const handCard of handCards) {
-    const profile = profiles.find((item) => item.cardName === handCard.name);
+    const profile = profiles.find((p) => p.cardName === handCard.name);
     if (!profile) continue;
 
-    if (hasRole(profile, "basic_search")) {
-      candidates.push(
-        createCandidate(
-          `${handCard.instanceId ?? handCard.name}-basic-setup`,
-          handCard.name,
-          "たねポケモンを確保してベンチを安定させる",
-          ["bench_setup", "search", "setup"],
-          undefined,
-          0,
-          urgency.needSetupNow >= 50 ? 3 : 2,
-          2,
-        ),
-      );
-    }
+    const templated = buildTemplateCandidates({ urgency, profile }).map((row, index) => ({
+      id: actionId(handCard.name, `${index}`),
+      cardName: handCard.name,
+      ...row,
+    }));
 
-    if (hasRole(profile, "evolution_search")) {
-      candidates.push(
-        createCandidate(
-          `${handCard.instanceId ?? handCard.name}-evo-line`,
-          handCard.name,
-          "進化ラインを揃えて次ターンの出力を確保する",
-          ["search", "evolution", "future_line"],
-          undefined,
-          0,
-          2,
-          2,
-        ),
-      );
-    }
+    actions.push(...templated);
 
-    if (hasRole(profile, "pokemon_search")) {
-      candidates.push(
-        createCandidate(
-          `${handCard.instanceId ?? handCard.name}-search-attacker`,
-          handCard.name,
-          "主力アタッカーかシステムポケモンを確保する",
-          ["search", "setup", "stabilize"],
-          undefined,
-          0,
-          2,
-          2,
-        ),
-      );
-    }
-
-    if (hasRole(profile, "draw") || hasRole(profile, "hand_refresh") || hasRole(profile, "topdeck_tutor")) {
-      candidates.push(
-        createCandidate(
-          `${handCard.instanceId ?? handCard.name}-draw-out`,
-          handCard.name,
-          "必要札へ到達するために手札を掘り進める",
-          ["draw", "search", "stabilize"],
-          undefined,
-          0,
-          urgency.needSetupNow >= 60 ? 1 : 0,
-          urgency.needDrawNow >= 60 ? 4 : 3,
-        ),
-      );
-    }
-
-    if (hasRole(profile, "switch") || hasRole(profile, "pivot")) {
-      candidates.push(
-        createCandidate(
-          `${handCard.instanceId ?? handCard.name}-switch-pivot`,
-          handCard.name,
-          "アクティブを入れ替えて攻撃役またはピボットへ繋ぐ",
-          ["switch", "tempo", "recover"],
-          undefined,
-          0,
-          1,
-          2,
-        ),
-      );
-    }
-
-    if (hasRole(profile, "gust")) {
+    if (profile.staticRoles.includes("gust" as never)) {
       for (const target of board.opponentBench) {
-        candidates.push(
-          createCandidate(
-            `${handCard.instanceId ?? handCard.name}-gust-${target.cardId}`,
-            handCard.name,
-            `${target.name} を呼び出して盤面を崩す`,
-            ["gust", "swing", "force_response"],
-            target.name,
-            target.isSystem ? 2 : 1,
-            0,
-            target.isSystem ? 2 : 1,
-          ),
-        );
+        actions.push({
+          id: actionId(handCard.name, `gust:${target.cardId}`),
+          cardName: handCard.name,
+          line: `${target.name} を呼び出して盤面を崩す`,
+          target: target.name,
+          tags: ["gust", "tempo", "force_response"],
+          estimatedPrizeSwing: target.isSystem ? 2 : 1,
+          estimatedSetupGain: 0,
+          estimatedStabilityGain: target.isSystem ? 2 : 1,
+        });
+      }
+      if (board.opponentActive) {
+        actions.push({
+          id: actionId(handCard.name, `gust-active-check`),
+          cardName: handCard.name,
+          line: "ボスを温存して次ターンの詰め札として構える",
+          target: undefined,
+          tags: ["future_line", "endgame"],
+          estimatedPrizeSwing: 0,
+          estimatedSetupGain: 0,
+          estimatedStabilityGain: 1,
+        });
       }
     }
 
-    if (hasRole(profile, "energy_accel") || hasRole(profile, "energy_recovery")) {
-      candidates.push(
-        createCandidate(
-          `${handCard.instanceId ?? handCard.name}-energy`,
-          handCard.name,
-          "エネルギー供給を進めて攻撃準備を整える",
-          ["energy", "setup", "future_line"],
-          undefined,
-          0,
-          2,
-          1,
-        ),
-      );
-    }
-
-    if (hasRole(profile, "resource_recovery") || hasRole(profile, "recovery")) {
-      candidates.push(
-        createCandidate(
-          `${handCard.instanceId ?? handCard.name}-recover-board`,
-          handCard.name,
-          "落ちた重要札や盤面を回復して立て直す",
-          ["rebuild", "recover", "stabilize"],
-          undefined,
-          0,
-          1,
-          2,
-        ),
-      );
-    }
-
-    if (hasRole(profile, "stadium_control") || hasRole(profile, "board_expansion")) {
-      candidates.push(
-        createCandidate(
-          `${handCard.instanceId ?? handCard.name}-stadium-control`,
-          handCard.name,
-          "スタジアムで盤面条件を有利に変える",
-          ["stadium", "force_response", "swing"],
-          undefined,
-          0,
-          2,
-          1,
-        ),
-      );
-    }
-
-    if (hasRole(profile, "stall") || hasRole(profile, "disrupt")) {
-      candidates.push(
-        createCandidate(
-          `${handCard.instanceId ?? handCard.name}-stall`,
-          handCard.name,
-          "相手のテンポを止めて育成ターンを稼ぐ",
-          ["stall", "force_response", "swing"],
-          undefined,
-          0,
-          1,
-          1,
-        ),
-      );
+    if (
+      profile.staticRoles.includes("damage_boost" as never) &&
+      board.opponentActive &&
+      ((board.opponentActive.hp ?? 999) - board.opponentActive.damage <= 240)
+    ) {
+      actions.push({
+        id: actionId(handCard.name, "damage-push"),
+        cardName: handCard.name,
+        line: "このターンの打点を伸ばしてサイドを先行する",
+        target: board.opponentActive.name,
+        tags: ["damage", "tempo", "endgame"],
+        estimatedPrizeSwing: 2,
+        estimatedSetupGain: 0,
+        estimatedStabilityGain: 0,
+      });
     }
   }
 
-  return candidates;
+  return actions;
 }
 
-export function inferDynamicRolesForCandidate(action: ActionCandidate, board: BoardState): DynamicRole[] {
+export function inferDynamicRoles(action: ActionCandidate, board: BoardState, urgency: BoardUrgencyProfile): DynamicRole[] {
   const roles: DynamicRole[] = [];
 
   if (action.tags.includes("gust")) {
-    if (action.target && board.opponentBench.some((card) => card.name === action.target && card.isSystem)) {
+    if (action.target && board.opponentBench.some((p) => p.name === action.target && p.isSystem)) {
       roles.push("system_snipe");
-    } else if (action.target && board.opponentBench.some((card) => card.name === action.target && (card.retreat ?? 0) >= 2)) {
+    } else if (action.target && board.opponentBench.some((p) => p.name === action.target && (p.retreat ?? 0) >= 2)) {
       roles.push("stall_trap");
     } else {
       roles.push("finisher_gust");
     }
   }
 
-  if (action.tags.includes("draw")) roles.push("desperate_draw");
+  if (action.tags.includes("draw") && urgency.needDrawNow >= 60) roles.push("desperate_draw");
   if (action.tags.includes("bench_setup")) roles.push("bench_fill_now", "setup_priority");
   if (action.tags.includes("switch")) roles.push("retreat_pivot");
   if (action.tags.includes("recover")) roles.push("recover_board");
+  if (action.tags.includes("tempo")) roles.push("swing_turn");
   if (action.tags.includes("force_response")) roles.push("force_response");
-  if (action.tags.includes("swing")) roles.push("swing_turn");
 
   return [...new Set(roles)];
 }

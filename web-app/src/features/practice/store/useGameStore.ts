@@ -4,16 +4,19 @@ import { buildAIInput } from '@/lib/ai/buildAIInput';
 import { supabase, createSupabaseClient } from '@/lib/supabase';
 import { generateGameStatusContext } from '@/lib/ai/promptGenerator';
 import { 
-    buildRecommendationEngine,
     createRoleProfile,
+    normalizeText,
     getSectionTexts,
-    resolveArchetypePreset 
+    resolveArchetypePreset,
+    buildRecommendationFromRoleComplete,
+    RoleProfileRepo
 } from '@/features/practice/ai-next';
 import type { 
     BoardState as AIBoardState, 
     ActionCandidate, 
     RecommendationResult,
-    BoardCardLite 
+    BoardCardLite,
+    CardRoleProfile 
 } from '@/features/practice/ai-next';
 
 // Helper to shuffle an array
@@ -848,29 +851,60 @@ export const useGameStore = create<GameState>((set, get) => ({
         const state = get();
         try {
             set({ coachLoading: true });
-            
-            // 盤面状態の正規化
+
             const board = toAIBoardState(state);
-            
-            // 手札カードのインスタンス
-            const p1Hand = (state.zones['player1-hand'] || []).map(id => state.cards[id]);
-            
-            // カードプロファイルの構築 (全カードを対象にするか手札のみにするかはエンジンに依存するが、ここでは全カードを渡す)
+            const p1Hand = (state.zones['player1-hand'] || []).map(id => state.cards[id]).filter(Boolean);
             const cards = Object.values(state.cards ?? {});
-            const profiles = cards.map((card: any) => createRoleProfile(card, getSectionTexts(card)));
             
-            // 新エンジンによるレコメンド生成
-            const result = buildRecommendationEngine({
-                board,
-                handCards: p1Hand,
-                profiles,
-                archetype: 'generic', // TODO: Archetype detection
+            // SupabaseからRoleProfileを取得 (Phase 5/Reinforcement)
+            if (!supabase) throw new Error('Supabase client not initialized');
+            const repo = new RoleProfileRepo(supabase);
+            const cardIds = [...new Set(cards.map(c => c.baseCardId))].filter(Boolean) as string[];
+            const cachedProfiles = await repo.findByCardIds(cardIds);
+            
+            // 不足分のみローカルで推論して補完
+            const profiles = cards.map((card: any) => {
+                const cached = cachedProfiles.find((p: CardRoleProfile) => p.cardId === card.baseCardId);
+                if (cached) return cached;
+                return createRoleProfile(card, getSectionTexts(card));
             });
 
-            set({ coachResult: result });
+            const handCards = p1Hand.map(c => ({ instanceId: c.instanceId, name: c.name }));
+            const archetype = 'generic';
+
+            // WebWorkerによる非同期解析 (Phase 4: ISSUE-017)
+            if (typeof Worker !== 'undefined') {
+                const worker = new Worker(new URL('../ai-next/engine/ai.worker.ts', import.meta.url));
+                
+                return new Promise<void>((resolve, reject) => {
+                    worker.onmessage = (event) => {
+                        if (event.data.type === 'SUCCESS') {
+                            set({ coachResult: event.data.result, coachLoading: false });
+                            worker.terminate();
+                            resolve();
+                        } else {
+                            console.error('Worker error:', event.data.error);
+                            worker.terminate();
+                            reject(event.data.error);
+                        }
+                    };
+                    worker.onerror = (err) => {
+                        console.error('Worker failed to load:', err);
+                        worker.terminate();
+                        // Fallback to sync
+                        const result = buildRecommendationFromRoleComplete({ board, handCards, profiles, archetype });
+                        set({ coachResult: result, coachLoading: false });
+                        resolve();
+                    };
+                    worker.postMessage({ board, handCards, profiles, archetype });
+                });
+            } else {
+                // Fallback for environments without Worker support
+                const result = buildRecommendationFromRoleComplete({ board, handCards, profiles, archetype });
+                set({ coachResult: result, coachLoading: false });
+            }
         } catch (e) {
             console.error('Coach analysis failed:', e);
-        } finally {
             set({ coachLoading: false });
         }
     },
@@ -1055,12 +1089,12 @@ export const useGameStore = create<GameState>((set, get) => ({
 const toAIBoardState = (state: GameState): AIBoardState => {
   const getZoneCards = (zone: ZoneType) => (state.zones[zone] || []).map(id => state.cards[id]);
 
-  const mapToLite = (cards: any[]): BoardCardLite[] => cards.map(card => ({
+  const mapToLite = (cards: any[]): BoardCardLite[] => cards.filter(Boolean).map(card => ({
       cardId: card.instanceId,
       name: card.name,
       damage: card.damage || 0,
-      hp: card.hp || null,
-      retreat: card.retreat ? parseInt(card.retreat) : null,
+      hp: Number(card.hp ?? 0) || null,
+      retreat: Number(card.retreat ?? 0) || null,
       energies: (card.attachedEnergyIds || []).length,
       isSystem: !!(card.ability && card.ability.length > 0),
       canAttack: !!(card.attacks && card.attacks.length > 0)
@@ -1086,22 +1120,24 @@ const toAIBoardState = (state: GameState): AIBoardState => {
   ];
   
   const p1Discard = getZoneCards('player1-trash');
+  const p2Discard = getZoneCards('player2-trash');
 
   return {
     turnCount: state.turnCount,
     turn: state.turnCount,
-    playerGoingFirst: true, // Simplified
+    playerGoingFirst: true, // 簡略化
     prizesTakenByPlayer: 6 - state.zones['player2-prizes'].length,
     prizesTakenByOpponent: 6 - state.zones['player1-prizes'].length,
-    hand: p1Hand.map(c => c.name),
+    hand: p1Hand.filter(Boolean).map(c => c.name),
     bench: mapToLite(p1Bench),
     active: p1Active ? mapToLite([p1Active])[0] : null,
     opponentBench: mapToLite(p2Bench),
     opponentActive: p2Active ? mapToLite([p2Active])[0] : null,
-    discard: p1Discard.map(c => c.name),
+    discard: p1Discard.filter(Boolean).map(c => c.name),
+    opponentDiscard: p2Discard.filter(Boolean).map(c => c.name),
     deckRemaining: state.zones['player1-deck'].length,
-    availableSupporter: true, // Simplified
-    availableEnergyAttachment: true, // Simplified
+    availableSupporter: true, // 簡略化
+    availableEnergyAttachment: true, // 簡略化
     knownOpponentSwitchOuts: 0
   };
 };

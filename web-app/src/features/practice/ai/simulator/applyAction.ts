@@ -76,7 +76,7 @@ export function applyAction(state: CanonicalGameState, action: ActionAtom): Cano
                         baseCardId: 'placeholder',
                         name: 'サーチされたポケモン',
                         type: 'pokemon',
-                        kinds: 'non_rule',
+                        kinds: 'basic',
                         superType: 'pokemon',
                         damage: 0,
                         hp: 100,
@@ -106,9 +106,23 @@ export function applyAction(state: CanonicalGameState, action: ActionAtom): Cano
                         baseCardId: 'placeholder',
                         name: 'ドローしたカード',
                         type: 'item',
-                        kinds: 'non_rule',
+                        kinds: 'basic',
                         superType: 'item'
                     });
+                }
+            }
+            break;
+        }
+
+        case 'PLAY_TOOL': {
+            const cardIndex = self.hand.findIndex(c => c.instanceId === action.cardId);
+            if (cardIndex !== -1) {
+                const toolCard = self.hand.splice(cardIndex, 1)[0];
+                const targets = [self.active, ...self.bench];
+                const target = targets.find(p => p?.instanceId === action.toPokemonId);
+                if (target) {
+                    // ここでは簡易的にどうぐ装着後の状態を管理していないため、トラッシュのみシミュレーション
+                    self.discard.push(toolCard);
                 }
             }
             break;

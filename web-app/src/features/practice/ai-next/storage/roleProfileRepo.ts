@@ -34,6 +34,67 @@ export class RoleProfileRepo {
     if (error) throw error;
   }
 
+  async upsertMany(profiles: CardRoleProfile[]) {
+    if (profiles.length === 0) return;
+    
+    const { error } = await this.supabase
+      .from('card_role_profiles')
+      .upsert(
+        profiles.map(p => ({
+          card_id: p.cardId,
+          card_name: p.cardName,
+          static_roles: p.staticRoles,
+          deck_roles: p.deckRoles || [],
+          dynamic_roles: p.dynamicRoles || [],
+          key_score: p.keyScore,
+          labels: p.labels,
+          reasons: p.reasons,
+          confidence: p.confidence,
+          evidence: p.evidence,
+          inferred_at: p.inferredAt,
+          version: p.version,
+        })),
+        { onConflict: 'card_id,version' }
+      );
+
+    if (error) throw error;
+  }
+
+  async findByCardIds(cardIds: string[]): Promise<CardRoleProfile[]> {
+    if (cardIds.length === 0) return [];
+
+    const { data, error } = await this.supabase
+      .from('card_role_profiles')
+      .select('*')
+      .in('card_id', cardIds)
+      .order('inferred_at', { ascending: false });
+
+    if (error || !data) return [];
+
+    // 重複を排除（同じ card_id があれば最新のもののみ採用）
+    const uniqueMap = new Map<string, any>();
+    for (const item of data) {
+      if (!uniqueMap.has(item.card_id)) {
+        uniqueMap.set(item.card_id, item);
+      }
+    }
+
+    return Array.from(uniqueMap.values()).map(item => ({
+      cardId: item.card_id,
+      cardName: item.card_name,
+      staticRoles: item.static_roles,
+      deckRoles: item.deck_roles,
+      dynamicRoles: item.dynamic_roles,
+      keyScore: item.key_score,
+      labels: item.labels,
+      reasons: item.reasons,
+      confidence: item.confidence,
+      evidence: item.evidence,
+      inferredAt: item.inferred_at,
+      version: item.version,
+    }));
+  }
+
   async findByCardId(cardId: string, version: string = 'latest'): Promise<CardRoleProfile | null> {
     const query = this.supabase
       .from('card_role_profiles')

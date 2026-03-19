@@ -11,6 +11,7 @@ export type ActionAtom =
   | { type: 'RETREAT'; fromId: string; toId: string }
   | { type: 'USE_ABILITY'; sourceId: string; abilityId: string; target?: string }
   | { type: 'ATTACK'; attackId: string; target?: string }
+  | { type: 'PLAY_TOOL'; cardId: string; toPokemonId: string }
   | { type: 'PASS' };
 
 /**
