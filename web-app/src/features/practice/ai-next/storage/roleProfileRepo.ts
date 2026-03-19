@@ -29,7 +29,7 @@ export class RoleProfileRepo {
         evidence: profile.evidence,
         inferred_at: profile.inferredAt,
         version: profile.version,
-      }, { onConflict: 'card_id,version' });
+      }, { onConflict: 'card_id' });
 
     if (error) throw error;
   }
@@ -54,7 +54,7 @@ export class RoleProfileRepo {
           inferred_at: p.inferredAt,
           version: p.version,
         })),
-        { onConflict: 'card_id,version' }
+        { onConflict: 'card_id' }
       );
 
     if (error) throw error;

@@ -31,6 +31,7 @@ type CardLike = {
   kinds?: string;
   hp?: string | number;
   retreat?: string | number;
+  evolvesTo?: string[];
 };
 
 type RescueRule = {
@@ -278,6 +279,10 @@ function inferPrimitivesFromText(
   ) {
     addPrimitive(primitives, primitiveEvidence, "spread_damage", source, text, "全体・複数面への干渉。", 0.95);
   }
+  
+  if (includesAny(normalized, ["サイドを", "多くとる", "サイドを1枚多く", "サイドを2枚多く"])) {
+    addPrimitive(primitives, primitiveEvidence, "prize_swing", source, text, "サイド追加取得効果。", 0.99);
+  }
 
   if (
     includesAny(normalized, ["相手のベンチポケモン", "ベンチポケモン1匹", "ベンチポケモンを1匹"]) &&
@@ -396,6 +401,10 @@ function mapPrimitivesToRoles(
   if (primitives.includes("evolution_cheat")) add("setup_cheat", "通常進行より早い進化。", 0.99);
   if (primitives.includes("bench_expand")) add("board_expansion", "盤面枠を広げる。", 0.99);
   if (primitives.includes("bench_expand") || primitives.includes("increase_retreat_cost")) add("stadium_control", "スタジアム由来の盤面制御。", 0.84);
+
+  if (primitives.includes("prize_swing")) {
+    add("main_attacker", "サイドレースを有利にする強力なアタッカー。", 0.95);
+  }
 
   const consistencyPrimitives: EffectPrimitive[] = [
     "search_deck_to_hand",
@@ -612,6 +621,19 @@ export function createRoleProfile(card: CardLike, sections: SectionInferenceInpu
     if (retreatValue !== null && retreatValue <= 1) {
       addRole(allRoles, allEvidence, "pivot", "heuristic", `retreat=${retreatValue}`, "にげるエネルギーが軽く、ピボット適性が高い。", 0.88);
     }
+  }
+
+  // 進化先の重要度（ドラパルトex等）を考慮した重み付け (ISSUE-011強化)
+  const masterEvolutionMeta = ["ドラパルトex", "リザードンex", "ルギアVSTAR", "サーナイトex", "パオジアンex"];
+  if (card.evolvesTo?.some(e => masterEvolutionMeta.includes(e))) {
+    addRole(allRoles, allEvidence, "consistency", "meta_evolution", "トップティアへの進化。", "強力なアタッカーへの進化元として重要度が極めて高い。", 0.99);
+    addRole(allRoles, allEvidence, "bench_setup", "meta_evolution", "トップティアへの進化。", "優先的にベンチに用意すべき進化元。", 0.9);
+  }
+  
+  // 高打点・高HPアタッカー判定
+  const hpValue = typeof card.hp === 'number' ? card.hp : parseInt(String(card.hp || '0'));
+  if (hpValue >= 280 || (hpValue >= 200 && (card.kinds?.includes('ex') || card.kinds?.includes('has_rule')))) {
+    addRole(allRoles, allEvidence, "main_attacker", "attribute", `hp=${hpValue}`, "高いHP・耐久性能を持つメインアタッカー候補。", 0.85);
   }
 
   const mergedText = sections.map((section) => section.text ?? "").join("\n");

@@ -96,7 +96,9 @@ export type RoleEvidenceSource =
   | 'attack'
   | 'energy'
   | 'manual'
-  | 'heuristic';
+  | 'heuristic'
+  | 'meta_evolution'
+  | 'attribute';
 
 export type EffectPrimitive =
   | 'search_deck_to_hand'
@@ -134,6 +136,7 @@ export type EffectPrimitive =
   | 'bench_fill'
   | 'evolution_cheat'
   | 'deck_fixing'
+  | 'prize_swing'
   | 'resource_loop'
   | 'energy_denial'
   | 'coin_flip_conditional';
