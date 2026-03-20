@@ -4,6 +4,9 @@ import { CardKind } from '@/types/game';
 // The URL structure for official Pokemon card decks in Japan
 const POKEMON_DECK_URL = 'https://www.pokemon-card.com/deck/confirm.html/deckID';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const deckCode = searchParams.get('code');
