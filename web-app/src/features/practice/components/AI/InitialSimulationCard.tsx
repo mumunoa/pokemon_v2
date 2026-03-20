@@ -94,17 +94,35 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType }) => {
 
                     {/* Interpretation */}
                     <div className="bg-slate-950/40 rounded-xl p-4 border border-slate-800">
-                        <h4 className="text-indigo-300 text-[10px] font-black uppercase mb-2 italic">
-                            {summary.interpretation.headline}
-                        </h4>
-                        <ul className="space-y-1">
-                            {summary.interpretation.summaryLines.map((line, i) => (
-                                <li key={i} className="text-slate-300 text-[10px] leading-relaxed flex gap-2">
-                                    <span className="text-indigo-500">•</span>
-                                    {line}
-                                </li>
-                            ))}
-                        </ul>
+                        {summary.advancedAdvice ? (
+                            <>
+                                <h4 className="text-indigo-300 text-[11px] font-black uppercase mb-3 leading-relaxed">
+                                    {summary.advancedAdvice.overallComment}
+                                </h4>
+                                <ul className="space-y-1.5">
+                                    {summary.advancedAdvice.summaryLines.map((line: string, i: number) => (
+                                        <li key={i} className="text-slate-300 text-[10px] leading-relaxed flex gap-2 items-start">
+                                            <span className="text-indigo-500 mt-0.5">•</span>
+                                            <span>{line}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </>
+                        ) : (
+                            <>
+                                <h4 className="text-indigo-300 text-[10px] font-black uppercase mb-2 italic">
+                                    {summary.interpretation.headline}
+                                </h4>
+                                <ul className="space-y-1">
+                                    {summary.interpretation.summaryLines.map((line, i) => (
+                                        <li key={i} className="text-slate-300 text-[10px] leading-relaxed flex gap-2">
+                                            <span className="text-indigo-500">•</span>
+                                            {line}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </>
+                        )}
                     </div>
 
                     {/* Basic Pokemon Hit Rates */}
@@ -156,20 +174,59 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType }) => {
                             <h4 className="text-white text-xs font-bold flex items-center gap-2">
                                 <span className="text-lg">💡</span> デッキ改善のヒント
                             </h4>
-                            {summary.suggestions.map((s, i) => (
-                                <div key={i} className="bg-gradient-to-r from-purple-900/20 to-indigo-900/20 border border-purple-500/30 rounded-xl p-4">
-                                    <p className="text-slate-200 text-xs mb-3 leading-relaxed">
-                                        {s.reason}
-                                    </p>
-                                    <div className="flex items-center gap-2 text-[10px] font-black">
-                                        <span className="text-red-400 bg-red-400/10 px-2 py-0.5 rounded">OUT</span>
-                                        <span className="text-slate-400">{s.outCards[0].cardName}</span>
-                                        <span className="text-indigo-400">→</span>
-                                        <span className="text-green-400 bg-green-400/10 px-2 py-0.5 rounded">IN</span>
-                                        <span className="text-slate-200">{s.inCards[0].cardName}</span>
+                            {summary.advancedAdvice && summary.advancedAdvice.suggestions && summary.advancedAdvice.suggestions.length > 0 ? (
+                                summary.advancedAdvice.suggestions.map((s: any, i: number) => (
+                                    <div key={i} className="bg-gradient-to-r from-purple-900/20 to-indigo-900/20 border border-purple-500/30 rounded-xl p-4">
+                                        <h5 className="text-purple-300 text-xs font-bold mb-2 pb-2 border-b border-purple-500/20">{s.title}</h5>
+                                        <p className="text-slate-300 text-[10px] mb-2 leading-relaxed">
+                                            <span className="text-indigo-400 font-bold mr-1">【診断】</span>{s.diagnosis}
+                                        </p>
+                                        <p className="text-slate-300 text-[10px] mb-2 leading-relaxed">
+                                            <span className="text-red-400 font-bold mr-1">【影響】</span>{s.whyItHurts}
+                                        </p>
+                                        <p className="text-slate-200 text-[10px] font-bold mb-3 leading-relaxed">
+                                            <span className="text-green-400 font-bold mr-1">【方針】</span>{s.action}
+                                        </p>
+                                        {s.candidateCards && s.candidateCards.length > 0 && (
+                                            <div className="mb-2">
+                                                <span className="text-slate-400 text-[10px] block mb-1">おすすめ候補カード (Standard):</span>
+                                                <div className="flex flex-wrap gap-1">
+                                                    {s.candidateCards.map((c: any, ci: number) => (
+                                                        <span key={ci} className="bg-indigo-900/50 text-indigo-200 text-[9px] px-2 py-0.5 rounded border border-indigo-500/30">
+                                                            {c.name}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {s.cutGuidance && s.cutGuidance.length > 0 && (
+                                            <div>
+                                                <span className="text-slate-400 text-[10px] block mb-1">抜き候補の目安:</span>
+                                                <ul className="list-disc pl-4 text-slate-500 text-[9px]">
+                                                    {s.cutGuidance.map((c: string, ci: number) => (
+                                                        <li key={ci}>{c}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
                                     </div>
-                                </div>
-                            ))}
+                                ))
+                            ) : (
+                                summary.suggestions.map((s, i) => (
+                                    <div key={i} className="bg-gradient-to-r from-purple-900/20 to-indigo-900/20 border border-purple-500/30 rounded-xl p-4">
+                                        <p className="text-slate-200 text-xs mb-3 leading-relaxed">
+                                            {s.reason}
+                                        </p>
+                                        <div className="flex items-center gap-2 text-[10px] font-black">
+                                            <span className="text-red-400 bg-red-400/10 px-2 py-0.5 rounded">OUT</span>
+                                            <span className="text-slate-400">{s.outCards[0].cardName}</span>
+                                            <span className="text-indigo-400">→</span>
+                                            <span className="text-green-400 bg-green-400/10 px-2 py-0.5 rounded">IN</span>
+                                            <span className="text-slate-200">{s.inCards[0].cardName}</span>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     ) : (
                         <div className="bg-slate-950/80 backdrop-blur-sm rounded-xl p-4 border border-slate-800 flex flex-col items-center gap-3">

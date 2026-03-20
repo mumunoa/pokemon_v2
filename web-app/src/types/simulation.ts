@@ -160,6 +160,7 @@ export type InitialSimulationSummary = {
     warnings: string[]
   }
   basicPokemonHitRates: { cardName: string, count: number, rate: number }[]
+  advancedAdvice?: any // Populated by DeckAdviceEngine
 }
 
 export type InitialSimulationRequest = {

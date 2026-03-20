@@ -131,12 +131,19 @@ export async function GET(request: Request) {
         // 3. Enrich with Supabase data
         const uniqueIds = Array.from(new Set(deckList.map(c => c.id)));
         const { supabase } = await import('@/lib/supabase');
+        let supabaseDebug = { queried: false, error: null as string | null, resultCount: 0 };
         
         if (supabase && uniqueIds.length > 0) {
+            supabaseDebug.queried = true;
             const { data: dbCards, error: dbError } = await supabase
                 .from('cards')
                 .select('*')
                 .in('id', uniqueIds);
+
+            supabaseDebug.error = dbError ? dbError.message : null;
+            supabaseDebug.resultCount = dbCards ? dbCards.length : 0;
+            console.log(`[Deck Route Debug] Querying Supabase IDs:`, uniqueIds.slice(0, 5), `... (${uniqueIds.length} total)`);
+            console.log(`[Deck Route Debug] Supabase Result: Count=${supabaseDebug.resultCount}, Error=${supabaseDebug.error}`);
 
             if (!dbError && dbCards) {
                 // Map DB data back to the deck list
@@ -189,7 +196,8 @@ export async function GET(request: Request) {
         return NextResponse.json({
             deckCode,
             totalCards: deckList.reduce((sum, card) => sum + card.count, 0),
-            cards: deckList
+            cards: deckList,
+            supabaseDebug
         });
 
     } catch (error: any) {

@@ -9,6 +9,8 @@ import { SimulationStatsAggregator } from '@/lib/simulation/analysis/SimulationS
 import { DeckImprovementAdvisor } from '@/lib/simulation/analysis/DeckImprovementAdvisor';
 import { createSupabaseClient } from '@/lib/supabase';
 import { ArchetypePresetCatalog } from '@/lib/simulation/catalog/ArchetypePresetCatalog';
+import { generateDeckAdvice, registerAdviceSupabaseClient } from '@/lib/simulation/analysis/DeckAdviceEngine';
+import { createClient } from '@supabase/supabase-js';
 
 export async function POST(req: NextRequest) {
     try {
@@ -58,8 +60,51 @@ export async function POST(req: NextRequest) {
         const aggregator = new SimulationStatsAggregator();
         const summary = aggregator.aggregate(logs, archetype, setupConfig, body.perspective || 'first');
 
+
         const advisor = new DeckImprovementAdvisor();
         summary.suggestions = advisor.generateSuggestions(summary.failureBreakdown, logs);
+
+        // 新アドバイスエンジンのセットアップと呼び出し
+        if (planType !== 'free') {
+            const adminSupabase = createClient(
+                process.env.NEXT_PUBLIC_SUPABASE_URL || '', 
+                process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+            );
+            registerAdviceSupabaseClient(() => adminSupabase as any);
+
+            // SimulationSummaryの失敗集計を渡す
+            const failRate = (type: string) => (summary.failureBreakdown.find(f => f.type === type)?.count || 0) / summary.totalTrials;
+
+            const advancedAdvice = await generateDeckAdvice({
+                deckCards: body.deck.map((c: any) => ({
+                    cardId: c.id,
+                    name: c.name,
+                    count: c.count,
+                    supertype: c.type as 'pokemon' | 'trainer' | 'energy',
+                    subtype: c.kinds,
+                    stage: c.kinds === 'basic' ? 'basic' : (c.kinds === 'stage1' ? 'stage1' : (c.kinds === 'stage2' ? 'stage2' : undefined)),
+                    regulation: c.regulation,
+                    roles: c.roles || []
+                })),
+                simulation: {
+                    totalTrials: summary.totalTrials,
+                    seedRate: summary.seedRate.rate,
+                    setupSuccessRate: summary.setupRate.rate,
+                    supportAccessRate: summary.supporterRate.rate,
+                    energyAccessRate: summary.energyRate.rate,
+                    noSeedStartRate: failRate('NO_BASIC') + failRate('LOW_BASIC_DENSITY'),
+                    noSupportByTurn2Rate: failRate('NO_SUPPORTER'),
+                    noEnergyByTurn2Rate: failRate('NO_ENERGY'),
+                    noBench2ByTurn2Rate: failRate('NO_BENCH_SETUP'),
+                    noAttackerReadyByTurn2Rate: failRate('NO_MAIN_ATTACKER'),
+                    noEvolutionReadyByTurn2Rate: failRate('NO_EVOLUTION_LINE'),
+                    brickedStartRate: failRate('HAND_BRICK'),
+                },
+                includeDebug: true
+            });
+
+            summary.advancedAdvice = advancedAdvice;
+        }
 
         // プランに応じた情報制限
         if (planType === 'free') {
