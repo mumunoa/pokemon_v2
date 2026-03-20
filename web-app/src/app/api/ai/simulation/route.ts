@@ -13,6 +13,14 @@ import { ArchetypePresetCatalog } from '@/lib/simulation/catalog/ArchetypePreset
 export async function POST(req: NextRequest) {
     try {
         const body: InitialSimulationRequest = await req.json();
+
+        // [デバッグ用] 60枚のカード情報をコンソールに出力 (name, type, kinds, id などを確認するため)
+        console.log("=== [DEBUG] 60枚のデッキカード情報 ===");
+        body.deck.forEach((card, i) => {
+            console.log(`[${i + 1}] ID:${card.id} | Name: ${card.name} | Type: ${card.type} | Kinds: ${card.kinds} | Count: ${card.count}`);
+        });
+        console.log("======================================");
+
         const { userId } = getAuth(req);
 
         // プラン情報の取得

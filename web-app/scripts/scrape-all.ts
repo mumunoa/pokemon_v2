@@ -236,12 +236,12 @@ async function scrapeCategory(series: string, maxPage: number) {
 
   for (let i = 0; i < cardIds.length; i++) {
     const cardID = cardIds[i];
-    const url = `${DETAIL_BASE_URL}/card-search/details.php/card/${cardID}/regu/XY`;
+    const url = `${DETAIL_BASE_URL}/card-search/details.php/card/${cardID}/regu/all`;
     process.stdout.write(`[${series}] Scraping ${i + 1}/${cardIds.length} (ID:${cardID})...\r`);
 
     const html = await fetchHTML(url);
     if (!html) {
-      process.stdout.write(`\n[ID:${cardID}] Failed to fetch HTML\n`);
+      process.stdout.write(`\n[ID:${cardID}] [url:${url}]Failed to fetch HTML\n`);
       continue;
     }
 
@@ -266,20 +266,50 @@ async function scrapeCategory(series: string, maxPage: number) {
 async function main() {
   const args = process.argv.slice(2);
   const params: { [key: string]: number } = { pokemon: 0, trainer: 0, energy: 0 };
+  let targetId = '';
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--pokemon') params.pokemon = parseInt(args[++i]);
     if (args[i] === '--trainer') params.trainer = parseInt(args[++i]);
     if (args[i] === '--energy') params.energy = parseInt(args[++i]);
+    if (args[i] === '--id') targetId = args[++i];
   }
 
-  if (params.pokemon === 0 && params.trainer === 0 && params.energy === 0) {
-    console.log('Usage: npx tsx scripts/scrape-all.ts --pokemon <pages> --trainer <pages> --energy <pages>');
+  if (params.pokemon === 0 && params.trainer === 0 && params.energy === 0 && !targetId) {
+    console.log('Usage: npx tsx scripts/scrape-all.ts [--pokemon <pages> | --trainer <pages> | --energy <pages> | --id <cardID>]');
     return;
   }
 
   const startTime = new Date().toISOString();
   console.log(`\nStarting process at: ${startTime}`);
+
+  // --id が指定されている場合の単体・複数更新
+  if (targetId) {
+    const targetIds = targetId.split(',').map(id => id.trim()).filter(id => id);
+    console.log(`\n--- Processing Card Update (${targetIds.length} cards) ---`);
+
+    for (const id of targetIds) {
+      const url = `${DETAIL_BASE_URL}/card-search/details.php/card/${id}/regu/all`;
+      const html = await fetchHTML(url);
+      if (!html) {
+        console.error(`[ID:${id}] [url:${url}]Failed to fetch HTML`);
+      } else {
+        const cardData = parseCardDetail(html, id);
+        if (cardData) {
+          const { error } = await supabase.from('cards').upsert(cardData, { onConflict: 'id' });
+          if (error) console.error(`[ID:${id}] Upsert failed: ${error.message}`);
+          else console.log(`[ID:${id}] Successfully updated as standard.`);
+        } else {
+          console.error(`[ID:${id}] Parse Error`);
+        }
+      }
+      await sleep(700); // サーバー負荷軽減
+    }
+
+    // --id 指定時は、他のカードを extra にする一括更新は行わない
+    console.log('\nID update completed. Skipping "extra" status synchronization.');
+    return;
+  }
 
   const activeCategories: string[] = [];
   if (params.pokemon > 0) {
