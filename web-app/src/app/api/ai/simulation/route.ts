@@ -72,20 +72,41 @@ export async function POST(req: NextRequest) {
             );
             registerAdviceSupabaseClient(() => adminSupabase as any);
 
+            // ① クライアントの古いキャッシュに依存しないよう、ここで全カードの最新 role_profiles を引き直す
+            const uniqueIds = Array.from(new Set(body.deck.map(c => c.id)));
+            const { data: dbRoleProfiles } = await adminSupabase
+                .from('card_role_profiles')
+                .select('card_id, static_roles')
+                .in('card_id', uniqueIds);
+
+            const roleMap: Record<string, string[]> = {};
+            if (dbRoleProfiles) {
+                dbRoleProfiles.forEach((rp: any) => {
+                    roleMap[rp.card_id] = rp.static_roles || [];
+                });
+            }
+
             // SimulationSummaryの失敗集計を渡す
             const failRate = (type: string) => (summary.failureBreakdown.find(f => f.type === type)?.count || 0) / summary.totalTrials;
 
+            const { autoInferRoles } = await import('@/lib/simulation/analysis/DeckAdviceEngine');
             const advancedAdvice = await generateDeckAdvice({
-                deckCards: body.deck.map((c: any) => ({
-                    cardId: c.id,
-                    name: c.name,
-                    count: c.count,
-                    supertype: c.type as 'pokemon' | 'trainer' | 'energy',
-                    subtype: c.kinds,
-                    stage: c.kinds === 'basic' ? 'basic' : (c.kinds === 'stage1' ? 'stage1' : (c.kinds === 'stage2' ? 'stage2' : undefined)),
-                    regulation: c.regulation,
-                    roles: c.roles || []
-                })),
+                deckCards: body.deck.map((c: any) => {
+                    // DBにあればそれを使う。なければ自動推論
+                    const dbRoles = roleMap[c.id];
+                    let finalRoles = (dbRoles && dbRoles.length > 0) ? dbRoles : autoInferRoles(c);
+                    
+                    return {
+                        cardId: c.id,
+                        name: c.name,
+                        count: c.count,
+                        supertype: c.type as 'pokemon' | 'trainer' | 'energy',
+                        subtype: c.kinds,
+                        stage: c.kinds === 'basic' ? 'basic' : (c.kinds === 'stage1' ? 'stage1' : (c.kinds === 'stage2' ? 'stage2' : undefined)),
+                        regulation: c.regulation,
+                        roles: finalRoles as any
+                    };
+                }),
                 simulation: {
                     totalTrials: summary.totalTrials,
                     seedRate: summary.seedRate.rate,

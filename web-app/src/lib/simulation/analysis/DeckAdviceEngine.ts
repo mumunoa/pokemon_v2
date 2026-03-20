@@ -36,7 +36,11 @@ export type CardRole =
   | 'stadium'
   | 'basic_energy'
   | 'special_energy'
-  | 'ace_spec';
+  | 'ace_spec'
+  | 'basic_pokemon' | 'main_attacker_basic' | 'main_attacker_stage1' | 'main_attacker_stage2'
+  | 'support_pokemon' | 'consistency' | 'draw' | 'hand_refresh' | 'supporter_search' 
+  | 'gust' | 'search' | 'evolution_search' | 'pokemon_search' | 'basic_search' 
+  | 'bench_setup' | 'switch' | 'pivot' | 'energy_search' | 'energy_recovery' | 'resource_recovery';
 
 export type DeckArchetype =
   | 'basic_aggro'
@@ -207,114 +211,188 @@ export type SupabaseCardRow = {
 
 const ARCHETYPE_PRESETS: Record<DeckArchetype, ArchetypeThresholdPreset> = {
   basic_aggro: {
-    seedRate: { good: 0.91, caution: 0.87 },
-    setupSuccessRate: { good: 0.74, caution: 0.66 },
-    supportAccessRate: { good: 0.84, caution: 0.78 },
-    energyAccessRate: { good: 0.78, caution: 0.68 },
-    minPokemonCount: 14,
+    seedRate: { good: 0.88, caution: 0.80 },
+    setupSuccessRate: { good: 0.70, caution: 0.60 },
+    supportAccessRate: { good: 0.80, caution: 0.70 },
+    energyAccessRate: { good: 0.75, caution: 0.65 },
+    minPokemonCount: 10,
     maxPokemonCount: 18,
-    minSupportCount: 8,
-    maxSupportCount: 10,
-    minDrawSupportCount: 5,
+    minSupportCount: 7,
+    maxSupportCount: 11,
+    minDrawSupportCount: 3,
     maxDrawSupportCount: 7,
-    minGoodsCount: 18,
-    maxGoodsCount: 24,
-    minSearchItemCount: 11,
-    maxSearchItemCount: 15,
-    minEnergyCount: 8,
-    maxEnergyCount: 12,
+    minGoodsCount: 15,
+    maxGoodsCount: 26,
+    minSearchItemCount: 6,
+    maxSearchItemCount: 14,
+    minEnergyCount: 7,
+    maxEnergyCount: 14,
   },
   stage1_main: {
-    seedRate: { good: 0.9, caution: 0.86 },
-    setupSuccessRate: { good: 0.72, caution: 0.64 },
-    supportAccessRate: { good: 0.85, caution: 0.78 },
-    energyAccessRate: { good: 0.76, caution: 0.66 },
-    minPokemonCount: 15,
-    maxPokemonCount: 19,
-    minSupportCount: 8,
+    seedRate: { good: 0.85, caution: 0.75 },
+    setupSuccessRate: { good: 0.65, caution: 0.55 },
+    supportAccessRate: { good: 0.80, caution: 0.70 },
+    energyAccessRate: { good: 0.70, caution: 0.60 },
+    minPokemonCount: 12,
+    maxPokemonCount: 20,
+    minSupportCount: 7,
     maxSupportCount: 11,
-    minDrawSupportCount: 5,
+    minDrawSupportCount: 3,
     maxDrawSupportCount: 7,
-    minGoodsCount: 16,
-    maxGoodsCount: 22,
-    minSearchItemCount: 10,
+    minGoodsCount: 15,
+    maxGoodsCount: 24,
+    minSearchItemCount: 6,
     maxSearchItemCount: 14,
-    minEnergyCount: 8,
+    minEnergyCount: 6,
     maxEnergyCount: 13,
   },
   stage2_main: {
-    seedRate: { good: 0.89, caution: 0.84 },
-    setupSuccessRate: { good: 0.68, caution: 0.6 },
-    supportAccessRate: { good: 0.85, caution: 0.79 },
-    energyAccessRate: { good: 0.75, caution: 0.65 },
-    minPokemonCount: 16,
-    maxPokemonCount: 20,
-    minSupportCount: 8,
+    seedRate: { good: 0.85, caution: 0.75 },
+    setupSuccessRate: { good: 0.60, caution: 0.50 },
+    supportAccessRate: { good: 0.80, caution: 0.70 },
+    energyAccessRate: { good: 0.70, caution: 0.60 },
+    minPokemonCount: 14,
+    maxPokemonCount: 22,
+    minSupportCount: 7,
     maxSupportCount: 11,
-    minDrawSupportCount: 5,
+    minDrawSupportCount: 3,
     maxDrawSupportCount: 7,
     minGoodsCount: 15,
-    maxGoodsCount: 21,
-    minSearchItemCount: 9,
-    maxSearchItemCount: 13,
-    minEnergyCount: 8,
-    maxEnergyCount: 14,
-  },
-  toolbox: {
-    seedRate: { good: 0.9, caution: 0.85 },
-    setupSuccessRate: { good: 0.71, caution: 0.63 },
-    supportAccessRate: { good: 0.84, caution: 0.77 },
-    energyAccessRate: { good: 0.76, caution: 0.66 },
-    minPokemonCount: 15,
-    maxPokemonCount: 19,
-    minSupportCount: 8,
-    maxSupportCount: 11,
-    minDrawSupportCount: 5,
-    maxDrawSupportCount: 7,
-    minGoodsCount: 16,
-    maxGoodsCount: 22,
-    minSearchItemCount: 10,
+    maxGoodsCount: 25,
+    minSearchItemCount: 6,
     maxSearchItemCount: 14,
-    minEnergyCount: 8,
-    maxEnergyCount: 13,
-  },
-  control: {
-    seedRate: { good: 0.9, caution: 0.85 },
-    setupSuccessRate: { good: 0.67, caution: 0.58 },
-    supportAccessRate: { good: 0.86, caution: 0.8 },
-    energyAccessRate: { good: 0.72, caution: 0.62 },
-    minPokemonCount: 13,
-    maxPokemonCount: 18,
-    minSupportCount: 9,
-    maxSupportCount: 12,
-    minDrawSupportCount: 5,
-    maxDrawSupportCount: 8,
-    minGoodsCount: 16,
-    maxGoodsCount: 24,
-    minSearchItemCount: 9,
-    maxSearchItemCount: 13,
     minEnergyCount: 6,
     maxEnergyCount: 12,
   },
-  unknown: {
-    seedRate: { good: 0.9, caution: 0.85 },
-    setupSuccessRate: { good: 0.7, caution: 0.6 },
-    supportAccessRate: { good: 0.85, caution: 0.78 },
-    energyAccessRate: { good: 0.75, caution: 0.65 },
-    minPokemonCount: 14,
-    maxPokemonCount: 18,
-    minSupportCount: 8,
+  toolbox: {
+    seedRate: { good: 0.85, caution: 0.75 },
+    setupSuccessRate: { good: 0.65, caution: 0.55 },
+    supportAccessRate: { good: 0.80, caution: 0.70 },
+    energyAccessRate: { good: 0.70, caution: 0.60 },
+    minPokemonCount: 12,
+    maxPokemonCount: 20,
+    minSupportCount: 7,
     maxSupportCount: 11,
-    minDrawSupportCount: 5,
+    minDrawSupportCount: 3,
     maxDrawSupportCount: 7,
-    minGoodsCount: 16,
-    maxGoodsCount: 22,
-    minSearchItemCount: 10,
+    minGoodsCount: 15,
+    maxGoodsCount: 25,
+    minSearchItemCount: 6,
     maxSearchItemCount: 14,
-    minEnergyCount: 8,
+    minEnergyCount: 6,
+    maxEnergyCount: 13,
+  },
+  control: {
+    seedRate: { good: 0.85, caution: 0.78 },
+    setupSuccessRate: { good: 0.60, caution: 0.50 },
+    supportAccessRate: { good: 0.85, caution: 0.75 },
+    energyAccessRate: { good: 0.60, caution: 0.50 },
+    minPokemonCount: 8,
+    maxPokemonCount: 16,
+    minSupportCount: 8,
+    maxSupportCount: 14,
+    minDrawSupportCount: 3,
+    maxDrawSupportCount: 8,
+    minGoodsCount: 18,
+    maxGoodsCount: 28,
+    minSearchItemCount: 4,
+    maxSearchItemCount: 12,
+    minEnergyCount: 4,
+    maxEnergyCount: 10,
+  },
+  unknown: {
+    seedRate: { good: 0.85, caution: 0.75 },
+    setupSuccessRate: { good: 0.65, caution: 0.55 },
+    supportAccessRate: { good: 0.80, caution: 0.70 },
+    energyAccessRate: { good: 0.70, caution: 0.60 },
+    minPokemonCount: 10,
+    maxPokemonCount: 20,
+    minSupportCount: 7,
+    maxSupportCount: 12,
+    minDrawSupportCount: 3,
+    maxDrawSupportCount: 8,
+    minGoodsCount: 15,
+    maxGoodsCount: 26,
+    minSearchItemCount: 4,
+    maxSearchItemCount: 14,
+    minEnergyCount: 6,
     maxEnergyCount: 14,
   },
 };
+
+// -------------------------------
+// 自動役割付与 (ヒューリスティクス)
+// -------------------------------
+export function autoInferRoles(card: any): CardRole[] {
+    const roles: CardRole[] = [];
+    const name = card.name || '';
+    const supertype = card.supertype || card.type || '';
+    const subtype = card.subtype || card.kinds || '';
+
+    // ポケモン
+    if (supertype === 'pokemon') {
+        if (card.stage === 'basic' || subtype === 'basic') roles.push('seed_pokemon');
+        // かがやく系やHPの大きいものは一旦メインアタッカー、システムなどに振る
+        if (name.includes('かがやく') || name.includes('ex') || name.includes('V') || name.includes('オーガポン')) {
+            roles.push('main_attacker');
+        } else if (name.includes('ビーダル') || name.includes('ピジョット') || name.includes('キュワワー') || name.includes('ロトム') || name.includes('ミュウ') || name.includes('ゲッコウガ') || name.includes('キチキギス')) {
+            roles.push('system_pokemon');
+        } else {
+            roles.push('sub_attacker');
+        }
+    }
+
+    // サポート
+    if (supertype === 'trainer' && subtype === 'supporter') {
+        if (name.includes('博士') || name.includes('ナンジャモ') || name.includes('リーリエ') || name.includes('マリィ') || name.includes('ツツジ') || name.includes('シロナ') || name.includes('ジャッジマン') || name.includes('コルニ') || name.includes('暗号マニア') || name.includes('アカマツ')) {
+            roles.push('draw_support');
+        } else if (name.includes('ペパー') || name.includes('カイ') || name.includes('スグリ') || name.includes('アクロマ') || name.includes('ボタン') || name.includes('マツバ')) {
+            roles.push('search_support');
+        } else if (name.includes('ボス') || name.includes('フラダリ') || name.includes('セレナ') || name.includes('プライムキャッチャー')) { // ボスは一応サポート
+            roles.push('gust_support');
+        } else {
+            roles.push('other_support');
+        }
+    }
+
+    // グッズ
+    if (supertype === 'trainer' && subtype === 'item') {
+        if (name.includes('ネストボール') || name.includes('なかよしポフィン') || name.includes('VIPパス') || name.includes('フェザーボール') || name.includes('ヒスイのヘビーボール') || name.includes('モンスターボール')) {
+            roles.push('seed_search_item');
+        }
+        if (name.includes('ハイパーボール') || name.includes('キャプチャーアロマ') || name.includes('スーパーボール') || name.includes('しんかのおこう') || name.includes('プレシャスボール') || name.includes('マスターボール')) {
+            roles.push('search_item');
+        }
+        if (name.includes('いれかえ') || name.includes('カート') || name.includes('あなぬけ') || name.includes('プライムキャッチャー')) {
+            roles.push('switch_item');
+        }
+        if (name.includes('大地の器') || name.includes('エネルギー転送') || name.includes('エネルギースピナー')) {
+            roles.push('energy_search_item');
+        }
+        if (name.includes('つりざお') || name.includes('エネルギー回収') || name.includes('エネルギーリサイクル')) {
+            roles.push('energy_recovery_item');
+        }
+        if (name.match(/キャッチャー/)) {
+            // プライムやカウンターなども（ボス代替）
+            roles.push('gust_support');
+        }
+    }
+
+    if (supertype === 'trainer' && subtype === 'tool') roles.push('tool');
+    if (supertype === 'trainer' && subtype === 'stadium') roles.push('stadium');
+    if (name.includes('ACE SPEC')) roles.push('ace_spec');
+
+    // エネルギー
+    if (supertype === 'energy') {
+        if (subtype === 'special' || name.includes('特殊')) {
+            roles.push('special_energy');
+        } else {
+            roles.push('basic_energy');
+        }
+    }
+
+    return roles.length > 0 ? roles : ['system_pokemon']; // fallback
+}
 
 // -------------------------------
 // Supabase client 抽象
@@ -389,56 +467,93 @@ export function summarizeDeckRoles(deckCards: DeckCard[]): DeckRoleSummary {
     for (const role of card.roles) {
       switch (role) {
         case 'seed_pokemon':
+        case 'basic_pokemon':
           summary.seedPokemonCount += card.count;
           break;
         case 'main_attacker':
+        case 'main_attacker_basic':
+        case 'main_attacker_stage1':
+        case 'main_attacker_stage2':
           summary.mainAttackerCount += card.count;
           break;
         case 'sub_attacker':
           summary.subAttackerCount += card.count;
           break;
         case 'system_pokemon':
+        case 'support_pokemon':
+        case 'consistency':
           summary.systemPokemonCount += card.count;
           break;
         case 'draw_support':
-          summary.supportCount += card.count;
-          summary.drawSupportCount += card.count;
+        case 'draw':
+        case 'hand_refresh':
+          if (card.supertype === 'trainer') {
+            summary.supportCount += card.count; // assuming supporter check needs refinement, but we count it roughly
+            summary.drawSupportCount += card.count;
+          }
           break;
         case 'search_support':
-          summary.supportCount += card.count;
-          summary.searchSupportCount += card.count;
+        case 'supporter_search':
+          if (card.supertype === 'trainer') {
+            summary.supportCount += card.count;
+            summary.searchSupportCount += card.count;
+          }
           break;
         case 'gust_support':
-          summary.supportCount += card.count;
-          summary.gustSupportCount += card.count;
+        case 'gust':
+          if (card.supertype === 'trainer') {
+            summary.supportCount += card.count;
+            summary.gustSupportCount += card.count;
+          }
           break;
         case 'other_support':
-          summary.supportCount += card.count;
-          summary.otherSupportCount += card.count;
+          if (card.supertype === 'trainer') summary.otherSupportCount += card.count;
           break;
         case 'search_item':
-          summary.goodsCount += card.count;
-          summary.searchItemCount += card.count;
+        case 'search':
+        case 'evolution_search':
+        case 'pokemon_search':
+          if (card.supertype === 'trainer') {
+            summary.goodsCount += card.count;
+            summary.searchItemCount += card.count;
+          }
           break;
         case 'seed_search_item':
-          summary.goodsCount += card.count;
-          summary.seedSearchItemCount += card.count;
+        case 'basic_search':
+        case 'bench_setup':
+          if (card.supertype === 'trainer') {
+            summary.goodsCount += card.count;
+            summary.seedSearchItemCount += card.count;
+          }
           break;
         case 'draw_item':
-          summary.goodsCount += card.count;
-          summary.drawItemCount += card.count;
+          if (card.supertype === 'trainer') {
+             summary.goodsCount += card.count;
+             summary.drawItemCount += card.count;
+          }
           break;
         case 'switch_item':
-          summary.goodsCount += card.count;
-          summary.switchItemCount += card.count;
+        case 'switch':
+        case 'pivot':
+          if (card.supertype === 'trainer') {
+             summary.goodsCount += card.count;
+             summary.switchItemCount += card.count;
+          }
           break;
         case 'energy_search_item':
-          summary.goodsCount += card.count;
-          summary.energySearchItemCount += card.count;
+        case 'energy_search':
+          if (card.supertype === 'trainer') {
+             summary.goodsCount += card.count;
+             summary.energySearchItemCount += card.count;
+          }
           break;
         case 'energy_recovery_item':
-          summary.goodsCount += card.count;
-          summary.energyRecoveryItemCount += card.count;
+        case 'energy_recovery':
+        case 'resource_recovery':
+          if (card.supertype === 'trainer') {
+             summary.goodsCount += card.count;
+             summary.energyRecoveryItemCount += card.count;
+          }
           break;
         case 'tool':
           summary.toolCount += card.count;
@@ -596,6 +711,23 @@ export function detectBottlenecks(
 // Supabase クエリ
 // -------------------------------
 
+function mapLegacyRoleToStaticRole(role: CardRole): string {
+  switch(role) {
+    case 'search_item': return 'search';
+    case 'seed_search_item': return 'basic_search';
+    case 'draw_support': return 'draw';
+    case 'gust_support': return 'gust';
+    case 'switch_item': return 'switch';
+    case 'energy_search_item': return 'energy_search';
+    case 'energy_recovery_item': return 'energy_recovery';
+    case 'seed_pokemon': return 'basic_pokemon';
+    case 'main_attacker': return 'main_attacker';
+    case 'system_pokemon': return 'consistency';
+    case 'search_support': return 'search';
+    default: return role as string;
+  }
+}
+
 async function fetchCandidateCardsByRoles(
   roles: CardRole[],
   limitPerRole = 3,
@@ -607,33 +739,40 @@ async function fetchCandidateCardsByRoles(
   const seen = new Set<string>();
 
   for (const role of roles) {
-    const query = client
-      .from('cards')
-      .select('id, name, regulation, legal_mark, roles, priority_score')
-      .eq('regulation', 'standard')
-      .contains('roles', [role])
-      .order('priority_score', { ascending: false })
-      .limit(limitPerRole);
+    const targetStaticRole = mapLegacyRoleToStaticRole(role);
 
-    const { data, error } = await query;
+    // card_role_profiles から static_roles に該当するものと、inner join で cards の情報を取得
+    const { data, error } = await client
+      .from('card_role_profiles')
+      .select('card_id, cards!inner(id, name, regulation, legal_mark, priority_score)')
+      .contains('static_roles', [targetStaticRole])
+      .eq('cards.regulation', 'standard');
+
     if (error || !data) continue;
 
-    for (const row of data) {
-      if (seen.has(row.id)) continue;
-      seen.add(row.id);
-      all.push({
-        id: row.id,
-        name: row.name,
-        regulation: row.regulation,
-        legalMark: row.legal_mark,
-        roles: row.roles ?? [],
-        priorityScore: row.priority_score,
+    const mappedCards = data
+      .map((p: any) => p.cards)
+      .filter((c: any) => c != null)
+      .map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        regulation: c.regulation,
+        legalMark: c.legal_mark,
+        roles: [role],
+        priorityScore: c.priority_score || 0,
         reason: buildCandidateReason(role),
-      });
+      }))
+      .sort((a: any, b: any) => (b.priorityScore || 0) - (a.priorityScore || 0))
+      .slice(0, limitPerRole);
+
+    for (const c of mappedCards) {
+      if (seen.has(c.id)) continue;
+      seen.add(c.id);
+      all.push(c);
     }
   }
 
-  return all;
+  return all.sort((a: any, b: any) => (b.priorityScore || 0) - (a.priorityScore || 0));
 }
 
 function buildCandidateReason(role: CardRole): string {

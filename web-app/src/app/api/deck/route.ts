@@ -135,10 +135,18 @@ export async function GET(request: Request) {
         
         if (supabase && uniqueIds.length > 0) {
             supabaseDebug.queried = true;
+            
+            // 1. Fetch cards
             const { data: dbCards, error: dbError } = await supabase
                 .from('cards')
                 .select('*')
                 .in('id', uniqueIds);
+
+            // 2. Fetch role profiles
+            const { data: dbRoleProfiles } = await supabase
+                .from('card_role_profiles')
+                .select('card_id, static_roles, deck_roles, dynamic_roles')
+                .in('card_id', uniqueIds);
 
             supabaseDebug.error = dbError ? dbError.message : null;
             supabaseDebug.resultCount = dbCards ? dbCards.length : 0;
@@ -151,9 +159,17 @@ export async function GET(request: Request) {
                 dbCards.forEach(card => {
                     dbMap[card.id] = card;
                 });
+                
+                const roleMap: Record<string, any> = {};
+                if (dbRoleProfiles) {
+                    dbRoleProfiles.forEach(rp => {
+                        roleMap[rp.card_id] = rp;
+                    });
+                }
 
                 deckList.forEach(card => {
                     const dbData = dbMap[card.id];
+                    const rpData = roleMap[card.id];
                     if (dbData) {
                         card.name = dbData.name || card.name;
                         card.no = dbData.no;
@@ -174,8 +190,14 @@ export async function GET(request: Request) {
                         (card as any).energy = dbData.energy;
                         (card as any).support = dbData.support;
                         (card as any).evolves = dbData.evolves;
-                        (card as any).roles = dbData.roles;
                         (card as any).archetypes = dbData.archetypes;
+                    }
+                    if (rpData) {
+                        (card as any).roles = rpData.static_roles || []; // use static_roles as the main role array
+                        (card as any).deckRoles = rpData.deck_roles || [];
+                        (card as any).dynamicRoles = rpData.dynamic_roles || [];
+                    } else {
+                        (card as any).roles = [];
                     }
                 });
             }
