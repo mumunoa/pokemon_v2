@@ -151,12 +151,7 @@ export async function GET(request: Request) {
                         card.hp = dbData.hp !== 'none' ? parseInt(dbData.hp, 10) : undefined;
                         // kinds may be more accurate in DB
                         if (dbData.kinds) {
-                            if (dbData.type === 'pokemon') {
-                                if (dbData.kinds === 'stage1') card.kinds = 'non_rule'; // Simplified mapping for UI
-                                else if (dbData.kinds === 'stage2') card.kinds = 'non_rule';
-                                else if (dbData.kinds === 'basic') card.kinds = 'non_rule';
-                                // Special rules (EX, V, etc) are handled by the 'kinds' flag in DB if we want
-                            }
+                            card.kinds = dbData.kinds;
                         }
                         // Add all extra fields
                         (card as any).types = dbData.types;

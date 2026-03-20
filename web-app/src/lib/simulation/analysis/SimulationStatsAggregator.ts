@@ -27,6 +27,22 @@ export class SimulationStatsAggregator {
     const failureBreakdown = this.calcFailureBreakdown(logs)
     const { bestBoardExamples, failedBoardExamples } = this.collectExamples(logs)
 
+    // たねポケモン（名前単位）の初手ヒット率の集計
+    const hitCounts: Record<string, number> = {}
+    logs.forEach(l => {
+        // 同じカードが2枚以上あっても1回（少なくとも1枚引いた）としてカウントする
+        const uniqueBasics = new Set(l.drawnBasics)
+        uniqueBasics.forEach(name => {
+            hitCounts[name] = (hitCounts[name] || 0) + 1
+        })
+    })
+
+    const basicPokemonHitRates = Object.entries(hitCounts).map(([cardName, count]) => ({
+        cardName,
+        count,
+        rate: Number((count / totalTrials).toFixed(3))
+    })).sort((a, b) => b.rate - a.rate)
+
     const headline = this.generateHeadline(setupRate.rate, archetype)
     const summaryLines = this.generateSummaryLines(seedRate.rate, setupRate.rate, supporterRate.rate, energyRate.rate)
 
@@ -53,7 +69,8 @@ export class SimulationStatsAggregator {
         headline,
         shortReason: failureBreakdown[0]?.type || 'UNKNOWN',
         warnings: this.generateWarnings(failureBreakdown)
-      }
+      },
+      basicPokemonHitRates
     }
   }
 

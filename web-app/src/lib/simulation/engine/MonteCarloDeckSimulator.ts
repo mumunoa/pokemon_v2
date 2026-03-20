@@ -175,6 +175,9 @@ export class MonteCarloDeckSimulator {
     // 重み付きスコアによる成功判定
     const setupSuccess = this.judgeSetupSuccess(board, handProfiles, archetype, failureReasons)
 
+    // openingHand (マリガン直後の初期7枚) から各カードのドローをカウント
+    const drawnBasics = hand.filter(c => isBasicPokemon(c)).map(c => c.name)
+
     return {
         trialIndex: index,
         mulliganCount,
@@ -188,7 +191,8 @@ export class MonteCarloDeckSimulator {
         reachedDrawEngine,
         reachedMainAttackerLine,
         setupSuccess,
-        failureReasons
+        failureReasons,
+        drawnBasics
     }
   }
 

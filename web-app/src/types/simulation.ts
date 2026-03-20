@@ -97,6 +97,7 @@ export type SimulationTrialLog = {
   reachedMainAttackerLine: boolean
   setupSuccess: boolean
   failureReasons: FailureReasonType[]
+  drawnBasics: string[]
 }
 
 export type SimulationMetricBreakdown = {
@@ -158,6 +159,7 @@ export type InitialSimulationSummary = {
     shortReason: string
     warnings: string[]
   }
+  basicPokemonHitRates: { cardName: string, count: number, rate: number }[]
 }
 
 export type InitialSimulationRequest = {

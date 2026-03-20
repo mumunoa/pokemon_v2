@@ -107,6 +107,31 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType }) => {
                         </ul>
                     </div>
 
+                    {/* Basic Pokemon Hit Rates */}
+                    {summary.basicPokemonHitRates && summary.basicPokemonHitRates.length > 0 && (
+                        <div className="space-y-3">
+                            <h4 className="text-white text-xs font-bold flex items-center gap-2">
+                                <span className="text-lg">🌱</span> たねポケモンの初手登場率
+                            </h4>
+                            <div className="grid grid-cols-2 gap-2">
+                                {summary.basicPokemonHitRates.map((h, i) => (
+                                    <div key={i} className="bg-slate-950/40 border border-slate-800 rounded-lg p-2 flex flex-col gap-1">
+                                        <div className="flex justify-between items-center text-[10px]">
+                                            <span className="text-slate-300 font-bold truncate max-w-[90px]" title={h.cardName}>{h.cardName}</span>
+                                            <span className="text-indigo-400 font-black">{Math.round(h.rate * 100)}%</span>
+                                        </div>
+                                        <div className="h-1 bg-slate-900 rounded-full overflow-hidden">
+                                            <div 
+                                                className="h-full bg-gradient-to-r from-indigo-600 to-indigo-400"
+                                                style={{ width: `${Math.round(h.rate * 100)}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Failure Breakdown */}
                     <div className="space-y-3">
                         <h4 className="text-white text-xs font-bold flex items-center gap-2">
