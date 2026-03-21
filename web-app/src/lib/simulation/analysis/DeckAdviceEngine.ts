@@ -38,9 +38,9 @@ export type CardRole =
   | 'special_energy'
   | 'ace_spec'
   | 'basic_pokemon' | 'main_attacker_basic' | 'main_attacker_stage1' | 'main_attacker_stage2'
-  | 'support_pokemon' | 'consistency' | 'draw' | 'hand_refresh' | 'supporter_search' 
-  | 'gust' | 'search' | 'evolution_search' | 'pokemon_search' | 'basic_search' 
-  | 'bench_setup' | 'switch' | 'pivot' | 'energy_search' | 'energy_recovery' | 'resource_recovery';
+  | 'support_pokemon' | 'consistency' | 'draw' | 'hand_refresh' | 'supporter_search'
+  | 'gust' | 'search' | 'evolution_search' | 'pokemon_search' | 'basic_search'
+  | 'bench_setup' | 'switch' | 'pivot' | 'energy_search' | 'energy_recovery' | 'resource_recovery' | 'recovery' | 'disrupt';
 
 export type DeckArchetype =
   | 'basic_aggro'
@@ -324,74 +324,74 @@ const ARCHETYPE_PRESETS: Record<DeckArchetype, ArchetypeThresholdPreset> = {
 // 自動役割付与 (ヒューリスティクス)
 // -------------------------------
 export function autoInferRoles(card: any): CardRole[] {
-    const roles: CardRole[] = [];
-    const name = card.name || '';
-    const supertype = card.supertype || card.type || '';
-    const subtype = card.subtype || card.kinds || '';
+  const roles: CardRole[] = [];
+  const name = card.name || '';
+  const supertype = card.supertype || card.type || '';
+  const subtype = card.subtype || card.kinds || '';
 
-    // ポケモン
-    if (supertype === 'pokemon') {
-        if (card.stage === 'basic' || subtype === 'basic') roles.push('seed_pokemon');
-        // かがやく系やHPの大きいものは一旦メインアタッカー、システムなどに振る
-        if (name.includes('かがやく') || name.includes('ex') || name.includes('V') || name.includes('オーガポン')) {
-            roles.push('main_attacker');
-        } else if (name.includes('ビーダル') || name.includes('ピジョット') || name.includes('キュワワー') || name.includes('ロトム') || name.includes('ミュウ') || name.includes('ゲッコウガ') || name.includes('キチキギス')) {
-            roles.push('system_pokemon');
-        } else {
-            roles.push('sub_attacker');
-        }
+  // ポケモン
+  if (supertype === 'pokemon') {
+    if (card.stage === 'basic' || subtype === 'basic') roles.push('seed_pokemon');
+    // かがやく系やHPの大きいものは一旦メインアタッカー、システムなどに振る
+    if (name.includes('かがやく') || name.includes('ex') || name.includes('V') || name.includes('オーガポン')) {
+      roles.push('main_attacker');
+    } else if (name.includes('ビーダル') || name.includes('ピジョット') || name.includes('キュワワー') || name.includes('ロトム') || name.includes('ミュウ') || name.includes('ゲッコウガ') || name.includes('キチキギス')) {
+      roles.push('system_pokemon');
+    } else {
+      roles.push('sub_attacker');
     }
+  }
 
-    // サポート
-    if (supertype === 'trainer' && subtype === 'supporter') {
-        if (name.includes('博士') || name.includes('ナンジャモ') || name.includes('リーリエ') || name.includes('マリィ') || name.includes('ツツジ') || name.includes('シロナ') || name.includes('ジャッジマン') || name.includes('コルニ') || name.includes('暗号マニア') || name.includes('アカマツ')) {
-            roles.push('draw_support');
-        } else if (name.includes('ペパー') || name.includes('カイ') || name.includes('スグリ') || name.includes('アクロマ') || name.includes('ボタン') || name.includes('マツバ')) {
-            roles.push('search_support');
-        } else if (name.includes('ボス') || name.includes('フラダリ') || name.includes('セレナ') || name.includes('プライムキャッチャー')) { // ボスは一応サポート
-            roles.push('gust_support');
-        } else {
-            roles.push('other_support');
-        }
+  // サポート
+  if (supertype === 'trainer' && subtype === 'supporter') {
+    if (name.includes('博士') || name.includes('ナンジャモ') || name.includes('リーリエ') || name.includes('マリィ') || name.includes('ツツジ') || name.includes('シロナ') || name.includes('ジャッジマン') || name.includes('コルニ') || name.includes('暗号マニア') || name.includes('アカマツ')) {
+      roles.push('draw_support');
+    } else if (name.includes('ペパー') || name.includes('カイ') || name.includes('スグリ') || name.includes('アクロマ') || name.includes('ボタン') || name.includes('マツバ')) {
+      roles.push('search_support');
+    } else if (name.includes('ボス') || name.includes('フラダリ') || name.includes('セレナ') || name.includes('プライムキャッチャー')) { // ボスは一応サポート
+      roles.push('gust_support');
+    } else {
+      roles.push('other_support');
     }
+  }
 
-    // グッズ
-    if (supertype === 'trainer' && subtype === 'item') {
-        if (name.includes('ネストボール') || name.includes('なかよしポフィン') || name.includes('VIPパス') || name.includes('フェザーボール') || name.includes('ヒスイのヘビーボール') || name.includes('モンスターボール')) {
-            roles.push('seed_search_item');
-        }
-        if (name.includes('ハイパーボール') || name.includes('キャプチャーアロマ') || name.includes('スーパーボール') || name.includes('しんかのおこう') || name.includes('プレシャスボール') || name.includes('マスターボール')) {
-            roles.push('search_item');
-        }
-        if (name.includes('いれかえ') || name.includes('カート') || name.includes('あなぬけ') || name.includes('プライムキャッチャー')) {
-            roles.push('switch_item');
-        }
-        if (name.includes('大地の器') || name.includes('エネルギー転送') || name.includes('エネルギースピナー')) {
-            roles.push('energy_search_item');
-        }
-        if (name.includes('つりざお') || name.includes('エネルギー回収') || name.includes('エネルギーリサイクル')) {
-            roles.push('energy_recovery_item');
-        }
-        if (name.match(/キャッチャー/)) {
-            // プライムやカウンターなども（ボス代替）
-            roles.push('gust_support');
-        }
+  // グッズ
+  if (supertype === 'trainer' && subtype === 'item') {
+    if (name.includes('ネストボール') || name.includes('なかよしポフィン') || name.includes('VIPパス') || name.includes('フェザーボール') || name.includes('ヒスイのヘビーボール') || name.includes('モンスターボール')) {
+      roles.push('seed_search_item');
     }
-
-    if (supertype === 'trainer' && subtype === 'tool') roles.push('tool');
-    if (supertype === 'trainer' && subtype === 'stadium') roles.push('stadium');
-    if (name.includes('ACE SPEC')) roles.push('ace_spec');
-
-    // エネルギー
-    if (supertype === 'energy') {
-        if (subtype === 'special' || name.includes('特殊')) {
-            roles.push('special_energy');
-        } else {
-            roles.push('basic_energy');
-        }
+    if (name.includes('ハイパーボール') || name.includes('キャプチャーアロマ') || name.includes('スーパーボール') || name.includes('しんかのおこう') || name.includes('プレシャスボール') || name.includes('マスターボール')) {
+      roles.push('search_item');
     }
+    if (name.includes('いれかえ') || name.includes('カート') || name.includes('あなぬけ') || name.includes('プライムキャッチャー')) {
+      roles.push('switch_item');
+    }
+    if (name.includes('大地の器') || name.includes('エネルギー転送') || name.includes('エネルギースピナー')) {
+      roles.push('energy_search_item');
+    }
+    if (name.includes('つりざお') || name.includes('エネルギー回収') || name.includes('エネルギーリサイクル')) {
+      roles.push('energy_recovery_item');
+    }
+    if (name.match(/キャッチャー/)) {
+      // プライムやカウンターなども（ボス代替）
+      roles.push('gust_support');
+    }
+  }
 
-    return roles.length > 0 ? roles : ['system_pokemon']; // fallback
+  if (supertype === 'trainer' && subtype === 'tool') roles.push('tool');
+  if (supertype === 'trainer' && subtype === 'stadium') roles.push('stadium');
+  if (name.includes('ACE SPEC')) roles.push('ace_spec');
+
+  // エネルギー
+  if (supertype === 'energy') {
+    if (subtype === 'special' || name.includes('特殊')) {
+      roles.push('special_energy');
+    } else {
+      roles.push('basic_energy');
+    }
+  }
+
+  return roles.length > 0 ? roles : ['system_pokemon']; // fallback
 }
 
 // -------------------------------
@@ -454,124 +454,123 @@ export function summarizeDeckRoles(deckCards: DeckCard[]): DeckRoleSummary {
   for (const card of deckCards) {
     summary.totalCards += card.count;
 
-    if (card.supertype === 'pokemon') {
+    const isPokemon = card.supertype === 'pokemon';
+    const isTrainer = card.supertype === 'trainer';
+    const isEnergy = card.supertype === 'energy';
+
+    const isSupporter = card.subtype === 'supporter';
+    const isItem = card.subtype === 'item';
+    const isTool = card.subtype === 'tool';
+    const isStadium = card.subtype === 'stadium';
+
+    if (isPokemon) {
       summary.pokemonCount += card.count;
       if (card.stage === 'stage1') summary.stage1Count += card.count;
       if (card.stage === 'stage2') summary.stage2Count += card.count;
     }
 
-    if (card.supertype === 'energy') {
+    if (isEnergy) {
       summary.energyCount += card.count;
     }
 
-    for (const role of card.roles) {
-      switch (role) {
-        case 'seed_pokemon':
-        case 'basic_pokemon':
-          summary.seedPokemonCount += card.count;
-          break;
-        case 'main_attacker':
-        case 'main_attacker_basic':
-        case 'main_attacker_stage1':
-        case 'main_attacker_stage2':
-          summary.mainAttackerCount += card.count;
-          break;
-        case 'sub_attacker':
-          summary.subAttackerCount += card.count;
-          break;
-        case 'system_pokemon':
-        case 'support_pokemon':
-        case 'consistency':
-          summary.systemPokemonCount += card.count;
-          break;
-        case 'draw_support':
-        case 'draw':
-        case 'hand_refresh':
-          if (card.supertype === 'trainer') {
-            summary.supportCount += card.count; // assuming supporter check needs refinement, but we count it roughly
-            summary.drawSupportCount += card.count;
-          }
-          break;
-        case 'search_support':
-        case 'supporter_search':
-          if (card.supertype === 'trainer') {
-            summary.supportCount += card.count;
-            summary.searchSupportCount += card.count;
-          }
-          break;
-        case 'gust_support':
-        case 'gust':
-          if (card.supertype === 'trainer') {
-            summary.supportCount += card.count;
-            summary.gustSupportCount += card.count;
-          }
-          break;
-        case 'other_support':
-          if (card.supertype === 'trainer') summary.otherSupportCount += card.count;
-          break;
-        case 'search_item':
-        case 'search':
-        case 'evolution_search':
-        case 'pokemon_search':
-          if (card.supertype === 'trainer') {
-            summary.goodsCount += card.count;
-            summary.searchItemCount += card.count;
-          }
-          break;
-        case 'seed_search_item':
-        case 'basic_search':
-        case 'bench_setup':
-          if (card.supertype === 'trainer') {
-            summary.goodsCount += card.count;
-            summary.seedSearchItemCount += card.count;
-          }
-          break;
-        case 'draw_item':
-          if (card.supertype === 'trainer') {
-             summary.goodsCount += card.count;
-             summary.drawItemCount += card.count;
-          }
-          break;
-        case 'switch_item':
-        case 'switch':
-        case 'pivot':
-          if (card.supertype === 'trainer') {
-             summary.goodsCount += card.count;
-             summary.switchItemCount += card.count;
-          }
-          break;
-        case 'energy_search_item':
-        case 'energy_search':
-          if (card.supertype === 'trainer') {
-             summary.goodsCount += card.count;
-             summary.energySearchItemCount += card.count;
-          }
-          break;
-        case 'energy_recovery_item':
-        case 'energy_recovery':
-        case 'resource_recovery':
-          if (card.supertype === 'trainer') {
-             summary.goodsCount += card.count;
-             summary.energyRecoveryItemCount += card.count;
-          }
-          break;
-        case 'tool':
-          summary.toolCount += card.count;
-          break;
-        case 'stadium':
-          summary.stadiumCount += card.count;
-          break;
-        case 'basic_energy':
-          summary.basicEnergyCount += card.count;
-          break;
-        case 'special_energy':
-          summary.specialEnergyCount += card.count;
-          break;
-        case 'ace_spec':
-          summary.aceSpecCount += card.count;
-          break;
-      }
+    if (isTrainer) {
+      if (isSupporter) summary.supportCount += card.count;
+      if (isItem) summary.goodsCount += card.count;
+      if (isTool) summary.toolCount += card.count;
+      if (isStadium) summary.stadiumCount += card.count;
     }
+
+    // api/deck/route.ts または api/ai/simulation/route.ts にて
+    // card_role_profiles から取得した static_roles が格納されています。
+    const profileRoles = card.roles || [];
+
+    // 1枚のカードが複数のタグ('draw', 'consistency'等)を持っていても
+    // 1回しか合算しないよう、カードごとにフラグで管理します。
+    let drawSupport = false;
+    let searchSupport = false;
+    let gustSupport = false;
+    let otherSupport = false;
+
+    let searchItem = false;
+    let seedSearchItem = false;
+    let drawItem = false;
+    let switchItem = false;
+    let energySearchItem = false;
+    let energyRecoveryItem = false;
+    let seedPokemon = false;
+    let mainAttacker = false;
+    let subAttacker = false;
+    let systemPokemon = false;
+    let basicEnergy = false;
+    let specialEnergy = false;
+    let aceSpec = false;
+
+    for (const role of profileRoles) {
+      // ポケモンの判定
+      if (role === 'seed_pokemon' || role === 'basic_pokemon') seedPokemon = true;
+      if (role === 'main_attacker' || role.startsWith('main_attacker_')) mainAttacker = true;
+      if (role === 'sub_attacker') subAttacker = true;
+      if (role === 'system_pokemon' || role === 'support_pokemon' || role === 'consistency') systemPokemon = true;
+
+      // サポートの判定 (kinds="supporter")
+      if (isSupporter) {
+        if (role === 'draw_support' || role === 'draw' || role === 'hand_refresh') drawSupport = true;
+        else if (role === 'search_support' || role === 'supporter_search' || role === 'search') searchSupport = true;
+        else if (role === 'gust_support' || role === 'gust') gustSupport = true;
+        else if (role === 'other_support' || role === 'recovery' || role === 'disrupt') otherSupport = true;
+      }
+
+      // グッズの判定 (kinds="item")
+      if (isItem) {
+        if (role === 'search_item' || role === 'search' || role === 'evolution_search' || role === 'pokemon_search') searchItem = true;
+        if (role === 'seed_search_item' || role === 'basic_search' || role === 'bench_setup') seedSearchItem = true;
+        if (role === 'draw_item' || (role === 'draw')) drawItem = true;
+        if (role === 'switch_item' || role === 'switch' || role === 'pivot') switchItem = true;
+        if (role === 'energy_search_item' || role === 'energy_search') energySearchItem = true;
+        if (role === 'energy_recovery_item' || role === 'energy_recovery' || role === 'resource_recovery') energyRecoveryItem = true;
+      }
+
+      // エネルギーの判定
+      if (isEnergy) {
+        if (role === 'basic_energy') basicEnergy = true;
+        if (role === 'special_energy') specialEnergy = true;
+      }
+
+      if (role === 'ace_spec') aceSpec = true;
+    }
+
+    // fallback mapping if it hasn't caught specific subtype match
+    if (isTrainer && profileRoles.length === 0) {
+      if (isSupporter) otherSupport = true;
+    }
+
+    if (isEnergy && !basicEnergy && !specialEnergy) {
+       // primitive fallback
+       if (card.subtype === 'special' || (card.name && card.name.includes('特殊'))) specialEnergy = true;
+       else basicEnergy = true;
+    }
+
+    // フラグに基づいて1度だけ追加する
+    if (seedPokemon) summary.seedPokemonCount += card.count;
+    if (mainAttacker) summary.mainAttackerCount += card.count;
+    if (subAttacker) summary.subAttackerCount += card.count;
+    if (systemPokemon) summary.systemPokemonCount += card.count;
+    
+    if (drawSupport) summary.drawSupportCount += card.count;
+    if (searchSupport) summary.searchSupportCount += card.count;
+    if (gustSupport) summary.gustSupportCount += card.count;
+    if (otherSupport && !drawSupport && !searchSupport && !gustSupport) summary.otherSupportCount += card.count;
+
+    if (searchItem) summary.searchItemCount += card.count;
+    if (seedSearchItem) summary.seedSearchItemCount += card.count;
+    if (drawItem) summary.drawItemCount += card.count;
+    if (switchItem) summary.switchItemCount += card.count;
+    if (energySearchItem) summary.energySearchItemCount += card.count;
+    if (energyRecoveryItem) summary.energyRecoveryItemCount += card.count;
+
+    if (basicEnergy) summary.basicEnergyCount += card.count;
+    if (specialEnergy) summary.specialEnergyCount += card.count;
+    if (aceSpec) summary.aceSpecCount += card.count;
   }
 
   return summary;
@@ -712,7 +711,7 @@ export function detectBottlenecks(
 // -------------------------------
 
 function mapLegacyRoleToStaticRole(role: CardRole): string {
-  switch(role) {
+  switch (role) {
     case 'search_item': return 'search';
     case 'seed_search_item': return 'basic_search';
     case 'draw_support': return 'draw';
@@ -816,7 +815,7 @@ function buildOverallComment(
   }
 
   if (setupGood && supportWeak) {
-    return '初動の展開は成立していますが、中盤の手札更新が細く、毎試合同じ出力を再現しにくい構成です。改善優先度は条件付きの強札より、毎試合使うドローサポートの厚みです。';
+    return '初動の展開は成立していますが、中盤の手札更新が細く、毎試合同じ出力を再現しにくい構成です。改善優先度は条件付きの強札より、毎ターン使うドローサポートの厚みです。';
   }
 
   if (bottlenecks.includes('seed_density_shortage')) {
@@ -914,7 +913,7 @@ async function buildSuggestions(
           whyItHurts:
             '再現できる構築は、強い初手だけでなく、止まった手札を立て直す回数を十分に確保しています。ここが薄いと試合ごとの出力差が大きくなります。',
           action:
-            '毎試合打つドローサポートを厚くし、メタ札や状況依存札を削る方向が有効です。サーチサポートを混ぜる場合も、初動と中盤の接続を重視してください。',
+            '毎ターン打つドローサポートやドロー特性を持つポケモンを厚くし、メタ札や状況依存札を削る方向が有効です。サーチサポートを混ぜる場合も、初動と中盤の接続を重視してください。',
           recommendedRoles,
           candidateCards: await fetchCandidateCardsByRoles(recommendedRoles, 3),
           cutGuidance: [
@@ -1083,10 +1082,10 @@ export async function generateDeckAdvice(input: AdviceEngineInput): Promise<Advi
     suggestions,
     debug: input.includeDebug
       ? {
-          roleSummary,
-          symptoms,
-          preset,
-        }
+        roleSummary,
+        symptoms,
+        preset,
+      }
       : undefined,
   };
 }
