@@ -1,4 +1,4 @@
-import type { BoardState } from "../domain/types";
+import type { BoardState, CardRoleProfile } from "../domain/types";
 
 export type GamePhase = "opening" | "midgame" | "endgame";
 
@@ -8,6 +8,21 @@ export type PrizeMapPressure = {
   canTakeOnePrizeNow: boolean;
   canTakeTwoPrizeNow: boolean;
   opponentCanTakeTwoPrizeNext: boolean;
+};
+
+export type ReachabilityContext = {
+  canBenchThisTurn: number;
+  canFindDrawThisTurn: number;
+  canFindEnergyThisTurn: number;
+  canPrepareMainAttackerNextTurn: number;
+  hasImmediateDrawSupport: boolean;
+  hasImmediateBenchAccess: boolean;
+  hasImmediateEnergyAccess: boolean;
+};
+
+export type BoardUrgencyBuildContext = {
+  handCards?: Array<{ name: string }>;
+  profiles?: CardRoleProfile[];
 };
 
 export type BoardUrgencyProfile = {
@@ -24,6 +39,7 @@ export type BoardUrgencyProfile = {
   systemPunishValue: number;
   tempoCatchupValue: number;
   prizeMap: PrizeMapPressure;
+  reachability: ReachabilityContext;
 };
 
 function clamp(value: number, min = 0, max = 100): number {
@@ -35,6 +51,42 @@ function inferPhase(board: BoardState): GamePhase {
   if (totalTaken <= 2) return "opening";
   if (totalTaken <= 7) return "midgame";
   return "endgame";
+}
+
+function countRoles(
+  handCards: Array<{ name: string }>,
+  profiles: CardRoleProfile[] | undefined,
+  wanted: string[],
+): number {
+  if (!profiles?.length || !handCards.length) return 0;
+  const names = new Set(handCards.map((card) => card.name));
+  return profiles.filter((profile) => {
+    if (!names.has(profile.cardName)) return false;
+    return wanted.some((role) => profile.staticRoles.includes(role as never));
+  }).length;
+}
+
+function buildReachabilityContext(
+  board: BoardState,
+  ctx?: BoardUrgencyBuildContext,
+): ReachabilityContext {
+  const handCards = ctx?.handCards ?? board.hand.map((name) => ({ name }));
+  const benchAccess = countRoles(handCards, ctx?.profiles, ["bench_setup", "seed_search_item", "search"]);
+  const drawAccess = countRoles(handCards, ctx?.profiles, ["draw", "draw_support", "search_support"]);
+  const energyAccess = countRoles(handCards, ctx?.profiles, ["energy", "energy_search", "energy_accel", "energy_search_item"]);
+  const evolutionAccess = countRoles(handCards, ctx?.profiles, ["rare_candy", "evolution", "search", "topdeck_tutor"]);
+
+  const activeEnergy = board.active?.energies ?? 0;
+
+  return {
+    canBenchThisTurn: clamp(benchAccess * 2 + (board.bench.length < 2 ? 1 : 0), 0, 4),
+    canFindDrawThisTurn: clamp(drawAccess, 0, 3),
+    canFindEnergyThisTurn: clamp(energyAccess + (activeEnergy > 0 ? 1 : 0), 0, 3),
+    canPrepareMainAttackerNextTurn: clamp(evolutionAccess + benchAccess, 0, 4),
+    hasImmediateDrawSupport: drawAccess > 0,
+    hasImmediateBenchAccess: benchAccess > 0,
+    hasImmediateEnergyAccess: energyAccess > 0 || activeEnergy > 0,
+  };
 }
 
 export function buildPrizeMap(board: BoardState): PrizeMapPressure {
@@ -56,7 +108,10 @@ export function buildPrizeMap(board: BoardState): PrizeMapPressure {
   };
 }
 
-export function buildBoardUrgencyProfile(board: BoardState): BoardUrgencyProfile {
+export function buildBoardUrgencyProfile(
+  board: BoardState,
+  ctx?: BoardUrgencyBuildContext,
+): BoardUrgencyProfile {
   const phase = inferPhase(board);
   const prizeMap = buildPrizeMap(board);
   const benchCount = board.bench.length;
@@ -64,15 +119,33 @@ export function buildBoardUrgencyProfile(board: BoardState): BoardUrgencyProfile
   const activeEnergy = board.active?.energies ?? 0;
   const heavyRetreatTargets = board.opponentBench.filter((p) => (p.retreat ?? 0) >= 2).length;
   const systemTargets = board.opponentBench.filter((p) => p.isSystem).length;
-  const drawNeed = board.hand.length <= 3 ? 75 : board.hand.length <= 5 ? 48 : 20;
+  const reachability = buildReachabilityContext(board, ctx);
+
+  const baseDrawNeed = board.hand.length <= 3 ? 75 : board.hand.length <= 5 ? 48 : 20;
+  const drawReachabilityDiscount =
+    reachability.hasImmediateDrawSupport ? 28 : reachability.canFindDrawThisTurn > 0 ? 16 : 0;
 
   const setupNeedBase =
     phase === "opening"
       ? (benchCount <= 1 ? 80 : benchCount === 2 ? 55 : 25)
-      : (activeReady ? 20 : 45);
+      : activeReady ? 20 : 45;
 
-  const needSetupNow = clamp(setupNeedBase + (activeReady ? 0 : 15));
-  const needDrawNow = clamp(drawNeed + (board.deckRemaining <= 10 ? 10 : 0));
+  const setupReachabilityDiscount =
+    reachability.canBenchThisTurn >= 2 ? 30 :
+    reachability.canBenchThisTurn >= 1 ? 16 : 0;
+
+  const energyReachabilityDiscount =
+    reachability.hasImmediateEnergyAccess ? 24 :
+    reachability.canFindEnergyThisTurn > 0 ? 12 : 0;
+
+  const futureAttackerDiscount =
+    reachability.canPrepareMainAttackerNextTurn >= 2 ? 14 :
+    reachability.canPrepareMainAttackerNextTurn >= 1 ? 7 : 0;
+
+  const needSetupNow = clamp(
+    setupNeedBase + (activeReady ? 0 : 15) - setupReachabilityDiscount - futureAttackerDiscount,
+  );
+  const needDrawNow = clamp(baseDrawNeed + (board.deckRemaining <= 10 ? 10 : 0) - drawReachabilityDiscount);
   const needGustNow = clamp(
     (prizeMap.canTakeTwoPrizeNow ? 65 : prizeMap.canTakeOnePrizeNow ? 35 : 10) +
       systemTargets * 12 +
@@ -92,7 +165,7 @@ export function buildBoardUrgencyProfile(board: BoardState): BoardUrgencyProfile
       (board.prizesTakenByOpponent > board.prizesTakenByPlayer ? 20 : 5) +
       (phase === "endgame" ? 18 : 0),
   );
-  const needEnergyNow = clamp(activeEnergy === 0 ? 70 : activeEnergy === 1 ? 45 : 20);
+  const needEnergyNow = clamp((activeEnergy === 0 ? 70 : activeEnergy === 1 ? 45 : 20) - energyReachabilityDiscount);
   const canPushPrizeNow = clamp(
     (prizeMap.canTakeTwoPrizeNow ? 90 : prizeMap.canTakeOnePrizeNow ? 65 : 20) +
       systemTargets * 8,
@@ -118,5 +191,6 @@ export function buildBoardUrgencyProfile(board: BoardState): BoardUrgencyProfile
     systemPunishValue,
     tempoCatchupValue,
     prizeMap,
+    reachability,
   };
 }

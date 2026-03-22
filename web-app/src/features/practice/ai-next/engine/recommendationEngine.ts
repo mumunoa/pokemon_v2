@@ -65,12 +65,13 @@ function scoreAction(
   action: ReturnType<typeof buildActionCandidatesFromProfiles>[number],
   board: BoardState,
   profiles: CardRoleProfile[],
+  urgency: ReturnType<typeof buildBoardUrgencyProfile>,
+  openingEvaluation?: OpeningEvaluation,
   archetype?: string,
   opponentArchetype?: string,
   opponentThreat?: OpponentThreat,
   macroStrategy?: MacroStrategy
 ): ScoredAction {
-  const urgency = buildBoardUrgencyProfile(board);
   const strategy = resolveStrategy(archetype, urgency.phase);
   const profile = profiles.find((p) => p.cardName === action.cardName);
   const dynamicRoles = inferDynamicRoles(action, board, urgency);
@@ -83,7 +84,7 @@ function scoreAction(
   // 2手先（Lookahead）の価値を加算
   let bestNextVal = 0;
   const nextBoard = predictBoardState(board, action);
-  const nextUrgency = buildBoardUrgencyProfile(nextBoard);
+  const nextUrgency = buildBoardUrgencyProfile(nextBoard, { handCards: nextBoard.hand.map(n => ({ name: n })), profiles });
   const nextCandidates = buildActionCandidatesFromProfiles(nextBoard, nextBoard.hand.map(n => ({ name: n })), profiles, nextUrgency);
   if (nextCandidates.length > 0) {
     bestNextVal = Math.max(...nextCandidates.map(c => c.estimatedPrizeSwing * 10 + c.estimatedSetupGain * 8 + c.estimatedStabilityGain * 6));
@@ -100,6 +101,13 @@ function scoreAction(
   if (dynamicRoles.includes("bench_fill_now")) score += 15;
   if (dynamicRoles.includes("desperate_draw")) score += 14;
   if (dynamicRoles.includes("recover_board")) score += 12;
+
+  if (openingEvaluation) {
+    const openingIsStable = openingEvaluation.stability === "stable" || openingEvaluation.stability === "average";
+    if (openingIsStable && action.tags.includes("draw")) score -= 14;
+    if (openingIsStable && action.tags.includes("bench_setup")) score += 10;
+    if (openingIsStable && action.tags.includes("search")) score += 8;
+  }
 
   if (profile?.staticRoles.includes("topdeck_tutor" as never) && urgency.phase === "endgame") score += 12;
   if (profile?.staticRoles.includes("resource_recovery" as never) && board.discard.length >= 8) score += 10;
@@ -199,6 +207,9 @@ function buildKeyCards(profiles: CardRoleProfile[], handCards: HandCardLike[], b
 }
 
 function boardSummary(board: BoardState): string {
+  if (board.turn === 0 || (board.turn === 1 && !board.active)) {
+    return `対戦準備中 / 手札${board.hand.length}枚`;
+  }
   return `ターン${board.turn} / 手札${board.hand.length}枚 / ベンチ${board.bench.length}体 / 相手ベンチ${board.opponentBench.length}体`;
 }
 
@@ -209,7 +220,7 @@ export function buildRecommendationFromRoleComplete(params: {
   archetype?: string;
 }): RecommendationResult {
   const { board, handCards, profiles, archetype } = params;
-  const urgency = buildBoardUrgencyProfile(board);
+  const urgency = buildBoardUrgencyProfile(board, { handCards, profiles });
   const opponentArchetype = inferOpponentArchetype(board);
   const opponentThreat = inferOpponentThreat(board, opponentArchetype);
   const macroStrategy = generateMacroStrategy(board, archetype || "generic");
@@ -219,26 +230,53 @@ export function buildRecommendationFromRoleComplete(params: {
   
   const candidates = buildActionCandidatesFromProfiles(board, handCards, profiles, urgency);
   const scored = candidates
-    .map((c) => scoreAction(c, board, profiles, archetype, opponentArchetype, opponentThreat, macroStrategy))
+    .map((c) => scoreAction(c, board, profiles, urgency, openingEvaluation, archetype, opponentArchetype, opponentThreat, macroStrategy))
     .sort((a, b) => b.score - a.score);
 
-  const bestAction = scored[0] ?? null;
-  const alternatives = scored.slice(1, 6);
+  const uniqueScored: ScoredAction[] = [];
+  const seenActionCards = new Set<string>();
+  for (const action of scored) {
+    if (!seenActionCards.has(action.cardName)) {
+      seenActionCards.add(action.cardName);
+      uniqueScored.push(action);
+    }
+  }
+
+  const bestAction = uniqueScored[0] ?? null;
+  const alternatives = uniqueScored.slice(1, 6);
   
   // アクション候補(有力ライン)として既に提案されたカード名を集める
   const suggestedNames = new Set([
-      bestAction?.cardName,
-      ...alternatives.map(a => a.cardName)
+      ...uniqueScored.slice(0, 6).map(a => a.cardName)
   ].filter(Boolean));
 
   // キーカードから重複するカードを除き、純粋に「手札等の重要なカード」としてピックアップする
   const rawKeyCards = buildKeyCards(profiles, handCards, board);
-  const keyCards = rawKeyCards.filter(k => !suggestedNames.has(k.cardName)).slice(0, 5);
+  
+  const uniqueKeyCards: KeyCard[] = [];
+  const seenKeyCards = new Set<string>(suggestedNames);
+  for (const kc of rawKeyCards) {
+    if (!seenKeyCards.has(kc.cardName)) {
+      seenKeyCards.add(kc.cardName);
+      uniqueKeyCards.push(kc);
+    }
+  }
+  
+  const keyCards = uniqueKeyCards.slice(0, 5);
 
-  let analysis = buildCoachNarrative(board, urgency, bestAction, alternatives);
+  let analysis = buildCoachNarrative(
+    board, 
+    urgency, 
+    bestAction, 
+    alternatives, 
+    openingEvaluation ? { 
+      handGrade: openingEvaluation.stability === 'stable' ? 'A' : openingEvaluation.stability === 'average' ? 'B' : 'D', 
+      openingSummary: openingEvaluation.reason 
+    } : undefined
+  );
 
-  // 対戦準備中（turn === 0）の場合の専用ガイダンス
-  if (board.turn === 0) {
+  // 対戦準備中（turn === 0 または turn === 1かつアクティブ不在）の場合の専用ガイダンス
+  if (board.turn === 0 || (board.turn === 1 && !board.active)) {
     analysis = `【対戦準備中】\n1ターン目の目標は、メインアタッカーやシステム基盤となる「たねポケモン」を場に複数展開することです。\n現在の初期手札から、どのように盤面を構築する（または山札を引く・サーチする）のが最も安定するかを最優先に考えましょう。不要なカードは極力プレイせず、次ターンの手札干渉や展開に備えるのが基本です。`;
   }
 
