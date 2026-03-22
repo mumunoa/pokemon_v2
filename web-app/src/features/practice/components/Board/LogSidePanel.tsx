@@ -65,6 +65,7 @@ export const LogSidePanel: React.FC<Props> = ({ isOpen, onClose }) => {
     const cards = useGameStore(s => s.cards);
     const scrollRef = useRef<HTMLDivElement>(null);
     const [isUpgradePromptOpen, setIsUpgradePromptOpen] = React.useState(false);
+    const [confirmReplayIndex, setConfirmReplayIndex] = React.useState<number | null>(null);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -112,48 +113,73 @@ export const LogSidePanel: React.FC<Props> = ({ isOpen, onClose }) => {
                                 setIsUpgradePromptOpen(true);
                                 return;
                             }
-                            restoreToLog(i);
+                            setConfirmReplayIndex(i);
                         };
 
                         return (
-                            <div
-                                key={log.id}
-                                onClick={handleLogClick}
-                                className={`text-[12px] p-2.5 rounded-lg border leading-relaxed transition-all group ${!isLatest ? 'cursor-pointer hover:scale-[1.02] hover:shadow-lg' : ''} ${isTurn
-                                        ? 'bg-blue-500/10 border-blue-500/30 text-blue-100 font-bold mt-4'
-                                        : 'bg-slate-800/40 border-slate-700/50 text-slate-200'
-                                    }`}
-                            >
-                                <div className="flex gap-2 items-start relative">
-                                    <span className="text-slate-500 text-[10px] shrink-0 font-mono mt-0.5 w-4">{i + 1}</span>
-                                    <span className="shrink-0 text-sm">{icon}</span>
-                                    <div className="flex-1 drop-shadow-sm">
-                                        <span className={log.cardInstanceId ? "text-yellow-100 font-medium" : ""}>
-                                            {message}
-                                        </span>
-                                        {/* Optional Payload Debug view for advanced tracking */}
-                                        {log.actionType === 'move_card' && (
-                                            <div className="text-[9px] text-slate-500 mt-1 font-mono">
-                                                ID: {log.baseCardId}
+                            <div key={log.id}>
+                                <div
+                                    onClick={handleLogClick}
+                                    className={`text-[12px] p-2.5 rounded-lg border leading-relaxed transition-all group ${!isLatest ? 'cursor-pointer hover:scale-[1.02] hover:shadow-lg' : ''} ${isTurn
+                                            ? 'bg-blue-500/10 border-blue-500/30 text-blue-100 font-bold mt-4'
+                                            : 'bg-slate-800/40 border-slate-700/50 text-slate-200'
+                                        }`}
+                                >
+                                    <div className="flex gap-2 items-start relative">
+                                        <span className="text-slate-500 text-[10px] shrink-0 font-mono mt-0.5 w-4">{i + 1}</span>
+                                        <span className="shrink-0 text-sm">{icon}</span>
+                                        <div className="flex-1 drop-shadow-sm">
+                                            <span className={log.cardInstanceId ? "text-yellow-100 font-medium" : ""}>
+                                                {message}
+                                            </span>
+                                            {/* Optional Payload Debug view for advanced tracking */}
+                                            {log.actionType === 'move_card' && (
+                                                <div className="text-[9px] text-slate-500 mt-1 font-mono">
+                                                    ID: {log.baseCardId}
+                                                </div>
+                                            )}
+                                        </div>
+                                        
+                                        {!isLatest && (
+                                            <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center bg-slate-800/90 rounded px-1.5 py-1">
+                                                {isPro ? (
+                                                    <span className="text-[9px] text-blue-300 font-bold flex items-center gap-1">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+                                                        ここへ戻る
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[9px] text-yellow-500 font-bold flex items-center gap-1">
+                                                        🔒 Pro限定
+                                                    </span>
+                                                )}
                                             </div>
                                         )}
                                     </div>
-                                    
-                                    {!isLatest && (
-                                        <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center bg-slate-800/90 rounded px-1.5 py-1">
-                                            {isPro ? (
-                                                <span className="text-[9px] text-blue-300 font-bold flex items-center gap-1">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
-                                                    ここへ戻る
-                                                </span>
-                                            ) : (
-                                                <span className="text-[9px] text-yellow-500 font-bold flex items-center gap-1">
-                                                    🔒 Pro限定
-                                                </span>
-                                            )}
-                                        </div>
-                                    )}
                                 </div>
+
+                                {/* Confirmation Modal Inline */}
+                                {confirmReplayIndex === i && (
+                                    <div className="mt-2 p-3 bg-indigo-950/80 border border-indigo-500/50 rounded-xl animate-in fade-in slide-in-from-top-2 flex flex-col items-center gap-3">
+                                        <p className="text-[11px] font-bold text-indigo-100 text-center leading-tight">
+                                            この盤面に戻りますか？<br/>
+                                            <span className="text-[9px] font-normal opacity-70">※これより先の履歴は消去されます</span>
+                                        </p>
+                                        <div className="flex gap-2 w-full">
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); restoreToLog(i); setConfirmReplayIndex(null); }}
+                                                className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold py-1.5 rounded-lg active:scale-95 transition-all"
+                                            >
+                                                はい
+                                            </button>
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); setConfirmReplayIndex(null); }}
+                                                className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold py-1.5 rounded-lg active:scale-95 transition-all"
+                                            >
+                                                いいえ
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         );
                     })

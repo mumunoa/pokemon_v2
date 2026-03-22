@@ -103,9 +103,13 @@ export const Card: React.FC<CardProps> = React.memo(({ card, style = {}, classNa
 
     // Image visibility logic based on displayMode
     const shouldShowImage = displayMode === 'local-image';
+    
+    // Rewrite external Pokemon-card URL to proxy
+    const getProxiedUrl = (url: string) => url.replace('https://www.pokemon-card.com/', '/image-proxy/');
+    
     const bgImageUrl = (card.isReversed)
-        ? 'https://www.pokemon-card.com/assets/images/card_images/back.png'
-        : (shouldShowImage ? card.imageUrl : 'none');
+        ? '/image-proxy/assets/images/card_images/back.png'
+        : (shouldShowImage ? getProxiedUrl(card.imageUrl) : 'none');
 
     let finalTransform = '';
 

@@ -24,12 +24,11 @@ export const ShareModal: React.FC<Props> = ({ boardRef, isOpen, onClose, aiComme
             setTimeout(() => {
                 if (!boardRef.current) return;
                 
-                html2canvas(boardRef.current, {
-                    backgroundColor: '#0F172A', // slate-950
-                    scale: 1.5, // slightly higher res
-                    useCORS: true, 
-                    allowTaint: true,
-                }).then(canvas => {
+                    html2canvas(boardRef.current, {
+                        backgroundColor: '#0F172A', // slate-950
+                        scale: 1.5, // slightly higher res
+                        useCORS: true, 
+                    }).then(canvas => {
                     const dataUrl = canvas.toDataURL('image/png');
                     setPreviewUrl(dataUrl);
                     setIsLoading(false);

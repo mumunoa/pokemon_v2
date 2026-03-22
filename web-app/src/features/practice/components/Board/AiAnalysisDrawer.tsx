@@ -55,7 +55,12 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                              </button>
                         )}
                     </div>
-                   <CoachPanel result={coachResult} isLoading={coachLoading} />
+                   <CoachPanel 
+                       result={coachResult} 
+                       isLoading={coachLoading} 
+                       isProUser={isPro} 
+                       onUpgradeClick={() => setIsUpgradeOpen(true)}
+                   />
                 </div>
 
                 {/* Status Indicator */}

@@ -132,6 +132,12 @@ export const Arena: React.FC = () => {
     // }, [cards, initializeDeck]);
 
     const handleAnalyzeGame = async () => {
+        const { player1Deck } = useGameStore.getState();
+        if (player1Deck.length === 0) {
+            alert('「設定」からデッキコードを読み込んでください。');
+            return;
+        }
+
         if (isClerkEnabled && !isSignedIn) {
             alert('AI分析機能を利用するにはログインが必要です。');
             return;
@@ -965,7 +971,7 @@ export const Arena: React.FC = () => {
                                         {zones[`${playerId}-deck` as ZoneType].length}
                                     </div>
                                 )}
-                                <div className={`deck-stack player1-card-back w-[90%] h-[92%] absolute bg-slate-700 rounded-md shadow-md ${(isShuffling === playerId || isShuffling === 'both') ? 'animate-shuffle' : ''}`} style={{ backgroundImage: "url('https://www.pokemon-card.com/assets/images/card_images/back.png')", backgroundSize: "cover" }} />
+                                <div className={`deck-stack player1-card-back w-[90%] h-[92%] absolute bg-slate-700 rounded-md shadow-md ${(isShuffling === playerId || isShuffling === 'both') ? 'animate-shuffle' : ''}`} style={{ backgroundImage: "url('/image-proxy/assets/images/card_images/back.png')", backgroundSize: "cover" }} />
                                 <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black/40 rounded transition-opacity">
                                     <span className="text-white text-[10px] font-bold text-center">タップで<br />アクション<br />を見る</span>
                                 </div>
@@ -976,7 +982,7 @@ export const Arena: React.FC = () => {
                                     top: '0', left: '0', width: '90%', height: '92%',
                                     animation: 'drawAnim 1.0s cubic-bezier(0.4, 0, 0.2, 1) forwards'
                                 }}>
-                                    <div className="w-full h-full rounded-md shadow-xl" style={{ backgroundImage: "url('https://www.pokemon-card.com/assets/images/card_images/back.png')", backgroundSize: "cover" }} />
+                                    <div className="w-full h-full rounded-md shadow-xl" style={{ backgroundImage: "url('/image-proxy/assets/images/card_images/back.png')", backgroundSize: "cover" }} />
                                 </div>
                             )}
 
@@ -985,7 +991,7 @@ export const Arena: React.FC = () => {
                                     top: '0', left: '0', width: '90%', height: '92%',
                                     animation: 'returnToDeckAnim 0.5s ease-in forwards'
                                 }}>
-                                    <div className="w-full h-full rounded-md shadow-xl" style={{ backgroundImage: "url('https://www.pokemon-card.com/assets/images/card_images/back.png')", backgroundSize: "cover" }} />
+                                    <div className="w-full h-full rounded-md shadow-xl" style={{ backgroundImage: "url('/image-proxy/assets/images/card_images/back.png')", backgroundSize: "cover" }} />
                                 </div>
                             )}
                         </div>
@@ -1052,7 +1058,7 @@ export const Arena: React.FC = () => {
                 {isOpponent ? (
                     <Zone id={`${playerId}-hand` as ZoneType} className={`${playerId}-hand-opponent relative w-full flex justify-center space-x-[calc(var(--card-w)*-0.6)] overflow-visible z-[10] opacity-90 flex-shrink-0`} style={{ height: 'calc(var(--card-h) * 0.5)' }}>
                         {zones[`${playerId}-hand` as ZoneType].map((cardId) => (
-                            <div key={cardId} className="w-[var(--card-w)] h-[calc(var(--card-w)*1.4)] bg-slate-700 rounded shadow-md border border-slate-600 scale-[0.6] origin-top" style={{ backgroundImage: "url('https://www.pokemon-card.com/assets/images/card_images/back.png')", backgroundSize: "cover" }} />
+                            <div key={cardId} className="w-[var(--card-w)] h-[calc(var(--card-w)*1.4)] bg-slate-700 rounded shadow-md border border-slate-600 scale-[0.6] origin-top" style={{ backgroundImage: "url('/image-proxy/assets/images/card_images/back.png')", backgroundSize: "cover" }} />
                         ))}
                     </Zone>
                 ) : (
@@ -1083,12 +1089,49 @@ export const Arena: React.FC = () => {
                             <button className="bg-orange-700 hover:bg-orange-600 text-white rounded shadow font-bold border border-orange-500 transition-colors responsive-btn" onClick={() => handleReturnToDeck(playerId)}>山札に戻す</button>
                         </div>
 
-                        {/* Hand Count Display */}
-                        <div className="absolute top-2 right-[12vw] text-slate-400 text-[var(--btn-font-size)] scale-[0.8] origin-right font-bold font-mono bg-slate-800 px-2 py-1 rounded-full border border-slate-700 shadow-inner z-[70]">
+                        {/* Hand Count Display - Moved to bottom right */}
+                        <div className="absolute bottom-4 right-4 text-slate-400 text-[var(--btn-font-size)] scale-[0.9] origin-right font-bold font-mono bg-slate-900/80 px-3 py-1.5 rounded-full border border-slate-700 shadow-xl z-[70] backdrop-blur-sm">
                             手札 : {zones[`${playerId}-hand` as ZoneType].length}
                         </div>
                         {renderHandCards(playerId)}
                     </Zone>
+                )}
+
+                {/* Relocated Operation Buttons (Right side of self field) */}
+                {!isOpponent && (
+                    <div className="absolute right-[1vw] top-[40%] -translate-y-1/2 z-[8000] flex flex-col gap-3 items-center p-2 bg-slate-900/40 rounded-2xl border border-slate-700/50 backdrop-blur-md shadow-2xl">
+                        <button
+                            className="bg-indigo-700 hover:bg-indigo-600 text-white rounded-xl shadow-lg font-bold border border-indigo-500 transition-all active:scale-95 flex flex-col items-center justify-center py-2.5 px-3 text-[10px] w-16 group"
+                            onClick={() => setIsShareModalOpen(true)}
+                            title="X(Twitter)へシェア"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mb-1 group-hover:-translate-y-0.5 transition-transform"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                            <span>シェア</span>
+                        </button>
+                        
+                        {useGameStore.getState().currentTurnPlayer === (isOpponentView ? 'player2' : 'player1') && (
+                            <button
+                                className="bg-purple-700 hover:bg-purple-600 text-white rounded-xl shadow-lg font-bold border border-purple-500 transition-all active:scale-95 py-2.5 px-3 text-[10px] w-16 relative flex flex-col items-center justify-center gap-1 group"
+                                onClick={handleAnalyzeGame}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mb-0.5 group-hover:rotate-12 transition-transform">
+                                    <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.04-2.44 2.5 2.5 0 0 1-2.04-2.44 2.5 2.5 0 0 1 0-4.12 2.5 2.5 0 0 1 2.04-2.44 2.5 2.5 0 0 1 2.04-2.44A2.5 2.5 0 0 1 9.5 2z"/>
+                                    <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.04-2.44 2.5 2.5 0 0 0 2.04-2.44 2.5 2.5 0 0 0 0-4.12 2.5 2.5 0 0 0-2.04-2.44 2.5 2.5 0 0 0-2.04-2.44A2.5 2.5 0 0 0 14.5 2z"/>
+                                </svg>
+                                <span>AI分析</span>
+                                {(isClerkEnabled && isSignedIn && !isPro && tickets !== null) && (
+                                    <span className="absolute -top-1.5 -right-1.5 bg-yellow-500 text-black text-[8px] font-black px-1 py-0.5 rounded-full border border-yellow-300 shadow-md">
+                                        ⚡️{tickets}
+                                    </span>
+                                )}
+                                {(isClerkEnabled && isSignedIn && isPro) && (
+                                    <span className="absolute -top-1.5 -right-1.5 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white text-[8px] font-black px-1 py-0.5 rounded-md border border-yellow-300 shadow-md">
+                                        PRO
+                                    </span>
+                                )}
+                            </button>
+                        )}
+                    </div>
                 )}
             </div>
         );
@@ -1161,40 +1204,14 @@ export const Arena: React.FC = () => {
                     </div>
 
                     {/* Operation Buttons (Right side of bar) */}
-                    <div className="flex space-x-[var(--card-gap)] absolute right-[2vw] z-[5000]">
-                        <button
-                            className="bg-indigo-700 hover:bg-indigo-600 text-white rounded shadow-md font-bold border border-indigo-500 transition-colors flex items-center justify-center p-2 sm:px-3 sm:py-1"
-                            onClick={() => setIsShareModalOpen(true)}
-                            title="X(Twitter)へシェア"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="sm:mr-1"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-                            <span className="hidden sm:inline">シェア</span>
-                        </button>
+                    <div className="flex items-center space-x-[var(--card-gap)] absolute right-[2vw] z-[5000]">
                         {useGameStore.getState().currentTurnPlayer === (isOpponentView ? 'player2' : 'player1') && (
-                            <>
-                                <button
-                                    className="bg-purple-700 hover:bg-purple-600 text-white rounded shadow-md font-bold border border-purple-500 transition-colors responsive-btn relative flex items-center justify-center gap-1"
-                                    onClick={handleAnalyzeGame}
-                                >
-                                    AI分析
-                                    {(isClerkEnabled && isSignedIn && !isPro && tickets !== null) && (
-                                        <span className="absolute -top-2 -right-2 bg-yellow-500 text-black text-[10px] sm:text-xs font-black px-1.5 py-0.5 rounded-full border border-yellow-300 shadow-md transform scale-90 sm:scale-100">
-                                            ⚡️{tickets}
-                                        </span>
-                                    )}
-                                    {(isClerkEnabled && isSignedIn && isPro) && (
-                                        <span className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md border border-yellow-300 shadow-md">
-                                            PRO
-                                        </span>
-                                    )}
-                                </button>
-                                <button
-                                    className={`text-white rounded shadow-md font-bold border transition-colors responsive-btn ${isGameStarted ? 'bg-red-700 hover:bg-red-600 border-red-500' : 'bg-blue-700 hover:bg-blue-600 border-blue-500'}`}
-                                    onClick={() => isGameStarted ? setIsEndTurnModalOpen(true) : setIsStartGameModalOpen(true)}
-                                >
-                                    {isGameStarted ? 'ターン終了' : 'バトル開始'}
-                                </button>
-                            </>
+                            <button
+                                className={`text-white rounded shadow-md font-bold border transition-colors responsive-btn ${isGameStarted ? 'bg-red-700 hover:bg-red-600 border-red-500' : 'bg-blue-700 hover:bg-blue-600 border-blue-500'}`}
+                                onClick={() => isGameStarted ? setIsEndTurnModalOpen(true) : setIsStartGameModalOpen(true)}
+                            >
+                                {isGameStarted ? 'ターン終了' : 'バトル開始'}
+                            </button>
                         )}
                         <button
                             className="bg-slate-700 hover:bg-slate-600 text-white rounded shadow-md font-bold border border-slate-500 transition-colors responsive-btn"

@@ -176,9 +176,9 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                                         {isPro && (
                                                             <button 
                                                                 onClick={(e) => { e.stopPropagation(); togglePin(deckCodeInfo.code); }}
-                                                                className={`p-1 rounded transition-colors shrink-0 ${deckCodeInfo.pinned ? 'text-yellow-400' : 'text-slate-600 hover:text-slate-400 opacity-0 group-hover:opacity-100'}`}
+                                                                className={`p-1 rounded transition-all shrink-0 ${deckCodeInfo.pinned ? 'text-yellow-400 opacity-100' : 'text-slate-500 hover:text-slate-300 opacity-40 hover:opacity-100'}`}
                                                             >
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill={deckCodeInfo.pinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5"/><path d="M9 10.5V7a3 3 0 0 1 6 0v3.5M15 10.5h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2"/></svg>
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill={deckCodeInfo.pinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5"/><path d="M9 10.5V7a3 3 0 0 1 6 0v3.5M15 10.5h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2"/></svg>
                                                             </button>
                                                         )}
                                                         <div className="flex-1 min-w-0 flex flex-col justify-center">
@@ -201,9 +201,9 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                                                     {isPro && (
                                                                         <button 
                                                                             onClick={(e) => { e.stopPropagation(); setEditingName({ id: deckCodeInfo.code, name: deckCodeInfo.name || "" }); }}
-                                                                            className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-blue-400 transition-opacity p-0.5"
+                                                                            className="text-slate-500 hover:text-blue-400 transition-opacity p-0.5 opacity-40 hover:opacity-100"
                                                                         >
-                                                                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
                                                                         </button>
                                                                     )}
                                                                 </span>
@@ -212,9 +212,9 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                                         </div>
                                                         <button 
                                                             onClick={(e) => { e.stopPropagation(); removeDeck(deckCodeInfo.code); }}
-                                                            className="p-1 text-slate-600 hover:text-red-400 hover:bg-red-400/10 rounded transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                                                            className="p-1 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded transition-all opacity-40 hover:opacity-100 shrink-0"
                                                         >
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                                                         </button>
                                                     </div>
                                                 ))}
