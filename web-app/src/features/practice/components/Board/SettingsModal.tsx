@@ -196,20 +196,20 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                                                     className="w-full bg-slate-900 text-[10px] text-white px-1.5 py-0.5 rounded border border-blue-500 outline-none"
                                                                 />
                                                             ) : (
-                                                                <span className="text-[11px] font-bold text-slate-200 truncate flex items-center gap-1.5">
+                                                                <span className="text-[11px] font-bold text-slate-200 truncate">
                                                                     {deckCodeInfo.name || "名称未設定デッキ"}
-                                                                    {isPro && (
-                                                                        <button 
-                                                                            onClick={(e) => { e.stopPropagation(); setEditingName({ id: deckCodeInfo.code, name: deckCodeInfo.name || "" }); }}
-                                                                            className="text-slate-500 hover:text-blue-400 transition-opacity p-0.5 opacity-40 hover:opacity-100"
-                                                                        >
-                                                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                                                                        </button>
-                                                                    )}
                                                                 </span>
                                                             )}
                                                             <span className="text-[9px] text-slate-500 font-mono tracking-widest leading-none mt-0.5">{deckCodeInfo.code}</span>
                                                         </div>
+                                                        {isPro && editingName?.id !== deckCodeInfo.code && (
+                                                            <button 
+                                                                onClick={(e) => { e.stopPropagation(); setEditingName({ id: deckCodeInfo.code, name: deckCodeInfo.name || "" }); }}
+                                                                className="p-1 text-slate-500 hover:text-blue-400 rounded transition-all opacity-40 hover:opacity-100 shrink-0"
+                                                            >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                                                            </button>
+                                                        )}
                                                         <button 
                                                             onClick={(e) => { e.stopPropagation(); removeDeck(deckCodeInfo.code); }}
                                                             className="p-1 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded transition-all opacity-40 hover:opacity-100 shrink-0"

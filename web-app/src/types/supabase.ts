@@ -61,6 +61,32 @@ export interface Database {
           created_at?: string
         }
       }
+      user_decks: {
+        Row: {
+          id: string
+          user_id: string
+          code: string
+          name: string | null
+          pinned: boolean
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          code: string
+          name?: string | null
+          pinned?: boolean
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          code?: string
+          name?: string | null
+          pinned?: boolean
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never

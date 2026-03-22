@@ -1097,42 +1097,7 @@ export const Arena: React.FC = () => {
                     </Zone>
                 )}
 
-                {/* Relocated Operation Buttons (Right side of self field) */}
-                {!isOpponent && (
-                    <div className="absolute right-[1vw] top-[40%] -translate-y-1/2 z-[8000] flex flex-col gap-3 items-center p-2 bg-slate-900/40 rounded-2xl border border-slate-700/50 backdrop-blur-md shadow-2xl">
-                        <button
-                            className="bg-indigo-700 hover:bg-indigo-600 text-white rounded-xl shadow-lg font-bold border border-indigo-500 transition-all active:scale-95 flex flex-col items-center justify-center py-2.5 px-3 text-[10px] w-16 group"
-                            onClick={() => setIsShareModalOpen(true)}
-                            title="X(Twitter)へシェア"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mb-1 group-hover:-translate-y-0.5 transition-transform"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-                            <span>シェア</span>
-                        </button>
-                        
-                        {useGameStore.getState().currentTurnPlayer === (isOpponentView ? 'player2' : 'player1') && (
-                            <button
-                                className="bg-purple-700 hover:bg-purple-600 text-white rounded-xl shadow-lg font-bold border border-purple-500 transition-all active:scale-95 py-2.5 px-3 text-[10px] w-16 relative flex flex-col items-center justify-center gap-1 group"
-                                onClick={handleAnalyzeGame}
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mb-0.5 group-hover:rotate-12 transition-transform">
-                                    <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.04-2.44 2.5 2.5 0 0 1-2.04-2.44 2.5 2.5 0 0 1 0-4.12 2.5 2.5 0 0 1 2.04-2.44 2.5 2.5 0 0 1 2.04-2.44A2.5 2.5 0 0 1 9.5 2z"/>
-                                    <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.04-2.44 2.5 2.5 0 0 0 2.04-2.44 2.5 2.5 0 0 0 0-4.12 2.5 2.5 0 0 0-2.04-2.44 2.5 2.5 0 0 0-2.04-2.44A2.5 2.5 0 0 0 14.5 2z"/>
-                                </svg>
-                                <span>AI分析</span>
-                                {(isClerkEnabled && isSignedIn && !isPro && tickets !== null) && (
-                                    <span className="absolute -top-1.5 -right-1.5 bg-yellow-500 text-black text-[8px] font-black px-1 py-0.5 rounded-full border border-yellow-300 shadow-md">
-                                        ⚡️{tickets}
-                                    </span>
-                                )}
-                                {(isClerkEnabled && isSignedIn && isPro) && (
-                                    <span className="absolute -top-1.5 -right-1.5 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white text-[8px] font-black px-1 py-0.5 rounded-md border border-yellow-300 shadow-md">
-                                        PRO
-                                    </span>
-                                )}
-                            </button>
-                        )}
-                    </div>
-                )}
+                {/* Removed from here to prevent overlap */}
             </div>
         );
     };
@@ -1199,7 +1164,7 @@ export const Arena: React.FC = () => {
                         {zones.stadium.length > 0 ? renderCardsInZone('player1', 'stadium') : <div className="text-white opacity-30 text-[10px] sm:text-xs font-bold">スタジアム</div>}
                     </Zone>
 
-                    <div className="flex items-center space-x-3 ml-4">
+                    <div className="absolute left-[25vw] flex items-center space-x-3 z-[100]">
                         {isClerkEnabled ? <AuthStatus /> : <div className="text-[10px] text-slate-500">Local Mode</div>}
                     </div>
 
@@ -1219,6 +1184,41 @@ export const Arena: React.FC = () => {
                         >
                             {isOpponentView ? '自分視点' : '相手視点'}
                         </button>
+
+                        {/* Relocated & Resized AI/Share Buttons - Positioned below Opponent View */}
+                        <div className="flex flex-col gap-1.5 absolute top-[calc(var(--bar-h)*1.2)] right-0">
+                            <button
+                                className="bg-indigo-700/90 hover:bg-indigo-600 text-white rounded-lg shadow-lg font-bold border border-indigo-500/50 transition-all active:scale-95 flex flex-col items-center justify-center p-1 px-2 text-[8px] w-12 group backdrop-blur-sm"
+                                onClick={() => setIsShareModalOpen(true)}
+                                title="X(Twitter)へシェア"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                                <span>シェア</span>
+                            </button>
+                            
+                            {useGameStore.getState().currentTurnPlayer === (isOpponentView ? 'player2' : 'player1') && (
+                                <button
+                                    className="bg-purple-700/90 hover:bg-purple-600 text-white rounded-lg shadow-lg font-bold border border-purple-500/50 transition-all active:scale-95 p-1 px-2 text-[8px] w-12 relative flex flex-col items-center justify-center group backdrop-blur-sm"
+                                    onClick={handleAnalyzeGame}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                        <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.04-2.44 2.5 2.5 0 0 1-2.04-2.44 2.5 2.5 0 0 1 0-4.12 2.5 2.5 0 0 1 2.04-2.44 2.5 2.5 0 0 1 2.04-2.44A2.5 2.5 0 0 1 9.5 2z"/>
+                                        <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.04-2.44 2.5 2.5 0 0 0 2.04-2.44 2.5 2.5 0 0 0 0-4.12 2.5 2.5 0 0 0-2.04-2.44 2.5 2.5 0 0 0-2.04-2.44A2.5 2.5 0 0 0 14.5 2z"/>
+                                    </svg>
+                                    <span>AI分析</span>
+                                    {(isClerkEnabled && isSignedIn && !isPro && tickets !== null) && (
+                                        <span className="absolute -top-1 -right-1 bg-yellow-500 text-black text-[7px] font-black px-1 rounded-full border border-yellow-300 shadow-md">
+                                            {tickets}
+                                        </span>
+                                    )}
+                                    {(isClerkEnabled && isSignedIn && isPro) && (
+                                        <span className="absolute -top-1 -right-1 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white text-[7px] font-black px-1 rounded-md border border-yellow-300 shadow-md">
+                                            P
+                                        </span>
+                                    )}
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
 
