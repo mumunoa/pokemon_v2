@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useGameStore } from '@/features/practice/store/useGameStore';
+import { useDeckHistory } from '@/hooks/useDeckHistory';
+import { useAuth } from '@/hooks/useAuth';
 import { PlayerId } from '@/types/game';
 
 interface Props {
@@ -15,6 +17,11 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
         player2Deck,
         initializeDeck
     } = useGameStore();
+
+    const { isPro } = useAuth();
+    const { history, addDeck, updateDeckName, togglePin, removeDeck } = useDeckHistory();
+
+    const [editingName, setEditingName] = useState<{ id: string, name: string } | null>(null);
 
     const [deckCodes, setDeckCodes] = useState<Record<PlayerId, string>>({
         player1: '',
@@ -40,6 +47,8 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
             const result = await loadDeckFromCode(playerId, code);
             if (!result.success) {
                 setErrors(prev => ({ ...prev, [playerId]: result.error || '不明なエラー' }));
+            } else {
+                addDeck(code);
             }
         } finally {
             setLoading(prev => ({ ...prev, [playerId]: false }));
@@ -140,19 +149,74 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                     {errors[pid] && (
                                         <p className="text-red-400 text-[10px] px-1">{errors[pid]}</p>
                                     )}
-                                    {/* Deck History */}
-                                    {useGameStore.getState().deckHistory.length > 0 && (
-                                        <div className="mt-2 space-y-1">
-                                            <p className="text-[10px] text-slate-500 px-1 font-medium">最近使用したデッキ (タップで選択)</p>
-                                            <div className="flex flex-wrap gap-1">
-                                                {useGameStore.getState().deckHistory.map((historyCode, idx) => (
-                                                    <button
-                                                        key={`${pid}-hist-${idx}`}
-                                                        onClick={() => setDeckCodes(prev => ({ ...prev, [pid]: historyCode }))}
-                                                        className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded border border-slate-700 transition-colors max-w-[120px] truncate"
+                                    {/* Advanced Deck History */}
+                                    {history.length > 0 && (
+                                        <div className="mt-3 space-y-2 border-t border-slate-700/50 pt-3">
+                                            <div className="flex justify-between items-center px-1">
+                                                <p className="text-[10px] text-slate-500 font-medium">保存されたデッキ ({history.length}/{isPro ? '20' : '4'})</p>
+                                                {!isPro && history.length >= 4 && (
+                                                    <span className="text-[9px] text-purple-400 bg-purple-900/30 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                                                        <span className="text-xs shrink-0">✨</span>PROで20件まで保存・命名可能
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
+                                                {history.map((deckCodeInfo, idx) => (
+                                                    <div 
+                                                        key={`${pid}-hist-${idx}-${deckCodeInfo.code}`}
+                                                        className={`flex items-center gap-1.5 p-1.5 rounded-lg border transition-colors group cursor-pointer ${
+                                                            deckCodes[pid] === deckCodeInfo.code ? 'bg-blue-900/40 border-blue-500/50' : 'bg-slate-800/80 border-slate-700 hover:border-slate-500 hover:bg-slate-700'
+                                                        }`}
+                                                        onClick={() => {
+                                                            if (editingName?.id !== deckCodeInfo.code) {
+                                                                setDeckCodes(prev => ({ ...prev, [pid]: deckCodeInfo.code }));
+                                                            }
+                                                        }}
                                                     >
-                                                        {historyCode}
-                                                    </button>
+                                                        {isPro && (
+                                                            <button 
+                                                                onClick={(e) => { e.stopPropagation(); togglePin(deckCodeInfo.code); }}
+                                                                className={`p-1 rounded transition-colors shrink-0 ${deckCodeInfo.pinned ? 'text-yellow-400' : 'text-slate-600 hover:text-slate-400 opacity-0 group-hover:opacity-100'}`}
+                                                            >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill={deckCodeInfo.pinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5"/><path d="M9 10.5V7a3 3 0 0 1 6 0v3.5M15 10.5h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2"/></svg>
+                                                            </button>
+                                                        )}
+                                                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                                            {editingName?.id === deckCodeInfo.code ? (
+                                                                <input 
+                                                                    autoFocus
+                                                                    value={editingName.name}
+                                                                    onClick={e => e.stopPropagation()}
+                                                                    onChange={e => setEditingName({ ...editingName, name: e.target.value })}
+                                                                    onBlur={() => { updateDeckName(deckCodeInfo.code, editingName.name); setEditingName(null); }}
+                                                                    onKeyDown={e => {
+                                                                        if (e.key === 'Enter') { updateDeckName(deckCodeInfo.code, editingName.name); setEditingName(null); }
+                                                                        if (e.key === 'Escape') setEditingName(null);
+                                                                    }}
+                                                                    className="w-full bg-slate-900 text-[10px] text-white px-1.5 py-0.5 rounded border border-blue-500 outline-none"
+                                                                />
+                                                            ) : (
+                                                                <span className="text-[11px] font-bold text-slate-200 truncate flex items-center gap-1.5">
+                                                                    {deckCodeInfo.name || "名称未設定デッキ"}
+                                                                    {isPro && (
+                                                                        <button 
+                                                                            onClick={(e) => { e.stopPropagation(); setEditingName({ id: deckCodeInfo.code, name: deckCodeInfo.name || "" }); }}
+                                                                            className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-blue-400 transition-opacity p-0.5"
+                                                                        >
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                                                                        </button>
+                                                                    )}
+                                                                </span>
+                                                            )}
+                                                            <span className="text-[9px] text-slate-500 font-mono tracking-widest leading-none mt-0.5">{deckCodeInfo.code}</span>
+                                                        </div>
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); removeDeck(deckCodeInfo.code); }}
+                                                            className="p-1 text-slate-600 hover:text-red-400 hover:bg-red-400/10 rounded transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                                        </button>
+                                                    </div>
                                                 ))}
                                             </div>
                                         </div>

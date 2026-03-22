@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { useGameStore } from '@/features/practice/store/useGameStore';
 import { StructuredLog, CardInstance } from '@/types/game';
+import { useAuth } from '@/hooks/useAuth';
+import { UpgradePrompt } from '@/features/practice/components/Coach/UpgradePrompt';
 
 interface Props {
     isOpen: boolean;
@@ -57,9 +59,12 @@ const formatLogMessage = (log: StructuredLog, cards: Record<string, CardInstance
 };
 
 export const LogSidePanel: React.FC<Props> = ({ isOpen, onClose }) => {
+    const { isPro } = useAuth();
     const structuredLogs = useGameStore(s => s.structuredLogs);
+    const restoreToLog = useGameStore(s => s.restoreToLog);
     const cards = useGameStore(s => s.cards);
     const scrollRef = useRef<HTMLDivElement>(null);
+    const [isUpgradePromptOpen, setIsUpgradePromptOpen] = React.useState(false);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -97,16 +102,29 @@ export const LogSidePanel: React.FC<Props> = ({ isOpen, onClose }) => {
                         const isTurn = log.actionType === 'end_turn';
                         const message = formatLogMessage(log, cards);
                         const icon = getActionIcon(log.actionType);
+                        
+                        // 最新のログはクリック不要（今の状態であるため）
+                        const isLatest = i === structuredLogs.length - 1;
+
+                        const handleLogClick = () => {
+                            if (isLatest) return;
+                            if (!isPro) {
+                                setIsUpgradePromptOpen(true);
+                                return;
+                            }
+                            restoreToLog(i);
+                        };
 
                         return (
                             <div
                                 key={log.id}
-                                className={`text-[12px] p-2.5 rounded-lg border leading-relaxed transition-all ${isTurn
+                                onClick={handleLogClick}
+                                className={`text-[12px] p-2.5 rounded-lg border leading-relaxed transition-all group ${!isLatest ? 'cursor-pointer hover:scale-[1.02] hover:shadow-lg' : ''} ${isTurn
                                         ? 'bg-blue-500/10 border-blue-500/30 text-blue-100 font-bold mt-4'
                                         : 'bg-slate-800/40 border-slate-700/50 text-slate-200'
                                     }`}
                             >
-                                <div className="flex gap-2 items-start">
+                                <div className="flex gap-2 items-start relative">
                                     <span className="text-slate-500 text-[10px] shrink-0 font-mono mt-0.5 w-4">{i + 1}</span>
                                     <span className="shrink-0 text-sm">{icon}</span>
                                     <div className="flex-1 drop-shadow-sm">
@@ -120,6 +138,21 @@ export const LogSidePanel: React.FC<Props> = ({ isOpen, onClose }) => {
                                             </div>
                                         )}
                                     </div>
+                                    
+                                    {!isLatest && (
+                                        <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center bg-slate-800/90 rounded px-1.5 py-1">
+                                            {isPro ? (
+                                                <span className="text-[9px] text-blue-300 font-bold flex items-center gap-1">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+                                                    ここへ戻る
+                                                </span>
+                                            ) : (
+                                                <span className="text-[9px] text-yellow-500 font-bold flex items-center gap-1">
+                                                    🔒 Pro限定
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         );
@@ -130,9 +163,14 @@ export const LogSidePanel: React.FC<Props> = ({ isOpen, onClose }) => {
             <div className="p-4 border-t border-slate-800 bg-slate-900/50">
                 <p className="text-[10px] text-slate-400 text-center flex flex-col gap-1">
                     <span>※ AI向け構造化ログを表示しています</span>
-                    <span className="text-slate-600">このデータがAIの分析基盤になります</span>
+                    <span className="text-slate-600 font-medium">✨ PRO機能：ログタップで盤面を巻き戻せます</span>
                 </p>
             </div>
+
+            <UpgradePrompt 
+                isOpen={isUpgradePromptOpen} 
+                onClose={() => setIsUpgradePromptOpen(false)} 
+            />
         </div>
     );
 };

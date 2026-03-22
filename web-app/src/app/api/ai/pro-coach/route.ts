@@ -16,10 +16,9 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Fetch user plan
         const { data: userProfile, error: userError } = await supabase
             .from('users')
-            .select('plan_type, ai_tickets')
+            .select('plan_type, ai_tickets, pro_trial_until')
             .eq('id', userId)
             .single();
 
@@ -27,7 +26,8 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
         }
 
-        const isPro = userProfile.plan_type === 'pro' || userProfile.plan_type === 'elite';
+        const trialUntil = userProfile.pro_trial_until ? new Date(userProfile.pro_trial_until) : null;
+        const isPro = userProfile.plan_type === 'pro' || userProfile.plan_type === 'elite' || (trialUntil !== null && trialUntil > new Date());
 
         if (!isPro && userProfile.ai_tickets <= 0) {
             return NextResponse.json({ 

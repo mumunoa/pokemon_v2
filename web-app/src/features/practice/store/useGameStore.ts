@@ -215,6 +215,50 @@ export const useGameStore = create<GameState>((set, get) => ({
         });
     },
 
+    restoreToLog: (logIndex: number) => {
+        set((state) => {
+            const targetLength = logIndex + 1;
+            // そのログが記録された直後の状態（＝次に別のアクションをする直前に保存された過去状態）を探す
+            let targetSnapshotIndex = state.pastStates.findIndex(s => s.structuredLogs.length === targetLength);
+            
+            if (targetSnapshotIndex === -1 && state.structuredLogs.length > targetLength) {
+                // まれにsaveStateが抜けたりしてぴったりの長さがない場合、直近の状態を探す
+                targetSnapshotIndex = state.pastStates.findIndex(s => s.structuredLogs.length > targetLength);
+                if (targetSnapshotIndex > 0) targetSnapshotIndex -= 1;
+            }
+
+            if (targetSnapshotIndex === -1 || targetSnapshotIndex >= state.pastStates.length) {
+                // 該当なし（現在の状態のままか、未来過ぎる場合）
+                return state;
+            }
+
+            const targetSnapshot = state.pastStates[targetSnapshotIndex];
+            const currentSnapshot = JSON.parse(JSON.stringify({
+                cards: state.cards,
+                zones: state.zones,
+                turnCount: state.turnCount,
+                currentTurnPlayer: state.currentTurnPlayer,
+                isOpponentView: state.isOpponentView,
+                displayMode: state.displayMode,
+                logs: state.logs,
+                structuredLogs: state.structuredLogs,
+                stateSnapshots: state.stateSnapshots,
+                deckHistory: state.deckHistory,
+                isGameStarted: state.isGameStarted,
+            }));
+
+            return {
+                ...targetSnapshot,
+                pastStates: state.pastStates.slice(0, targetSnapshotIndex),
+                futureStates: [
+                    ...state.pastStates.slice(targetSnapshotIndex + 1),
+                    currentSnapshot,
+                    ...state.futureStates
+                ]
+            };
+        });
+    },
+
     initializeDeck: (deckList1: DeckCard[], deckList2: DeckCard[]) => {
         set((state) => {
             const newCards: Record<string, CardInstance> = {};
@@ -345,6 +389,7 @@ export const useGameStore = create<GameState>((set, get) => ({
                 stateSnapshots: [setupSnapshot],
                 deckHistory: state.deckHistory,
                 isGameStarted: false,
+                coachResult: null,
                 pastStates: [],
                 futureStates: []
             };
@@ -842,12 +887,12 @@ export const useGameStore = create<GameState>((set, get) => ({
             if (playerId === 'player1') {
                 set((state) => {
                     const newHistory = [code, ...state.deckHistory.filter(c => c !== code)].slice(0, 4);
-                    return { player1Deck: deckList, deckHistory: newHistory };
+                    return { player1Deck: deckList, deckHistory: newHistory, coachResult: null };
                 });
             } else {
                 set((state) => {
                     const newHistory = [code, ...state.deckHistory.filter(c => c !== code)].slice(0, 4);
-                    return { player2Deck: deckList, deckHistory: newHistory };
+                    return { player2Deck: deckList, deckHistory: newHistory, coachResult: null };
                 });
             }
 

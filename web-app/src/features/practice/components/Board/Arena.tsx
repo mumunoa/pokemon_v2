@@ -23,6 +23,7 @@ import { ZonePopupModal, PopupState } from './ZonePopupModal';
 import { AnalysisOverlay } from '../Modals/AnalysisOverlay';
 import { TicketLimitModal } from '../Modals/TicketLimitModal';
 import { AiAnalysisDrawer } from './AiAnalysisDrawer';
+import { ShareModal } from '../Modals/ShareModal';
 import { UserButton, SignInButton } from "@clerk/nextjs";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from '@/lib/supabase';
@@ -62,7 +63,7 @@ export const Arena: React.FC = () => {
     const syncToSupabase = useGameStore(s => s.syncToSupabase);
 
     // カスタムフックを使用してClerkの状態を安全に取得
-    const { user, isSignedIn, getToken } = useAuth();
+    const { user, profile, isPro, isSignedIn, getToken } = useAuth();
     const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
     const isClerkEnabled = clerkKey && clerkKey.startsWith('pk_');
 
@@ -117,32 +118,18 @@ export const Arena: React.FC = () => {
     const [isToolbarOpen, setIsToolbarOpen] = useState(true);
     const [isAiAnalysisModalOpen, setIsAiAnalysisModalOpen] = useState(false);
     const [isAiDrawerOpen, setIsAiDrawerOpen] = useState(false);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
+    const arenaBoardRef = React.useRef<HTMLDivElement>(null);
     const [ticketModalError, setTicketModalError] = useState<string | undefined>(undefined);
-    const [tickets, setTickets] = useState<number | null>(null);
-    const [isPro, setIsPro] = useState(false);
-
-    useEffect(() => {
-        if (isClerkEnabled && isSignedIn && user) {
-            fetch('/api/user/profile')
-                .then(res => res.json())
-                .then(data => {
-                    if (data && data.ai_tickets !== undefined) {
-                        setTickets(data.ai_tickets);
-                        const trialUntil = data.pro_trial_until ? new Date(data.pro_trial_until) : null;
-                        setIsPro(trialUntil !== null && trialUntil > new Date());
-                    }
-                })
-                .catch(err => console.error('Failed to fetch profile', err));
-        }
-    }, [isClerkEnabled, isSignedIn, user]);
+    const tickets = profile?.ai_tickets ?? null;
 
     // 初期起動時、カードが1枚もない場合にサンプルデータを投入
-    useEffect(() => {
-        if (Object.keys(cards).length === 0) {
-            initializeDeck(sampleDeck, sampleDeck);
-        }
-    }, [cards, initializeDeck]);
+    // useEffect(() => {
+    //     if (Object.keys(cards).length === 0) {
+    //         initializeDeck(sampleDeck, sampleDeck);
+    //     }
+    // }, [cards, initializeDeck]);
 
     const handleAnalyzeGame = async () => {
         if (isClerkEnabled && !isSignedIn) {
@@ -277,11 +264,11 @@ export const Arena: React.FC = () => {
     } | null>(null);
 
     // Initialize deck once for testing if empty
-    useEffect(() => {
-        if (Object.keys(cards).length === 0) {
-            initializeDeck(sampleDeck, sampleDeck);
-        }
-    }, [cards, initializeDeck]);
+    // useEffect(() => {
+    //     if (Object.keys(cards).length === 0) {
+    //         initializeDeck(sampleDeck, sampleDeck);
+    //     }
+    // }, [cards, initializeDeck]);
 
     // Configure sensors for both mouse and touch
     const sensors = useSensors(
@@ -1155,7 +1142,10 @@ export const Arena: React.FC = () => {
                 }
             `}</style>
 
-            <div className="battle-arena h-full w-full relative flex flex-col overflow-hidden bg-slate-950 overscroll-none touch-none">
+            <div 
+                ref={arenaBoardRef} 
+                className="battle-arena h-full w-full relative flex flex-col overflow-hidden bg-slate-950 overscroll-none touch-none"
+            >
 
                 {/* Top Field */}
                 {renderPlayerField(isOpponentView ? 'player1' : 'player2', true)}
@@ -1172,6 +1162,14 @@ export const Arena: React.FC = () => {
 
                     {/* Operation Buttons (Right side of bar) */}
                     <div className="flex space-x-[var(--card-gap)] absolute right-[2vw] z-[5000]">
+                        <button
+                            className="bg-indigo-700 hover:bg-indigo-600 text-white rounded shadow-md font-bold border border-indigo-500 transition-colors flex items-center justify-center p-2 sm:px-3 sm:py-1"
+                            onClick={() => setIsShareModalOpen(true)}
+                            title="X(Twitter)へシェア"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="sm:mr-1"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                            <span className="hidden sm:inline">シェア</span>
+                        </button>
                         {useGameStore.getState().currentTurnPlayer === (isOpponentView ? 'player2' : 'player1') && (
                             <>
                                 <button
@@ -1327,6 +1325,19 @@ export const Arena: React.FC = () => {
             <AiAnalysisDrawer 
                 isOpen={isAiDrawerOpen}
                 onClose={() => setIsAiDrawerOpen(false)}
+            />
+
+            <ShareModal
+                boardRef={arenaBoardRef}
+                isOpen={isShareModalOpen}
+                onClose={() => setIsShareModalOpen(false)}
+                turnCount={turnCount}
+                currentTurnPlayer={currentTurnPlayer}
+                aiCommentary={useGameStore.getState().coachResult 
+                    ? (useGameStore.getState().coachResult?.baseRecommendation?.bestAction?.reasoning 
+                        || useGameStore.getState().coachResult?.bestAction?.reasoning 
+                        || "最適な手札使用と展開をご提案します。") 
+                    : undefined}
             />
 
             {/* Ticket Limitation Modal */}

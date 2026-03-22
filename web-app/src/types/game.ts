@@ -215,6 +215,7 @@ export interface GameState {
     addStructuredLog: (log: Omit<StructuredLog, 'id' | 'createdAt' | 'gameId' | 'turn'>) => void;
     takeSnapshot: (phase: StateSnapshot['phase']) => void;
     startGame: () => void;
+    restoreToLog: (logIndex: number) => void;
 
     initializeDeck: (deckList1: DeckCard[], deckList2: DeckCard[]) => void;
     moveCard: (cardId: string, fromZone: ZoneType, toZone: ZoneType, newIndex?: number) => void;

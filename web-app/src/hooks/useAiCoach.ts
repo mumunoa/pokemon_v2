@@ -13,12 +13,12 @@ import { useAuth } from '@/hooks/useAuth';
  */
 export function useAiCoach() {
     const gameState = useGameStore();
-    const { profile } = useAuth();
+    const { profile, isPro } = useAuth();
     const [isThinking, setIsThinking] = useState(false);
     const [latestAnalysis, setLatestAnalysis] = useState<CoachCommentary | null>(null);
 
     // ユーザーのプラン判定
-    const planType = (profile?.plan_type || 'free').toLowerCase();
+    const planType = isPro ? 'pro' : 'free';
 
     useEffect(() => {
         // 1. デバウンス処理（頻繁な再計算を避けるため、最後の変更から500ms待つ）
@@ -67,7 +67,7 @@ export function useAiCoach() {
      */
     const filteredCommentary = useMemo(() => {
         if (!latestAnalysis) return null;
-        if (planType === 'pro' || planType === 'elite') return latestAnalysis;
+        if (planType === 'pro') return latestAnalysis;
 
         // Free版のフィルタリング
         return {

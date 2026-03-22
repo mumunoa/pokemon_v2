@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Arena } from '@/features/practice/components/Board/Arena';
 import { useGameStore } from '@/features/practice/store/useGameStore';
 import { SettingsModal } from '@/features/practice/components/Board/SettingsModal';
@@ -11,17 +11,43 @@ export default function Home() {
   const { turnCount, currentTurnPlayer, logs, isGameStarted } = useGameStore();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLogOpen, setIsLogOpen] = useState(false);
+  const [showSettingsTutorial, setShowSettingsTutorial] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hasSeen = localStorage.getItem('hasSeenSettingsTutorial');
+      if (!hasSeen) {
+        setShowSettingsTutorial(true);
+      }
+    }
+  }, []);
+
+  const handleOpenSettings = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsSettingsOpen(true);
+    if (showSettingsTutorial) {
+      setShowSettingsTutorial(false);
+      localStorage.setItem('hasSeenSettingsTutorial', '1');
+    }
+  };
 
   return (
     <main className="w-full h-screen h-[100dvh] bg-slate-950 flex flex-col overflow-hidden relative" onClick={() => setIsLogOpen(false)}>
       <header className="glass-panel main-header flex justify-between items-center p-1 sm:p-4 bg-slate-900/80 backdrop-blur-md border-b border-slate-700/50 shadow-lg shrink-0 z-[1000]">
-        <button
-          onClick={(e) => { e.stopPropagation(); setIsSettingsOpen(true); }}
-          className="icon-btn settings-btn text-white bg-slate-800 px-4 py-2 rounded-md hover:bg-slate-700 active:scale-95 transition-all flex items-center gap-2"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
-          設定
-        </button>
+        <div className="relative z-[2000]">
+          <button
+            onClick={handleOpenSettings}
+            className={`icon-btn settings-btn text-white px-4 py-2 rounded-md hover:bg-slate-700 active:scale-95 transition-all flex items-center gap-2 ${showSettingsTutorial ? 'bg-indigo-600 ring-4 ring-indigo-500/50 animate-pulse' : 'bg-slate-800'}`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
+            設定
+          </button>
+          {showSettingsTutorial && (
+            <div className="absolute top-full left-0 mt-3 bg-indigo-600 text-white text-xs font-bold px-3 py-2 rounded shadow-xl whitespace-nowrap z-[2001] before:content-[''] before:absolute before:-top-1.5 before:left-6 before:w-3 before:h-3 before:bg-indigo-600 before:rotate-45">
+               デッキコード読み込みはこちら
+            </div>
+          )}
+        </div>
         <div className="turn-indicator font-bold text-sm sm:text-lg text-white">
           {isGameStarted ? `TURN ${turnCount} : ${currentTurnPlayer === 'player1' ? 'プレイヤー1' : 'プレイヤー2'}` : '対戦準備中'}
         </div>
