@@ -8,11 +8,13 @@ import type {
 import { buildBoardUrgencyProfile } from "./boardUrgency";
 import { buildActionCandidatesFromProfiles, inferDynamicRoles } from "./candidateGenerator";
 import { buildCoachNarrative } from "../explain/coachExplainer";
-import { inferOpponentArchetype } from "../inference/opponentInference";
+import { inferOpponentArchetype, inferOpponentThreat } from "../inference/opponentInference";
 import { analyzeDeckContext } from "../inference/deckContextAnalyzer";
 import { predictBoardState } from "./boardPredictor";
 import { evaluateOpeningHand } from "../inference/openingHandEvaluator";
-import type { BoardDiff, ArchetypeStrategy, ActionCandidate, OpeningEvaluation } from "../domain/types";
+import { generateMacroStrategy } from "../inference/prizePlanGenerator";
+import { evaluateDeckCompressionValue } from "../utils/probabilityUtils";
+import type { BoardDiff, ArchetypeStrategy, ActionCandidate, OpeningEvaluation, OpponentThreat, MacroStrategy } from "../domain/types";
 
 type HandCardLike = { instanceId?: string; name: string };
 
@@ -65,6 +67,8 @@ function scoreAction(
   profiles: CardRoleProfile[],
   archetype?: string,
   opponentArchetype?: string,
+  opponentThreat?: OpponentThreat,
+  macroStrategy?: MacroStrategy
 ): ScoredAction {
   const urgency = buildBoardUrgencyProfile(board);
   const strategy = resolveStrategy(archetype, urgency.phase);
@@ -101,12 +105,43 @@ function scoreAction(
   if (profile?.staticRoles.includes("resource_recovery" as never) && board.discard.length >= 8) score += 10;
   if (profile?.staticRoles.includes("pivot" as never) && urgency.needSwitchNow >= 50) score += 8;
 
+  // 大局観（マクロ戦略）に基づくボーナス
+  if (macroStrategy) {
+    if (macroStrategy.activePlan === 'control_lo' && dynamicRoles.includes("stall_trap")) {
+      score += 50; // コントロール方針の場合のバインドの価値を跳ね上げる
+    }
+    if (macroStrategy.activePlan === 'survival_stall' && action.tags.includes("recover")) {
+      score += 30; // ターン稼ぎが必要な時の回復の価値を高く
+    }
+    // 相手のペースが早く防衛ルートが選ばれた時は妨害の価値をさらに上げる
+    if (macroStrategy.activePlan === '1-2-2-1_route' && opponentThreat && action.tags.includes("disrupt")) {
+      score += 20; 
+    }
+  }
+
+  // 確率論とリソース管理（山札圧縮など）
+  // 例：山を掘り進めるドローサポートがある手札で、先にサーチ札（不要札を抜く）を使う順番のスコアを上げる
+  const hasDrawSupportInHand = board.hand.some(h => profiles.find(p => p.cardName === h)?.staticRoles.includes("draw" as never));
+  if (hasDrawSupportInHand && action.tags.some(t => t.includes("search") || t.includes("deck_fixing"))) {
+    // 例：博士の研究を打つ前に山を1枚圧縮すると、キーカード（残り2枚と仮定）を7枚ドローで引く確率がどれくらい上がるか
+    const compressionVal = evaluateDeckCompressionValue(board.deckRemaining, 2, 1, 7);
+    if (compressionVal > 0) {
+      score += Math.min(20, compressionVal * 150); // 確率上昇分スコア化
+    }
+  }
+
+  // リソース枯渇リスクのペナルティ
+  // 例：山札が極端に少ない時にドローしすぎるのはLOリスク
+  if (board.deckRemaining <= 3 && action.tags.includes("draw")) {
+    score -= 40; 
+  }
+
   // 対面（Matchup）に応じたスコア補正
   if (opponentArchetype === "Lugia VSTAR" && dynamicRoles.includes("system_snipe")) {
     score += 10; // アーケオス等を狙う価値を高める
   }
-  if (opponentArchetype === "Charizard ex" && action.tags.includes("disrupt")) {
-    score += 8; // 手札干渉等の価値を上げる
+  if (opponentThreat && action.tags.includes("disrupt")) {
+    score += opponentThreat.disruptValue; // 手札干渉のケア価値
   }
 
   const reasons: string[] = [];
@@ -118,6 +153,22 @@ function scoreAction(
   if (dynamicRoles.includes("stall_trap")) reasons.push("高にげエネを縛って育成ターンを稼げる。");
   if (dynamicRoles.includes("bench_fill_now")) reasons.push("今ターンの展開不足を直接補える。");
   if (dynamicRoles.includes("desperate_draw")) reasons.push("事故手札からの復帰ラインとして有効。");
+  if (opponentThreat && action.tags.includes("disrupt")) {
+    if (opponentThreat.lethalThreat) {
+      reasons.push(`相手の次ターン最大打点（${opponentThreat.expectedMaxDamage}）による負けを防ぐため、手札干渉の価値が高い。`);
+    } else {
+      reasons.push(`相手の要求札（約${opponentThreat.requiredCards}枚）を揃えさせないための妨害。`);
+    }
+  }
+  if (macroStrategy?.activePlan === 'control_lo' && dynamicRoles.includes("stall_trap")) {
+    reasons.push("LO（山札切れ）を狙う大局観にマッチした壁役配置。");
+  }
+  if (hasDrawSupportInHand && action.tags.some(t => t.includes("search") || t.includes("deck_fixing"))) {
+    reasons.push("ドローサポートを打つ前に不要なカードを抜き、山札を圧縮（確率最大化）するプレイング。");
+  }
+  if (board.deckRemaining <= 3 && action.tags.includes("draw")) {
+    reasons.push("LO（山札切れ）リスクがあるため、ドローに対するペナルティ。");
+  }
 
   return {
     ...action,
@@ -160,19 +211,37 @@ export function buildRecommendationFromRoleComplete(params: {
   const { board, handCards, profiles, archetype } = params;
   const urgency = buildBoardUrgencyProfile(board);
   const opponentArchetype = inferOpponentArchetype(board);
+  const opponentThreat = inferOpponentThreat(board, opponentArchetype);
+  const macroStrategy = generateMacroStrategy(board, archetype || "generic");
   const strategy = analyzeDeckContext({ name: archetype || "generic", archetype: archetype || "generic", cards: [] });
   const boardDiff = calculateBoardDiff(board, strategy);
   const openingEvaluation = board.turn <= 1 ? evaluateOpeningHand(board, profiles) : undefined;
   
   const candidates = buildActionCandidatesFromProfiles(board, handCards, profiles, urgency);
   const scored = candidates
-    .map((c) => scoreAction(c, board, profiles, archetype, opponentArchetype))
+    .map((c) => scoreAction(c, board, profiles, archetype, opponentArchetype, opponentThreat, macroStrategy))
     .sort((a, b) => b.score - a.score);
 
   const bestAction = scored[0] ?? null;
   const alternatives = scored.slice(1, 6);
-  const keyCards = buildKeyCards(profiles, handCards, board);
-  const analysis = buildCoachNarrative(board, urgency, bestAction, alternatives);
+  
+  // アクション候補(有力ライン)として既に提案されたカード名を集める
+  const suggestedNames = new Set([
+      bestAction?.cardName,
+      ...alternatives.map(a => a.cardName)
+  ].filter(Boolean));
+
+  // キーカードから重複するカードを除き、純粋に「手札等の重要なカード」としてピックアップする
+  const rawKeyCards = buildKeyCards(profiles, handCards, board);
+  const keyCards = rawKeyCards.filter(k => !suggestedNames.has(k.cardName)).slice(0, 5);
+
+  let analysis = buildCoachNarrative(board, urgency, bestAction, alternatives);
+
+  // 対戦準備中（turn === 0）の場合の専用ガイダンス
+  if (board.turn === 0) {
+    analysis = `【対戦準備中】\n1ターン目の目標は、メインアタッカーやシステム基盤となる「たねポケモン」を場に複数展開することです。\n現在の初期手札から、どのように盤面を構築する（または山札を引く・サーチする）のが最も安定するかを最優先に考えましょう。不要なカードは極力プレイせず、次ターンの手札干渉や展開に備えるのが基本です。`;
+  }
+
 
   return {
     bestAction,
@@ -182,6 +251,8 @@ export function buildRecommendationFromRoleComplete(params: {
     boardStateSummary: boardSummary(board),
     boardDiff,
     openingEvaluation,
+    opponentThreat,
+    macroStrategy,
     timestamp: new Date().toISOString(),
     version: "role-complete-recommendation.v3",
   };

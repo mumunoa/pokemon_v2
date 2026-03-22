@@ -248,6 +248,22 @@ export type OpeningEvaluation = {
   reason: string;
 };
 
+export type OpponentThreat = {
+  expectedMaxDamage: number;
+  requiredCards: number;
+  lethalThreat: boolean;
+  disruptValue: number;
+};
+
+export type WinConditionPlan = '2-2-2_route' | '2-1-2-1_route' | '1-2-2-1_route' | 'control_lo' | 'survival_stall';
+
+export type MacroStrategy = {
+  activePlan: WinConditionPlan;
+  estimatedTurnsToWin: number;
+  opponentEstimatedTurnsToWin: number;
+  description: string;
+};
+
 export type RecommendationResult = {
   bestAction: ScoredAction | null;
   alternatives: ScoredAction[];
@@ -256,6 +272,8 @@ export type RecommendationResult = {
   boardStateSummary: string;
   boardDiff?: BoardDiff;
   openingEvaluation?: OpeningEvaluation;
+  opponentThreat?: OpponentThreat;
+  macroStrategy?: MacroStrategy;
   timestamp: string;
   version: string;
 };

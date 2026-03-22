@@ -63,9 +63,16 @@ interface CardProps {
 export const Card: React.FC<CardProps> = React.memo(({ card, style = {}, className = '', onClick, disableDrag = false, isOverlay = false, zoneName, forcedTransform }) => {
     const displayMode = useGameStore(s => s.displayMode);
     
+    const isVisibleZone = zoneName && (
+        zoneName.includes('hand') || 
+        zoneName.includes('discard') || 
+        zoneName.includes('active') || 
+        zoneName.includes('bench')
+    );
+
     // セレクタを最適化: coachResult全体ではなく、このカードがKeyCardかどうかのみを監視
     const isKeyCard = useGameStore(s => 
-        s.coachResult?.keyCards?.some((k: any) => k.cardName === card.name) ?? false
+        isVisibleZone && (s.coachResult?.keyCards?.some((k: any) => k.cardName === card.name) ?? false)
     );
 
     const { attributes, listeners, setNodeRef: setDraggableRef, transform, isDragging } = useDraggable({

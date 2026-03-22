@@ -95,11 +95,14 @@ function parseCardDetail(html: string, cardID: string) {
   let kinds = 'item';
 
   const topInfo = rightBoxInner.querySelector('.TopInfo.Text-fjalla');
-  const typeText = topInfo?.querySelector('.type')?.textContent?.trim() || '';
+  const typeTextRaw = topInfo?.querySelector('.type')?.textContent || '';
+  // HTML上の「&nbsp;」(ノーブレークスペース)や空白全般を除去して判定しやすくする
+  const typeText = typeTextRaw.replace(/[\s\xa0]+/g, '');
+
   const h2Elements = Array.from(rightBoxInner.querySelectorAll('h2.mt20'));
   const h2Texts = h2Elements.map(h2 => h2.textContent?.trim() || '');
 
-  if (name.includes('エネルギー')) {
+  if (name.includes('エネルギー') && !name.includes('エネルギー回収') && !name.includes('エネルギー転送') && !name.includes('エネルギーつけかえ') && !name.includes('エネルギーリサイクル')) {
     // 1. エネルギー判定
     type = 'energy';
     kinds = 'none';
@@ -109,12 +112,28 @@ function parseCardDetail(html: string, cardID: string) {
     if (kinds === 'none' && h2Texts.some(t => t.includes('特殊エネルギー'))) {
       kinds = 'special';
     }
-  } else if (topInfo && (typeText.includes('たね') || typeText.includes('1進化') || typeText.includes('2進化'))) {
+  } else if (topInfo && (
+    typeText.includes('たね') ||
+    typeText.includes('1進化') ||
+    typeText.includes('2進化') ||
+    typeText.includes('VMAX') ||
+    typeText.includes('VSTAR') ||
+    typeText.includes('V-UNION') ||
+    typeText.includes('レベルアップ') ||
+    typeText.includes('BREAK') ||
+    typeText.includes('復元')
+  )) {
     // 2. ポケモン判定
     type = 'pokemon';
     if (typeText.includes('たね')) kinds = 'basic';
     else if (typeText.includes('1進化')) kinds = 'stage1';
     else if (typeText.includes('2進化')) kinds = 'stage2';
+    else if (typeText.includes('VMAX')) kinds = 'vmax';
+    else if (typeText.includes('VSTAR')) kinds = 'vstar';
+    else if (typeText.includes('V-UNION')) kinds = 'vunion';
+    else if (typeText.includes('レベルアップ')) kinds = 'level_up';
+    else if (typeText.includes('BREAK')) kinds = 'break';
+    else if (typeText.includes('復元')) kinds = 'restored';
   } else {
     // 3. トレーナーズ判定
     type = 'trainer';
