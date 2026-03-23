@@ -203,7 +203,7 @@ function parseCardDetail(html: string, cardID: string) {
   // サポート・テキスト
   const support: any[] = [];
   const supportPs = rightBoxInner.querySelectorAll('p');
-  if (type === 'trainer' && kinds === 'supporter' && supportPs.length > 0) {
+  if (type === 'trainer' && ['supporter', 'item', 'stadium', 'tool'].includes(kinds) && supportPs.length > 0) {
     const fullText = Array.from(supportPs).map(p => p.textContent?.trim()).filter(t => t).join('\n');
     if (fullText) support.push({ text: fullText });
   }

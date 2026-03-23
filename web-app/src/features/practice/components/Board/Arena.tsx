@@ -469,10 +469,12 @@ export const Arena: React.FC = () => {
 
             // 1. Dropped on a Pokemon (Attach Energy, Evolve, Tool)
             if (targetCard && targetCard.type === 'pokemon') {
-                const isTargetInHand = zones['player1-hand'].includes(targetCard.instanceId);
+                const isTargetInHand = finalTargetZone === 'player1-hand' || finalTargetZone === 'player2-hand';
 
                 if (!isTargetInHand) {
-                    if (draggedCard && draggedCard.type === 'energy') {
+                    // Normalize type check to be more robust for different data sources/strings
+                    const draggedType = draggedCard?.type?.trim().toLowerCase();
+                    if (draggedCard && draggedType === 'energy') {
                         if (energySourcePokemonId !== targetCard.instanceId) {
                             if (energySourcePokemonId) {
                                 useGameStore.getState().updateCardState(energySourcePokemonId, {
@@ -532,25 +534,17 @@ export const Arena: React.FC = () => {
                             isValidDrop = false;
                         }
                     }
-                    else if (targetCard.instanceId && sourceZone) {
-                        // Check if dropping onto a card in hand
-                        let cardZone: string | null = null;
-                        for (const [zName, cardIds] of Object.entries(zones)) {
-                            if (cardIds.includes(targetCard.instanceId)) {
-                                cardZone = zName;
-                                break;
-                            }
-                        }
-                        if (cardZone && (cardZone === 'player1-hand' || cardZone === 'player2-hand')) {
-                            moveCard(cardId, sourceZone, cardZone as ZoneType);
-                            isValidDrop = true;
-                        } else {
-                            isValidDrop = false;
-                        }
+                    else if (targetCard.instanceId && sourceZone && isTargetInHand) {
+                        moveCard(cardId, sourceZone, finalTargetZone);
+                        isValidDrop = true;
                     }
                     else {
                         isValidDrop = false;
                     }
+                } else if (sourceZone && sourceZone !== finalTargetZone) {
+                    // If target is in hand, simply move the card to hand
+                    moveCard(cardId, sourceZone, finalTargetZone);
+                    isValidDrop = true;
                 } else {
                     isValidDrop = false;
                 }
@@ -608,7 +602,8 @@ export const Arena: React.FC = () => {
                         const pokemonIdInZone = [...zones[finalTargetZone]].reverse().find(id => cards[id]?.type === 'pokemon');
 
                         if (pokemonIdInZone) {
-                            if (draggedCard.type === 'energy') {
+                            const draggedType = draggedCard?.type?.trim().toLowerCase();
+                            if (draggedCard && draggedType === 'energy') {
                                 if (energySourcePokemonId !== pokemonIdInZone) {
                                     if (energySourcePokemonId) {
                                         useGameStore.getState().updateCardState(energySourcePokemonId, {

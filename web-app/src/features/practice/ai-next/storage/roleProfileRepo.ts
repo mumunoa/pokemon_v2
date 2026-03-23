@@ -3,7 +3,9 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { CardRoleProfile } from '../domain/types';
 
 /**
- * Repository for static card role profiles.
+ * Compatible with current card_role_profiles table:
+ * - keeps onConflict: 'card_id'
+ * - writes primitives / primitive_evidence after migration adds columns
  */
 
 export class RoleProfileRepo {
@@ -13,49 +15,40 @@ export class RoleProfileRepo {
     this.supabase = supabase;
   }
 
+  private toRow(profile: CardRoleProfile) {
+    return {
+      card_id: profile.cardId,
+      card_name: profile.cardName,
+      static_roles: profile.staticRoles,
+      deck_roles: profile.deckRoles || [],
+      dynamic_roles: profile.dynamicRoles || [],
+      key_score: profile.keyScore,
+      labels: profile.labels,
+      reasons: profile.reasons,
+      confidence: profile.confidence,
+      evidence: profile.evidence,
+      primitives: profile.primitives || [],
+      primitive_evidence: profile.primitiveEvidence || [],
+      inferred_at: profile.inferredAt,
+      version: profile.version,
+    };
+  }
+
   async upsert(profile: CardRoleProfile) {
     const { error } = await this.supabase
       .from('card_role_profiles')
-      .upsert({
-        card_id: profile.cardId,
-        card_name: profile.cardName,
-        static_roles: profile.staticRoles,
-        deck_roles: profile.deckRoles || [],
-        dynamic_roles: profile.dynamicRoles || [],
-        key_score: profile.keyScore,
-        labels: profile.labels,
-        reasons: profile.reasons,
-        confidence: profile.confidence,
-        evidence: profile.evidence,
-        inferred_at: profile.inferredAt,
-        version: profile.version,
-      }, { onConflict: 'card_id' });
+      .upsert(this.toRow(profile), { onConflict: 'card_id' });
 
     if (error) throw error;
   }
 
   async upsertMany(profiles: CardRoleProfile[]) {
     if (profiles.length === 0) return;
-    
+
+    const rows = profiles.map((profile) => this.toRow(profile));
     const { error } = await this.supabase
       .from('card_role_profiles')
-      .upsert(
-        profiles.map(p => ({
-          card_id: p.cardId,
-          card_name: p.cardName,
-          static_roles: p.staticRoles,
-          deck_roles: p.deckRoles || [],
-          dynamic_roles: p.dynamicRoles || [],
-          key_score: p.keyScore,
-          labels: p.labels,
-          reasons: p.reasons,
-          confidence: p.confidence,
-          evidence: p.evidence,
-          inferred_at: p.inferredAt,
-          version: p.version,
-        })),
-        { onConflict: 'card_id' }
-      );
+      .upsert(rows, { onConflict: 'card_id' });
 
     if (error) throw error;
   }

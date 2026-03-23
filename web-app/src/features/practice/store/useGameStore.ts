@@ -908,63 +908,14 @@ export const useGameStore = create<GameState>((set, get) => ({
     },
 
     runCoachAnalysis: async () => {
-        const state = get();
         try {
+            const { runProfessionalCoachAnalysis } = await import('./useGameStore.proCoach.integration');
             set({ coachLoading: true });
-
-            const board = toAIBoardState(state);
-            const p1Hand = (state.zones['player1-hand'] || []).map(id => state.cards[id]).filter(Boolean);
-            const cards = Object.values(state.cards ?? {});
-            
-            // SupabaseからRoleProfileを取得 (Phase 5/Reinforcement)
-            if (!supabase) throw new Error('Supabase client not initialized');
-            const repo = new RoleProfileRepo(supabase);
-            const cardIds = [...new Set(cards.map(c => c.baseCardId))].filter(Boolean) as string[];
-            const cachedProfiles = await repo.findByCardIds(cardIds);
-            
-            // 不足分のみローカルで推論して補完
-            const profiles = cards.map((card: any) => {
-                const cached = cachedProfiles.find((p: CardRoleProfile) => p.cardId === card.baseCardId);
-                if (cached) return cached;
-                return createRoleProfile(card, getSectionTexts(card));
-            });
-
-            const handCards = p1Hand.map(c => ({ instanceId: c.instanceId, name: c.name }));
-            const archetype = 'generic';
-
-            // WebWorkerによる非同期解析 (Phase 4: ISSUE-017)
-            if (typeof Worker !== 'undefined') {
-                const worker = new Worker(new URL('../ai-next/engine/ai.worker.ts', import.meta.url));
-                
-                return new Promise<void>((resolve, reject) => {
-                    worker.onmessage = (event) => {
-                        if (event.data.type === 'SUCCESS') {
-                            set({ coachResult: event.data.result, coachLoading: false });
-                            worker.terminate();
-                            resolve();
-                        } else {
-                            console.error('Worker error:', event.data.error);
-                            worker.terminate();
-                            reject(event.data.error);
-                        }
-                    };
-                    worker.onerror = (err) => {
-                        console.error('Worker failed to load:', err);
-                        worker.terminate();
-                        // Fallback to sync
-                        const result = buildRecommendationFromRoleComplete({ board, handCards, profiles, archetype });
-                        set({ coachResult: result, coachLoading: false });
-                        resolve();
-                    };
-                    worker.postMessage({ board, handCards, profiles, archetype });
-                });
-            } else {
-                // Fallback for environments without Worker support
-                const result = buildRecommendationFromRoleComplete({ board, handCards, profiles, archetype });
-                set({ coachResult: result, coachLoading: false });
-            }
+            const result = runProfessionalCoachAnalysis(get());
+            set({ coachResult: result });
         } catch (e) {
             console.error('Coach analysis failed:', e);
+        } finally {
             set({ coachLoading: false });
         }
     },

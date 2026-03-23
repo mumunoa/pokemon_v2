@@ -32,6 +32,8 @@ type CardLike = {
   hp?: string | number;
   retreat?: string | number;
   evolvesTo?: string[];
+  ex_rule?: boolean;
+  attacks?: Array<{ name?: string; text?: string; damage?: string | number }>;
 };
 
 type RescueRule = {
@@ -103,6 +105,23 @@ function addRole(
   });
 }
 
+function hasOpponentReference(text: string): boolean {
+  return includesAny(text, ["相手の", "相手は", "相手のポケモン", "相手のベンチ", "おたがいの"]);
+}
+
+function parsePrintedDamage(card: CardLike): number {
+  const attacks = card.attacks ?? [];
+  let maxDamage = 0;
+  for (const attack of attacks) {
+    const raw = String(attack.damage ?? "");
+    const digits = raw.match(/\d+/g);
+    if (!digits) continue;
+    const value = Math.max(...digits.map(Number));
+    if (value > maxDamage) maxDamage = value;
+  }
+  return maxDamage;
+}
+
 function inferPrimitivesFromText(
   text: string,
   source: RoleEvidenceSource,
@@ -119,7 +138,7 @@ function inferPrimitivesFromText(
     addPrimitive(primitives, primitiveEvidence, "search_deck_to_bench", source, text, "山札から直接ベンチ展開。", 0.98);
   }
 
-  if (includesAny(normalized, ["たねポケモン", "たねを", "hpが「70」以下", "hp70以下"])) {
+  if (includesAny(normalized, ["たねポケモン", "たねを", "HPが「70」以下", "HP70以下"])) {
     addPrimitive(primitives, primitiveEvidence, "search_basic_pokemon", source, text, "たねポケモン条件。", 0.97);
   }
 
@@ -192,7 +211,7 @@ function inferPrimitivesFromText(
 
   if (
     includesAny(normalized, ["自分のバトルポケモン", "自分のポケモン", "自分のバトル場"]) &&
-    includesAny(normalized, ["ベンチポケモンと入れ替える", "入れ替える"])
+    includesAny(normalized, ["ベンチポケモンと入れ替える", "入れ替える", "バトル場に出す"])
   ) {
     addPrimitive(primitives, primitiveEvidence, "switch_self", source, text, "自分側の入れ替え。", 0.98);
   }
@@ -228,14 +247,15 @@ function inferPrimitivesFromText(
   }
 
   if (
+    hasOpponentReference(normalized) &&
     includesAny(normalized, ["エネルギーを"]) &&
     includesAny(normalized, ["トラッシュ", "はがす", "失わせる", "すべてなくなる"])
   ) {
-    addPrimitive(primitives, primitiveEvidence, "energy_denial", source, text, "エネルギー妨害。", 0.94);
+    addPrimitive(primitives, primitiveEvidence, "energy_denial", source, text, "エネルギー妨害。", 0.96);
   }
 
   if (
-    includesAny(normalized, ["hpを", "回復", "ダメカンを"]) &&
+    includesAny(normalized, ["HPを", "回復", "ダメカンを"]) &&
     includesAny(normalized, ["回復", "とる", "のぞく"])
   ) {
     if (includesAny(normalized, ["ダメカン"])) {
@@ -245,8 +265,8 @@ function inferPrimitivesFromText(
     }
   }
 
-  if (includesAny(normalized, ["きぜつしない", "きぜつを防ぐ"])) {
-    addPrimitive(primitives, primitiveEvidence, "prevent_knockout", source, text, "気絶回避。", 0.97);
+  if (includesAny(normalized, ["きぜつしない", "きぜつを防ぐ", "ダメージを受けない", "ワザのダメージを受けない"])) {
+    addPrimitive(primitives, primitiveEvidence, "prevent_knockout", source, text, "気絶回避・無効化。", 0.95);
   }
 
   if (includesAny(normalized, ["受けるワザのダメージ", "ダメージを受けない", "ダメージは", "ダメージを「-"])) {
@@ -269,7 +289,7 @@ function inferPrimitivesFromText(
     addPrimitive(primitives, primitiveEvidence, "increase_retreat_cost", source, text, "にげエネ増加。", 0.95);
   }
 
-  if (includesAny(normalized, ["番を終える", "ワザが使えない"])) {
+  if (hasOpponentReference(normalized) && includesAny(normalized, ["番を終える", "ワザが使えない"])) {
     addPrimitive(primitives, primitiveEvidence, "trap_retreat", source, text, "相手のテンポ制限。", 0.84);
   }
 
@@ -279,7 +299,7 @@ function inferPrimitivesFromText(
   ) {
     addPrimitive(primitives, primitiveEvidence, "spread_damage", source, text, "全体・複数面への干渉。", 0.95);
   }
-  
+
   if (includesAny(normalized, ["サイドを", "多くとる", "サイドを1枚多く", "サイドを2枚多く"])) {
     addPrimitive(primitives, primitiveEvidence, "prize_swing", source, text, "サイド追加取得効果。", 0.99);
   }
@@ -293,7 +313,8 @@ function inferPrimitivesFromText(
 
   if (
     includesAny(normalized, ["このワザのダメージは", "追加で", "ダメージが「+", "ダメージを追加", "×", "倍になる"]) ||
-    /\+\d+/.test(normalized)
+    /\+\d+/.test(normalized) ||
+    (normalized.includes("×") && includesAny(normalized, ["ダメージ", "ワザ"]))
   ) {
     addPrimitive(primitives, primitiveEvidence, "damage_modifier", source, text, "打点変動。", 0.9);
   }
@@ -350,7 +371,6 @@ function mapPrimitivesToRoles(
   if (primitives.includes("search_supporter")) add("supporter_search", "サポートへのアクセス。", 0.9);
   if (primitives.includes("search_stadium")) add("stadium_search", "スタジアムへのアクセス。", 0.9);
   if (primitives.includes("search_energy")) add("energy_search", "エネルギーへのアクセス。", 0.92);
-
   if (primitives.includes("search_deck_to_bench") || primitives.includes("bench_fill") || primitives.includes("bench_expand")) {
     add("bench_setup", "盤面のベンチ形成を前進させる。", 0.95);
   }
@@ -374,23 +394,14 @@ function mapPrimitivesToRoles(
     add("energy_recovery", "エネルギーを回収・再利用する。", 0.93);
   }
 
-  if (primitives.includes("energy_denial")) add("energy_denial", "相手のエネルギー計画を崩す。", 0.94);
-
-  if (primitives.includes("heal_hp") || primitives.includes("remove_damage_counter")) {
-    add("recovery", "回復で盤面を立て直す。", 0.93);
-  }
-
-  if (primitives.includes("recover_pokemon_from_discard") || primitives.includes("resource_loop")) {
-    add("resource_recovery", "ポケモンや汎用札を再利用する。", 0.9);
-  }
-
-  if (primitives.includes("prevent_knockout") || primitives.includes("reduce_damage_taken")) {
-    add("survival", "耐久ラインを上げる。", 0.92);
-  }
+  if (primitives.includes("energy_denial")) add("energy_denial", "相手のエネルギー計画を崩す。", 0.95);
+  if (primitives.includes("heal_hp") || primitives.includes("remove_damage_counter")) add("recovery", "回復で盤面を立て直す。", 0.93);
+  if (primitives.includes("recover_pokemon_from_discard") || primitives.includes("resource_loop")) add("resource_recovery", "ポケモンや汎用札を再利用する。", 0.9);
+  if (primitives.includes("prevent_knockout") || primitives.includes("reduce_damage_taken")) add("survival", "耐久ラインを上げる。", 0.92);
 
   if (primitives.includes("lock_item") || primitives.includes("lock_ability") || primitives.includes("trap_retreat") || primitives.includes("increase_retreat_cost")) {
     add("stall", "相手の行動速度を落とす。", 0.9);
-    add("disrupt", "相手のテンポ・行動を阻害する。", 0.88);
+    add("disrupt", "相手のテンポ・行動を阻害する。", 0.9);
   }
 
   if (primitives.includes("spread_damage")) add("spread", "複数面に干渉する。", 0.95);
@@ -401,10 +412,7 @@ function mapPrimitivesToRoles(
   if (primitives.includes("evolution_cheat")) add("setup_cheat", "通常進行より早い進化。", 0.99);
   if (primitives.includes("bench_expand")) add("board_expansion", "盤面枠を広げる。", 0.99);
   if (primitives.includes("bench_expand") || primitives.includes("increase_retreat_cost")) add("stadium_control", "スタジアム由来の盤面制御。", 0.84);
-
-  if (primitives.includes("prize_swing")) {
-    add("main_attacker", "サイドレースを有利にする強力なアタッカー。", 0.95);
-  }
+  if (primitives.includes("prize_swing")) add("main_attacker", "サイドレースを有利にする主力候補。", 0.95);
 
   const consistencyPrimitives: EffectPrimitive[] = [
     "search_deck_to_hand",
@@ -437,7 +445,6 @@ function mapPrimitivesToRoles(
 function inferBySource(text: string, source: RoleEvidenceSource): SectionInferenceResult {
   const { primitives, primitiveEvidence } = inferPrimitivesFromText(text, source);
   const mapped = mapPrimitivesToRoles(primitives, source, text);
-
   const roles = [...mapped.roles];
   const evidence = [...mapped.evidence];
 
@@ -462,7 +469,10 @@ function inferBySource(text: string, source: RoleEvidenceSource): SectionInferen
     if (primitives.includes("refresh_hand")) {
       addRole(roles, evidence, "draw", "support", text, "手札更新を伴うサポート補充。", 0.93);
     }
-
+    if (hasOpponentReference(text) && primitives.includes("refresh_hand")) {
+      addRole(roles, evidence, "disrupt", "support", text, "相手手札も巻き込む更新で要求値を上げる。", 0.95);
+      addRole(roles, evidence, "stall", "support", text, "相手の計画を崩してテンポを稼ぐ。", 0.9);
+    }
     if (primitives.includes("coin_flip_conditional") && primitives.includes("search_any_pokemon")) {
       addRole(roles, evidence, "consistency", "support", text, "確率付きサーチでも一定の再現性補助。", 0.77);
     }
@@ -489,6 +499,9 @@ const CARD_RESCUE_RULES: Record<string, RescueRule[]> = {
   [normalizeText("ジャッジマン")]: [
     { roles: ["hand_refresh", "stall", "disrupt", "consistency"], reason: "手札更新と相手干渉を兼ねる。", confidence: 0.99 },
   ],
+  [normalizeText("ナンジャモ")]: [
+    { roles: ["hand_refresh", "stall", "disrupt", "consistency"], reason: "終盤の手札干渉性能が高い更新サポート。", confidence: 0.99 },
+  ],
   [normalizeText("モンスターボール")]: [
     { roles: ["pokemon_search", "consistency"], reason: "条件付きのポケモンサーチ。", confidence: 0.82 },
   ],
@@ -496,7 +509,13 @@ const CARD_RESCUE_RULES: Record<string, RescueRule[]> = {
     { roles: ["recovery", "survival"], reason: "HP回復で耐久ラインをずらす。", confidence: 0.99 },
   ],
   [normalizeText("ハイパーボール")]: [
-    { roles: ["pokemon_search", "consistency"], reason: "本来は汎用ポケモンサーチ。", confidence: 0.97 },
+    { roles: ["pokemon_search", "consistency"], reason: "汎用ポケモンサーチ。", confidence: 0.97 },
+  ],
+  [normalizeText("ネストボール")]: [
+    { roles: ["basic_search", "bench_setup", "consistency"], reason: "序盤展開の基礎になる。", confidence: 0.99 },
+  ],
+  [normalizeText("なかよしポフィン")]: [
+    { roles: ["basic_search", "bench_setup", "consistency"], reason: "序盤の2体展開に直結する。", confidence: 0.99 },
   ],
   [normalizeText("夜のタンカ")]: [
     { roles: ["resource_recovery", "energy_recovery", "consistency"], reason: "ポケモン・基本エネルギーの再利用。", confidence: 0.97 },
@@ -537,9 +556,24 @@ const CARD_RESCUE_RULES: Record<string, RescueRule[]> = {
   [normalizeText("ヒカリ")]: [
     { roles: ["energy_accel", "consistency"], reason: "エネルギー運用を補助。", confidence: 0.72 },
   ],
+  [normalizeText("ボスの指令")]: [
+    { roles: ["gust", "consistency"], reason: "詰め・システム狩り・縛りに使える。", confidence: 0.99 },
+  ],
 };
 
 export const ROLE_REGRESSION_SEEDS: RegressionSeed[] = [
+  {
+    name: "なかよしポフィン",
+    source: "support",
+    text: "自分の山札からHPが「70」以下のたねポケモンを2枚まで選び、ベンチに出す。そして山札を切る。",
+    expectedRoles: ["basic_search", "bench_setup", "consistency"],
+  },
+  {
+    name: "ボスの指令",
+    source: "support",
+    text: "相手のベンチポケモンを1匹選び、バトルポケモンと入れ替える。",
+    expectedRoles: ["gust"],
+  },
   {
     name: "ふしぎなアメ",
     source: "support",
@@ -616,25 +650,42 @@ export function createRoleProfile(card: CardLike, sections: SectionInferenceInpu
     }
   }
 
+  if (normalizeText(card.kinds ?? "") === "basic") {
+    addRole(allRoles, allEvidence, "basic_pokemon", "heuristic", `kinds=${card.kinds ?? ""}`, "たねポケモン。", 0.99);
+  } else if (includesAny(String(card.kinds ?? ""), ["stage1", "stage2"])) {
+    addRole(allRoles, allEvidence, "evolution_pokemon", "heuristic", `kinds=${card.kinds ?? ""}`, "進化ポケモン。", 0.98);
+  }
+
   if (normalizeText(card.type ?? "") === "pokemon") {
     const retreatValue = parseRetreatValue(card.retreat);
     if (retreatValue !== null && retreatValue <= 1) {
       addRole(allRoles, allEvidence, "pivot", "heuristic", `retreat=${retreatValue}`, "にげるエネルギーが軽く、ピボット適性が高い。", 0.88);
     }
+
+    const hpValue = parseRetreatValue(card.hp);
+    const maxDamage = parsePrintedDamage(card);
+    if ((hpValue ?? 0) >= 220 || maxDamage >= 160 || !!card.ex_rule) {
+      addRole(allRoles, allEvidence, "main_attacker", "heuristic", `hp=${hpValue ?? 0},damage=${maxDamage}`, "主力アタッカー候補として扱える。", 0.87);
+    }
   }
 
-  // 進化先の重要度（ドラパルトex等）を考慮した重み付け (ISSUE-011強化)
-  const masterEvolutionMeta = ["ドラパルトex", "リザードンex", "ルギアVSTAR", "サーナイトex", "パオジアンex"];
-  if (card.evolvesTo?.some(e => masterEvolutionMeta.includes(e))) {
-    addRole(allRoles, allEvidence, "consistency", "meta_evolution", "トップティアへの進化。", "強力なアタッカーへの進化元として重要度が極めて高い。", 0.99);
-    addRole(allRoles, allEvidence, "bench_setup", "meta_evolution", "トップティアへの進化。", "優先的にベンチに用意すべき進化元。", 0.9);
+  if ((card.evolvesTo?.length ?? 0) > 0 && normalizeText(card.kinds ?? "") === "basic") {
+    addRole(allRoles, allEvidence, "consistency", "heuristic", "進化元ライン。", "進化デッキでは初手で重要度が高い。", 0.92);
+    addRole(allRoles, allEvidence, "bench_setup", "heuristic", "進化元ライン。", "優先的にベンチに置きたい進化元。", 0.88);
+
+    // 進化先の重要度（ドラパルトex等）を考慮した重み付け (ISSUE-011強化)
+    const masterEvolutionMeta = ["ドラパルトex", "リザードンex", "ルギアVSTAR", "サーナイトex", "パオジアンex"];
+    if (card.evolvesTo?.some(e => masterEvolutionMeta.includes(e))) {
+      addRole(allRoles, allEvidence, "consistency", "meta_evolution", "トップティアへの進化。", "強力なアタッカーへの進化元として重要度が極めて高い。", 0.99);
+      addRole(allRoles, allEvidence, "bench_setup", "meta_evolution", "トップティアへの進化。", "優先的にベンチに用意すべき進化元。", 0.9);
+    }
   }
   
   // 高打点・高HPアタッカー判定
-  const hpValue = typeof card.hp === 'number' ? card.hp : parseInt(String(card.hp || '0'));
-  if (hpValue >= 280 || (hpValue >= 200 && (card.kinds?.includes('ex') || card.kinds?.includes('has_rule')))) {
-    addRole(allRoles, allEvidence, "main_attacker", "attribute", `hp=${hpValue}`, "高いHP・耐久性能を持つメインアタッカー候補。", 0.85);
-  }
+  //const hpValue = typeof card.hp === 'number' ? card.hp : parseInt(String(card.hp || '0'));
+  //if (hpValue >= 280 || (hpValue >= 200 && (card.kinds?.includes('ex') || card.kinds?.includes('has_rule')))) {
+  //  addRole(allRoles, allEvidence, "main_attacker", "attribute", `hp=${hpValue}`, "高いHP・耐久性能を持つメインアタッカー候補。", 0.85);
+  //}
 
   const mergedText = sections.map((section) => section.text ?? "").join("\n");
   if (includesAny(mergedText, ["スタジアム"]) && includesAny(mergedText, ["ベンチは8匹まで", "ベンチの数は8匹"])) {

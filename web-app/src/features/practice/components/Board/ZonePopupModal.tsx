@@ -5,7 +5,7 @@ import { Card } from './Card';
 
 export type PopupState = {
     zone: ZoneType;
-    viewMode?: 'top-5' | 'top-7' | 'all' | 'prizes';
+    viewMode?: 'top-1' | 'top-2' | 'top-5' | 'top-7' | 'all' | 'prizes';
 } | null;
 
 interface Props {
@@ -17,7 +17,7 @@ interface Props {
 export const ZonePopupModal: React.FC<Props> = ({ state, onClose, onSelectCard }) => {
     const { cards, zones, drawCards, shuffleDeck, moveCard, updateCardState } = useGameStore();
     const [isPrizesRevealed, setIsPrizesRevealed] = useState(false);
-    const [deckViewMode, setDeckViewMode] = useState<'hidden' | 'top-5' | 'top-7' | 'all'>('hidden');
+    const [deckViewMode, setDeckViewMode] = useState<'hidden' | 'top-1' | 'top-2' | 'top-5' | 'top-7' | 'all'>('hidden');
     const [isShuffling, setIsShuffling] = useState(false);
 
     if (!state) return null;
@@ -94,6 +94,8 @@ export const ZonePopupModal: React.FC<Props> = ({ state, onClose, onSelectCard }
 
                 {state.zone.endsWith('-deck') && (
                     <div className="flex flex-wrap gap-2 mb-4 bg-slate-800 p-2 rounded items-center">
+                        <button className={`responsive-btn rounded shadow font-bold border transition-colors ${deckViewMode === 'top-1' ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-slate-700 border-slate-500 text-slate-200'}`} onClick={() => setDeckViewMode(deckViewMode === 'top-1' ? 'hidden' : 'top-1')}>上1枚見る</button>
+                        <button className={`responsive-btn rounded shadow font-bold border transition-colors ${deckViewMode === 'top-2' ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-slate-700 border-slate-500 text-slate-200'}`} onClick={() => setDeckViewMode(deckViewMode === 'top-2' ? 'hidden' : 'top-2')}>上2枚見る</button>
                         <button className={`responsive-btn rounded shadow font-bold border transition-colors ${deckViewMode === 'top-5' ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-slate-700 border-slate-500 text-slate-200'}`} onClick={() => setDeckViewMode(deckViewMode === 'top-5' ? 'hidden' : 'top-5')}>上5枚見る</button>
                         <button className={`responsive-btn rounded shadow font-bold border transition-colors ${deckViewMode === 'top-7' ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-slate-700 border-slate-500 text-slate-200'}`} onClick={() => setDeckViewMode(deckViewMode === 'top-7' ? 'hidden' : 'top-7')}>上7枚見る</button>
                         <button className={`responsive-btn rounded shadow font-bold border transition-colors ${deckViewMode === 'all' ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-slate-700 border-slate-500 text-slate-200'}`} onClick={() => setDeckViewMode(deckViewMode === 'all' ? 'hidden' : 'all')}>山札全て見る</button>
@@ -122,6 +124,8 @@ export const ZonePopupModal: React.FC<Props> = ({ state, onClose, onSelectCard }
                             if (state.zone.endsWith('-deck')) {
                                 isFaceDown = true;
                                 if (deckViewMode === 'all') isFaceDown = false;
+                                if (deckViewMode === 'top-1' && index < 1) isFaceDown = false;
+                                if (deckViewMode === 'top-2' && index < 2) isFaceDown = false;
                                 if (deckViewMode === 'top-5' && index < 5) isFaceDown = false;
                                 if (deckViewMode === 'top-7' && index < 7) isFaceDown = false;
                             }
@@ -149,6 +153,14 @@ export const ZonePopupModal: React.FC<Props> = ({ state, onClose, onSelectCard }
                                             onClick={() => !isFaceDown && onSelectCard && onSelectCard(card)}
                                         />
                                     </div>
+                                    {!isFaceDown && state.zone.endsWith('-deck') && (
+                                        <button 
+                                            className="mt-2 w-full bg-slate-800 hover:bg-slate-700 text-[#cbd5e1] text-[10px] py-1.5 rounded-md border border-slate-600 shadow-sm transition-colors font-bold"
+                                            onClick={() => moveCard(card.instanceId, state.zone, state.zone, 0)}
+                                        >
+                                            1番下におくる
+                                        </button>
+                                    )}
                                 </div>
                             );
                         })}

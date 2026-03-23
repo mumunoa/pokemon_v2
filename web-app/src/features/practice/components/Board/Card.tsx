@@ -5,14 +5,14 @@ import { CardInstance } from '@/types/game';
 
 export const getEnergyIcon = (energyName: string) => {
     // Map energy names to types
-    if (energyName.includes('雷') || energyName.includes('lightning')) return '/assets/symbols/lightning.png';
+    if (energyName.includes('雷') || energyName.includes('lightning') || energyName.includes('electric')) return '/assets/symbols/lightning.png';
     if (energyName.includes('草') || energyName.includes('grass')) return '/assets/symbols/grass.png';
     if (energyName.includes('炎') || energyName.includes('fire')) return '/assets/symbols/fire.png';
     if (energyName.includes('水') || energyName.includes('water')) return '/assets/symbols/water.png';
     if (energyName.includes('超') || energyName.includes('psychic')) return '/assets/symbols/psychic.png';
     if (energyName.includes('闘') || energyName.includes('fighting')) return '/assets/symbols/fighting.png';
-    if (energyName.includes('悪') || energyName.includes('darkness')) return '/assets/symbols/darkness.png';
-    if (energyName.includes('鋼') || energyName.includes('metal')) return '/assets/symbols/metal.png';
+    if (energyName.includes('悪') || energyName.includes('darkness') || energyName.includes('dark')) return '/assets/symbols/darkness.png';
+    if (energyName.includes('鋼') || energyName.includes('metal') || energyName.includes('steel')) return '/assets/symbols/metal.png';
     if (energyName.includes('ドラゴン') || energyName.includes('dragon')) return '/assets/symbols/dragon.png';
     return '/assets/symbols/colorless.png';
 };
@@ -62,16 +62,16 @@ interface CardProps {
 
 export const Card: React.FC<CardProps> = React.memo(({ card, style = {}, className = '', onClick, disableDrag = false, isOverlay = false, zoneName, forcedTransform }) => {
     const displayMode = useGameStore(s => s.displayMode);
-    
+
     const isVisibleZone = zoneName && (
-        zoneName.includes('hand') || 
-        zoneName.includes('discard') || 
-        zoneName.includes('active') || 
+        zoneName.includes('hand') ||
+        zoneName.includes('discard') ||
+        zoneName.includes('active') ||
         zoneName.includes('bench')
     );
 
     // セレクタを最適化: coachResult全体ではなく、このカードがKeyCardかどうかのみを監視
-    const isKeyCard = useGameStore(s => 
+    const isKeyCard = useGameStore(s =>
         isVisibleZone && (s.coachResult?.keyCards?.some((k: any) => k.cardName === card.name) ?? false)
     );
 
@@ -84,7 +84,9 @@ export const Card: React.FC<CardProps> = React.memo(({ card, style = {}, classNa
     const { isOver, setNodeRef: setDroppableRef } = useDroppable({
         id: card.instanceId,
         data: card,
-        disabled: card.type !== 'pokemon', // Only Pokemon can act as droppables for Energy/Tools
+        // 手札にある場合は全てのカードをドロップターゲットとして有効にする（手札への移動を容易にするため）
+        // フィールドではエネルギー等の付与対象としてポケモンのみを有効にする
+        disabled: card.type !== 'pokemon' && !(zoneName && zoneName.includes('hand')),
     });
 
     // Combine refs so we can drag AND drop on the card
@@ -103,10 +105,10 @@ export const Card: React.FC<CardProps> = React.memo(({ card, style = {}, classNa
 
     // Image visibility logic based on displayMode
     const shouldShowImage = displayMode === 'local-image';
-    
+
     // Rewrite external Pokemon-card URL to proxy
     const getProxiedUrl = (url: string) => url.replace('https://www.pokemon-card.com/', '/image-proxy/');
-    
+
     const bgImageUrl = (card.isReversed)
         ? '/image-proxy/assets/images/card_images/back.png'
         : (shouldShowImage ? getProxiedUrl(card.imageUrl) : 'none');
