@@ -61,6 +61,7 @@ export function scoreKeyCards(
 
         if (score > 30) {
             keyCards.push({
+                cardId: profile.cardId,
                 cardName: profile.cardName,
                 score: score,
                 reason: reasons.join(' / ')

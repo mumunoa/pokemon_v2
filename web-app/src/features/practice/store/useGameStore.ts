@@ -440,7 +440,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                     [toZone]: destArray
                 },
                 logs: [...state.logs, logMsg],
-                structuredLogs: [...state.structuredLogs, structuredLog]
+                structuredLogs: [...state.structuredLogs, structuredLog],
+                coachResult: null
             };
         });
     },
@@ -453,7 +454,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                 cards: {
                     ...state.cards,
                     [cardId]: { ...card, ...updates }
-                }
+                },
+                coachResult: null
             };
         });
     },
@@ -615,7 +617,10 @@ export const useGameStore = create<GameState>((set, get) => ({
             // 手札が変化したのでスナップショットを撮る
             setTimeout(() => get().takeSnapshot('main'), 0);
 
-            return newState;
+            return {
+                ...newState,
+                coachResult: null
+            };
         });
     },
 
@@ -844,7 +849,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                 futureStates: [],
                 logs: [...state.logs, logMsg],
                 structuredLogs: [...state.structuredLogs, structuredLog],
-                stateSnapshots: [...state.stateSnapshots, aiSnapshot]
+                stateSnapshots: [...state.stateSnapshots, aiSnapshot],
+                coachResult: null
             };
         });
     },
@@ -868,7 +874,8 @@ export const useGameStore = create<GameState>((set, get) => ({
             return {
                 isOpponentView: isOpponent,
                 pastStates: [...state.pastStates, snapshot],
-                futureStates: []
+                futureStates: [],
+                coachResult: null
             };
         });
     },

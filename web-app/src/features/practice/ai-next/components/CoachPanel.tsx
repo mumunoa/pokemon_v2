@@ -43,7 +43,7 @@ export function CoachPanel({ result, isLoading, onRun, isProUser = false, onUpgr
               className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-6 py-3 font-semibold text-white shadow-lg transition-all hover:scale-105 hover:shadow-emerald-500/25"
             >
               <div className="absolute inset-0 bg-white/20 opacity-0 transition-opacity group-hover:opacity-100"></div>
-              分析を開始する
+              プレミアムコーチ分析
             </button>
           ) : null}
         </div>
@@ -71,9 +71,9 @@ export function CoachPanel({ result, isLoading, onRun, isProUser = false, onUpgr
         {onRun ? (
           <button
             onClick={onRun}
-            className="rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-white/10"
+            className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs font-bold text-emerald-400 transition-all hover:bg-emerald-500/20 active:scale-95 shadow-[0_0_15px_rgba(16,185,129,0.1)]"
           >
-            再計算
+            プレミアムコーチ分析
           </button>
         ) : null}
       </div>
@@ -232,9 +232,16 @@ export function CoachPanel({ result, isLoading, onRun, isProUser = false, onUpgr
         <div className="rounded-xl bg-white/5 p-4">
           <div className="mb-3 text-sm font-bold text-white/70">プレイングを支えるキーカード</div>
           <div className="space-y-3">
-            {keyCards.slice(0, 3).map((card) => (
-              <KeyCardRow key={card.cardName} card={card} />
-            ))}
+            {keyCards
+              .filter((card, index, self) => 
+                index === self.findIndex((t) => (
+                  t.cardName === card.cardName || (t.cardId && t.cardId === card.cardId)
+                ))
+              )
+              .slice(0, 3)
+              .map((card) => (
+                <KeyCardRow key={card.cardId || card.cardName} card={card} />
+              ))}
           </div>
         </div>
       </div>

@@ -156,7 +156,7 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                                 <p className="text-[10px] text-slate-500 font-medium">保存されたデッキ ({history.length}/{isPro ? '20' : '4'})</p>
                                                 {!isPro && history.length >= 4 && (
                                                     <span className="text-[9px] text-purple-400 bg-purple-900/30 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                                                        <span className="text-xs shrink-0">✨</span>PROで20件まで保存・命名可能
+                                                        <span className="text-xs shrink-0">✨</span>PROで20件まで保存可能
                                                     </span>
                                                 )}
                                             </div>
@@ -188,24 +188,38 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                                                     value={editingName.name}
                                                                     onClick={e => e.stopPropagation()}
                                                                     onChange={e => setEditingName({ ...editingName, name: e.target.value })}
-                                                                    onBlur={() => { updateDeckName(deckCodeInfo.code, editingName.name); setEditingName(null); }}
+                                                                    onBlur={() => { 
+                                                                        if (editingName.name.trim()) {
+                                                                            updateDeckName(deckCodeInfo.code, editingName.name.trim()); 
+                                                                        }
+                                                                        setEditingName(null); 
+                                                                    }}
                                                                     onKeyDown={e => {
-                                                                        if (e.key === 'Enter') { updateDeckName(deckCodeInfo.code, editingName.name); setEditingName(null); }
+                                                                        if (e.key === 'Enter') { 
+                                                                            if (editingName.name.trim()) {
+                                                                                updateDeckName(deckCodeInfo.code, editingName.name.trim()); 
+                                                                            }
+                                                                            setEditingName(null); 
+                                                                        }
                                                                         if (e.key === 'Escape') setEditingName(null);
                                                                     }}
-                                                                    className="w-full bg-slate-900 text-[10px] text-white px-1.5 py-0.5 rounded border border-blue-500 outline-none"
+                                                                    className="w-full bg-slate-900 font-bold text-xs text-blue-400 px-2 py-1 rounded border border-blue-500 outline-none shadow-[0_0_10px_rgba(59,130,246,0.2)]"
                                                                 />
                                                             ) : (
-                                                                <span className="text-[11px] font-bold text-slate-200 truncate">
+                                                                <span className="text-[11px] font-bold text-slate-200 truncate pr-4">
                                                                     {deckCodeInfo.name || "名称未設定デッキ"}
                                                                 </span>
                                                             )}
                                                             <span className="text-[9px] text-slate-500 font-mono tracking-widest leading-none mt-0.5">{deckCodeInfo.code}</span>
                                                         </div>
-                                                        {isPro && editingName?.id !== deckCodeInfo.code && (
+                                                        {editingName?.id !== deckCodeInfo.code && (
                                                             <button 
-                                                                onClick={(e) => { e.stopPropagation(); setEditingName({ id: deckCodeInfo.code, name: deckCodeInfo.name || "" }); }}
-                                                                className="p-1 text-slate-500 hover:text-blue-400 rounded transition-all opacity-40 hover:opacity-100 shrink-0"
+                                                                onClick={(e) => { 
+                                                                    e.stopPropagation(); 
+                                                                    setEditingName({ id: deckCodeInfo.code, name: deckCodeInfo.name || "" }); 
+                                                                }}
+                                                                className="p-1.5 text-slate-500 hover:text-blue-400 rounded-lg transition-all opacity-40 hover:opacity-100 shrink-0 hover:bg-blue-400/10"
+                                                                title="名前を変更"
                                                             >
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
                                                             </button>

@@ -44,7 +44,7 @@ export const Arena: React.FC = () => {
     const currentTurnPlayer = useGameStore(s => s.currentTurnPlayer);
     const isOpponentView = useGameStore(s => s.isOpponentView);
     const isGameStarted = useGameStore(s => s.isGameStarted);
-    
+
     // Actions
     const startGame = useGameStore(s => s.startGame);
     const endTurn = useGameStore(s => s.endTurn);
@@ -1053,8 +1053,15 @@ export const Arena: React.FC = () => {
                 {isOpponent ? (
                     <Zone id={`${playerId}-hand` as ZoneType} className={`${playerId}-hand-opponent relative w-full flex justify-center space-x-[calc(var(--card-w)*-0.6)] overflow-visible z-[10] opacity-90 flex-shrink-0`} style={{ height: 'calc(var(--card-h) * 0.5)' }}>
                         {zones[`${playerId}-hand` as ZoneType].map((cardId) => (
-                            <div key={cardId} className="w-[var(--card-w)] h-[calc(var(--card-w)*1.4)] bg-slate-700 rounded shadow-md border border-slate-600 scale-[0.6] origin-top" style={{ backgroundImage: "url('/image-proxy/assets/images/card_images/back.png')", backgroundSize: "cover" }} />
+                            <div key={cardId} className="w-[var(--card-w)] h-[calc(var(--card-h)*1.4)] bg-slate-700 rounded shadow-md border border-slate-600 scale-[0.6] origin-top" style={{ backgroundImage: "url('/image-proxy/assets/images/card_images/back.png')", backgroundSize: "cover" }} />
                         ))}
+
+                        {/* Opponent Hand Display & Log Button Placeholder */}
+                        <div className="absolute -bottom-6 right-[5%] flex flex-col items-center gap-1 z-[100]">
+                            <div className="bg-slate-900/80 text-white text-[9px] px-2 py-0.5 rounded-md border border-slate-700 shadow-xl backdrop-blur-sm font-mono font-bold">
+                                手札 : {zones[`${playerId}-hand` as ZoneType].length}
+                            </div>
+                        </div>
                     </Zone>
                 ) : (
                     <Zone id={`${playerId}-hand` as ZoneType} className={`${playerId}-hand relative w-full bg-slate-900/90 border-t border-slate-700 shadow-[0_-5px_15px_rgba(0,0,0,0.5)] flex items-start justify-center space-x-[calc(var(--card-w)*-0.4)] overflow-visible z-50 pb-1 flex-shrink-0`} style={{ height: 'calc(var(--card-h) * var(--hand-h-mult))' }}>
@@ -1145,8 +1152,8 @@ export const Arena: React.FC = () => {
                 }
             `}</style>
 
-            <div 
-                ref={arenaBoardRef} 
+            <div
+                ref={arenaBoardRef}
                 className="battle-arena h-full w-full relative flex flex-col overflow-hidden bg-slate-950 overscroll-none touch-none"
             >
 
@@ -1159,7 +1166,7 @@ export const Arena: React.FC = () => {
                         {zones.stadium.length > 0 ? renderCardsInZone('player1', 'stadium') : <div className="text-white opacity-30 text-[10px] sm:text-xs font-bold">スタジアム</div>}
                     </Zone>
 
-                    <div className="absolute left-[25vw] flex items-center space-x-3 z-[100]">
+                    <div className="absolute left-1/4 -translate-x-1/2 top-1/2 -translate-y-1/2 flex items-center space-x-3 z-[100]">
                         {isClerkEnabled ? <AuthStatus /> : <div className="text-[10px] text-slate-500">Local Mode</div>}
                     </div>
 
@@ -1187,18 +1194,18 @@ export const Arena: React.FC = () => {
                                 onClick={() => setIsShareModalOpen(true)}
                                 title="X(Twitter)へシェア"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" y1="2" x2="12" y2="15" /></svg>
                                 <span>シェア</span>
                             </button>
-                            
+
                             {useGameStore.getState().currentTurnPlayer === (isOpponentView ? 'player2' : 'player1') && (
                                 <button
                                     className="bg-purple-700/90 hover:bg-purple-600 text-white rounded-lg shadow-lg font-bold border border-purple-500/50 transition-all active:scale-95 p-1 px-2 text-[8px] w-12 relative flex flex-col items-center justify-center group backdrop-blur-sm"
                                     onClick={handleAnalyzeGame}
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                        <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.04-2.44 2.5 2.5 0 0 1-2.04-2.44 2.5 2.5 0 0 1 0-4.12 2.5 2.5 0 0 1 2.04-2.44 2.5 2.5 0 0 1 2.04-2.44A2.5 2.5 0 0 1 9.5 2z"/>
-                                        <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.04-2.44 2.5 2.5 0 0 0 2.04-2.44 2.5 2.5 0 0 0 0-4.12 2.5 2.5 0 0 0-2.04-2.44 2.5 2.5 0 0 0-2.04-2.44A2.5 2.5 0 0 0 14.5 2z"/>
+                                        <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.04-2.44 2.5 2.5 0 0 1-2.04-2.44 2.5 2.5 0 0 1 0-4.12 2.5 2.5 0 0 1 2.04-2.44 2.5 2.5 0 0 1 2.04-2.44A2.5 2.5 0 0 1 9.5 2z" />
+                                        <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.04-2.44 2.5 2.5 0 0 0 2.04-2.44 2.5 2.5 0 0 0 0-4.12 2.5 2.5 0 0 0-2.04-2.44 2.5 2.5 0 0 0-2.04-2.44A2.5 2.5 0 0 0 14.5 2z" />
                                     </svg>
                                     <span>AI分析</span>
                                     {(isClerkEnabled && isSignedIn && !isPro && tickets !== null) && (
@@ -1334,7 +1341,7 @@ export const Arena: React.FC = () => {
             />
 
             {/* Free Tier AI Analysis Drawer */}
-            <AiAnalysisDrawer 
+            <AiAnalysisDrawer
                 isOpen={isAiDrawerOpen}
                 onClose={() => setIsAiDrawerOpen(false)}
             />
@@ -1345,10 +1352,10 @@ export const Arena: React.FC = () => {
                 onClose={() => setIsShareModalOpen(false)}
                 turnCount={turnCount}
                 currentTurnPlayer={currentTurnPlayer}
-                aiCommentary={useGameStore.getState().coachResult 
-                    ? (useGameStore.getState().coachResult?.baseRecommendation?.bestAction?.reasoning 
-                        || useGameStore.getState().coachResult?.bestAction?.reasoning 
-                        || "最適な手札使用と展開をご提案します。") 
+                aiCommentary={useGameStore.getState().coachResult
+                    ? (useGameStore.getState().coachResult?.baseRecommendation?.bestAction?.reasoning
+                        || useGameStore.getState().coachResult?.bestAction?.reasoning
+                        || "最適な手札使用と展開をご提案します。")
                     : undefined}
             />
 

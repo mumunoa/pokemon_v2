@@ -230,6 +230,7 @@ export type ScoredAction = ActionCandidate & {
 };
 
 export type KeyCard = {
+  cardId?: string;
   cardName: string;
   score: number;
   reason: string;

@@ -38,26 +38,28 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-6">
-                {/* Professional Analysis Section */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-8">
+                {/* 1. Deck Simulation Section (Moved to Top) */}
                 <div className="space-y-4">
+                    <h4 className="text-white text-xs font-bold flex items-center gap-2">
+                        <span className="w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center text-[10px]">1</span>
+                        デッキ安定度（初動AI分析）
+                    </h4>
+                    <InitialSimulationCard planType={planType} />
+                </div>
+
+                {/* 2. Professional Tactical Analysis Section */}
+                <div className="pt-6 border-t border-slate-800 space-y-4">
                     <div className="flex justify-between items-center">
                         <h4 className="text-white text-xs font-bold flex items-center gap-2">
-                            <span className="w-5 h-5 bg-emerald-600 rounded-full flex items-center justify-center text-[10px]">🔥</span>
+                            <span className="w-5 h-5 bg-emerald-600 rounded-full flex items-center justify-center text-[10px]">2</span>
                             プロタクティカル分析
                         </h4>
-                        {!coachResult && !coachLoading && (
-                             <button 
-                                onClick={() => runCoachAnalysis()}
-                                className="text-[10px] bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-full font-bold transition-all active:scale-95 shadow-lg shadow-emerald-500/20"
-                             >
-                                 深層分析を実行
-                             </button>
-                        )}
                     </div>
                    <CoachPanel 
                        result={coachResult} 
                        isLoading={coachLoading} 
+                       onRun={() => runCoachAnalysis()}
                        isProUser={isPro} 
                        onUpgradeClick={() => setIsUpgradeOpen(true)}
                    />
@@ -81,7 +83,8 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
 
                 {commentary && (
                     <>
-                        {/* Game Context Advice */}
+                        {/* Game Context Advice (Temporarily Commented Out) */}
+                        {/* 
                         <div className="space-y-2">
                             {commentary.gameContext.split(/(?=【)/).map((thought, tIdx) => (
                                 <div key={tIdx} className="bg-indigo-900/10 border border-indigo-500/10 rounded-xl p-3">
@@ -91,11 +94,12 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                                 </div>
                             ))}
                         </div>
+                        */}
 
-                        {/* Best Action */}
-                        <div className="space-y-3">
+                        {/* 3. Best Action */}
+                        <div className="space-y-3 pt-6 border-t border-slate-800">
                             <h4 className="text-white text-xs font-bold flex items-center gap-2">
-                                <span className="w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center text-[10px]">1</span>
+                                <span className="w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center text-[10px]">3</span>
                                 おすすめの一手
                             </h4>
                             
@@ -157,14 +161,7 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                             </div>
                         )}
 
-                        {/* Deck Simulation Section */}
-                        <div className="pt-6 border-t border-slate-800 space-y-4">
-                            <h4 className="text-white text-xs font-bold flex items-center gap-2">
-                                <span className="w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center text-[10px]">2</span>
-                                デッキ安定度（初動AI分析）
-                            </h4>
-                            <InitialSimulationCard planType={planType} />
-                        </div>
+                        {/* Deck Simulation Section Section is now at the top */}
                     </>
                 )}
             </div>

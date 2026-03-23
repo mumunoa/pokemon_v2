@@ -10,7 +10,19 @@ interface Props {
 export const CardActionModal: React.FC<Props> = ({ card: initialCard, onClose }) => {
     const liveCard = useGameStore(state => state.cards[initialCard.instanceId]) || initialCard;
     const { updateCardState, zones } = useGameStore();
-    const [isFlipped, setIsFlipped] = useState(false);
+    
+    // Determine if it's a field card before defining state
+    let initialZone = '';
+    for (const [zName, cardIds] of Object.entries(zones)) {
+        if (cardIds.includes(liveCard.instanceId)) {
+            initialZone = zName;
+            break;
+        }
+    }
+    const isBench = initialZone.startsWith('player1-bench') || initialZone.startsWith('player2-bench');
+    const isField = isBench || initialZone.endsWith('-active');
+
+    const [isFlipped, setIsFlipped] = useState(isField);
     const [flashDamage, setFlashDamage] = useState(false);
 
     React.useEffect(() => {
@@ -18,16 +30,6 @@ export const CardActionModal: React.FC<Props> = ({ card: initialCard, onClose })
         const timer = setTimeout(() => setFlashDamage(false), 600);
         return () => clearTimeout(timer);
     }, [liveCard.damage]);
-
-    let currentZone = '';
-    for (const [zName, cardIds] of Object.entries(zones)) {
-        if (cardIds.includes(liveCard.instanceId)) {
-            currentZone = zName;
-            break;
-        }
-    }
-    const isBench = currentZone.startsWith('player1-bench') || currentZone.startsWith('player2-bench');
-    const isField = isBench || currentZone.endsWith('-active');
 
     const handleClose = () => {
         onClose();
