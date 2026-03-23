@@ -3,10 +3,10 @@ import path from 'path';
 import fs from 'fs';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
-import { getSectionTexts } from '../utils/text';
-import { createRoleProfile } from '../inference/sectionRoleInference';
-import { CardRoleProfile } from '../domain/types';
-import { RoleProfileRepo } from '../storage/roleProfileRepo';
+import { getSectionTexts } from '../../src/features/practice/ai-next/utils/text';
+import { createRoleProfile } from '../../src/features/practice/ai-next/inference/sectionRoleInference';
+import { CardRoleProfile } from '../../src/features/practice/ai-next/domain/types';
+import { RoleProfileRepo } from '../../src/features/practice/ai-next/storage/roleProfileRepo';
 
 /**
  * Backfill script for initial card role profiles.
