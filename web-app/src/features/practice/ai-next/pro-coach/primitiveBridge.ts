@@ -53,7 +53,7 @@ export function buildPrimitiveHints(params: {
     }
 
     if (hasPrimitive(profile, "refresh_hand")) {
-      priority += Math.floor(params.drawNeed / 3) + (params.phase === "endgame" 0);
+      priority += Math.floor(params.drawNeed / 3) + (params.phase === "endgame" ? 10 : 0);
       if (profile.staticRoles.includes("disrupt")) {
         priority += params.phase === "endgame" ? 18 : 8;
         line = "手札を更新しつつ相手要求値を上げる";
