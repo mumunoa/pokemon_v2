@@ -26,21 +26,21 @@ export function CoachPanel({ result, isLoading, onRun, isProUser = false, onUpgr
 
   if (!result) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/10 to-transparent p-6 text-white shadow-xl backdrop-blur-md">
-        <div className="flex items-center justify-between gap-4">
+      <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/10 to-transparent p-6 text-white shadow-xl backdrop-blur-md text-center">
+        <div className="flex flex-col items-center gap-4">
           <div>
-            <div className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-xl font-bold text-transparent text-shadow-sm">
+            <div className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-xl font-black text-transparent text-shadow-sm">
               Premium Coach AI
             </div>
-            <div className="mt-2 text-sm text-white/70">
-              トッププロの思考プロセス（大局観・要求値計算・確率論）を完全トレースし、<br />
+            <div className="mt-2 text-xs text-white/60 leading-relaxed max-w-[280px]">
+              トッププロの思考プロセスを完全トレースし、<br />
               勝率を最大化する「次の一手」とその根拠を解説します。
             </div>
           </div>
           {onRun ? (
             <button
               onClick={onRun}
-              className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-6 py-3 font-semibold text-white shadow-lg transition-all hover:scale-105 hover:shadow-emerald-500/25"
+              className="group relative overflow-hidden rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 px-8 py-2.5 text-xs font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-emerald-500/25 active:scale-95"
             >
               <div className="absolute inset-0 bg-white/20 opacity-0 transition-opacity group-hover:opacity-100"></div>
               プレミアムコーチ分析
@@ -68,14 +68,6 @@ export function CoachPanel({ result, isLoading, onRun, isProUser = false, onUpgr
           </h2>
           <p className="mt-1 text-xs font-medium uppercase tracking-wider text-white/50">{boardStateSummary}</p>
         </div>
-        {onRun ? (
-          <button
-            onClick={onRun}
-            className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs font-bold text-emerald-400 transition-all hover:bg-emerald-500/20 active:scale-95 shadow-[0_0_15px_rgba(16,185,129,0.1)]"
-          >
-            プレミアムコーチ分析
-          </button>
-        ) : null}
       </div>
 
       <div className="space-y-6 relative">
