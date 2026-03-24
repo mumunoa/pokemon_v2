@@ -131,21 +131,23 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType }) => {
                             <h4 className="text-white text-xs font-bold flex items-center gap-2">
                                 <span className="text-lg">🌱</span> たねポケモンの初手登場率
                             </h4>
-                            <div className="grid grid-cols-2 gap-2">
-                                {summary.basicPokemonHitRates.map((h, i) => (
-                                    <div key={i} className="bg-slate-950/40 border border-slate-800 rounded-lg p-2 flex flex-col gap-1">
-                                        <div className="flex justify-between items-center text-[10px]">
-                                            <span className="text-slate-300 font-bold truncate max-w-[90px]" title={h.cardName}>{h.cardName}</span>
-                                            <span className="text-indigo-400 font-black">{Math.round(h.rate * 100)}%</span>
+                            <div className={`relative ${!isPro ? 'rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : ''}`}>
+                                <div className={`grid grid-cols-2 gap-2 ${!isPro ? 'blur-[2px] select-none opacity-40 pointer-events-none' : ''}`}>
+                                    {summary.basicPokemonHitRates.map((h, i) => (
+                                        <div key={i} className="bg-slate-950/40 border border-slate-800 rounded-lg p-2 flex flex-col gap-1">
+                                            <div className="flex justify-between items-center text-[10px]">
+                                                <span className="text-slate-300 font-bold truncate max-w-[90px]" title={h.cardName}>{h.cardName}</span>
+                                                <span className="text-indigo-400 font-black">{Math.round(h.rate * 100)}%</span>
+                                            </div>
+                                            <div className="h-1 bg-slate-900 rounded-full overflow-hidden">
+                                                <div 
+                                                    className="h-full bg-gradient-to-r from-indigo-600 to-indigo-400"
+                                                    style={{ width: `${Math.round(h.rate * 100)}%` }}
+                                                ></div>
+                                            </div>
                                         </div>
-                                        <div className="h-1 bg-slate-900 rounded-full overflow-hidden">
-                                            <div 
-                                                className="h-full bg-gradient-to-r from-indigo-600 to-indigo-400"
-                                                style={{ width: `${Math.round(h.rate * 100)}%` }}
-                                            ></div>
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     )}
@@ -155,89 +157,58 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType }) => {
                         <h4 className="text-white text-xs font-bold flex items-center gap-2">
                             <span className="text-lg">📉</span> 失敗原因の内訳
                         </h4>
-                        <div className="grid grid-cols-2 gap-2">
-                            {summary.failureBreakdown.map((f, i) => (
-                                <div key={i} className="bg-slate-950/40 border border-slate-800 rounded-lg p-2 flex justify-between items-center text-[10px]">
-                                    <div className="flex items-center gap-2">
-                                        <span>{getFailureIcon(f.type)}</span>
-                                        <span className="text-slate-400">{getFailureLabel(f.type)}</span>
+                        <div className={`relative ${!isPro ? 'rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : ''}`}>
+                            <div className={`grid grid-cols-2 gap-2 ${!isPro ? 'blur-[2px] select-none opacity-40 pointer-events-none' : ''}`}>
+                                {summary.failureBreakdown.map((f, i) => (
+                                    <div key={i} className="bg-slate-950/40 border border-slate-800 rounded-lg p-2 flex justify-between items-center text-[10px]">
+                                        <div className="flex items-center gap-2">
+                                            <span>{getFailureIcon(f.type)}</span>
+                                            <span className="text-slate-400">{getFailureLabel(f.type)}</span>
+                                        </div>
+                                        <span className="text-slate-200 font-bold">{f.count}回</span>
                                     </div>
-                                    <span className="text-slate-200 font-bold">{f.count}回</span>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
                     </div>
 
-                    {/* Pro Feature: Suggestions */}
-                    {isPro ? (
-                        <div className="space-y-4">
-                            <h4 className="text-white text-xs font-bold flex items-center gap-2">
-                                <span className="text-lg">💡</span> デッキ改善のヒント
-                            </h4>
-                            {summary.advancedAdvice && summary.advancedAdvice.suggestions && summary.advancedAdvice.suggestions.length > 0 ? (
-                                summary.advancedAdvice.suggestions.map((s: any, i: number) => (
-                                    <div key={i} className="bg-gradient-to-r from-purple-900/20 to-indigo-900/20 border border-purple-500/30 rounded-xl p-4">
-                                        <h5 className="text-purple-300 text-xs font-bold mb-2 pb-2 border-b border-purple-500/20">{s.title}</h5>
-                                        <p className="text-slate-300 text-[10px] mb-2 leading-relaxed">
-                                            <span className="text-indigo-400 font-bold mr-1">【診断】</span>{s.diagnosis}
-                                        </p>
-                                        <p className="text-slate-300 text-[10px] mb-2 leading-relaxed">
-                                            <span className="text-red-400 font-bold mr-1">【影響】</span>{s.whyItHurts}
-                                        </p>
-                                        <p className="text-slate-200 text-[10px] font-bold mb-3 leading-relaxed">
-                                            <span className="text-green-400 font-bold mr-1">【方針】</span>{s.action}
-                                        </p>
-                                        {s.candidateCards && s.candidateCards.length > 0 && (
-                                            <div className="mb-2">
-                                                <span className="text-slate-400 text-[10px] block mb-1">おすすめ候補カード (Standard):</span>
-                                                <div className="flex flex-wrap gap-1">
-                                                    {s.candidateCards.map((c: any, ci: number) => (
-                                                        <span key={ci} className="bg-indigo-900/50 text-indigo-200 text-[9px] px-2 py-0.5 rounded border border-indigo-500/30">
-                                                            {c.name}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                        {s.cutGuidance && s.cutGuidance.length > 0 && (
-                                            <div>
-                                                <span className="text-slate-400 text-[10px] block mb-1">抜き候補の目安:</span>
-                                                <ul className="list-disc pl-4 text-slate-500 text-[9px]">
-                                                    {s.cutGuidance.map((c: string, ci: number) => (
-                                                        <li key={ci}>{c}</li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
-                                    </div>
-                                ))
-                            ) : (
-                                summary.suggestions.map((s, i) => (
-                                    <div key={i} className="bg-gradient-to-r from-purple-900/20 to-indigo-900/20 border border-purple-500/30 rounded-xl p-4">
-                                        <p className="text-slate-200 text-xs mb-3 leading-relaxed">
-                                            {s.reason}
-                                        </p>
-                                        <div className="flex items-center gap-2 text-[10px] font-black">
-                                            <span className="text-red-400 bg-red-400/10 px-2 py-0.5 rounded">OUT</span>
-                                            <span className="text-slate-400">{s.outCards[0].cardName}</span>
-                                            <span className="text-indigo-400">→</span>
-                                            <span className="text-green-400 bg-green-400/10 px-2 py-0.5 rounded">IN</span>
-                                            <span className="text-slate-200">{s.inCards[0].cardName}</span>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    ) : (
-                        <div className="bg-slate-950/80 backdrop-blur-sm rounded-xl p-4 border border-slate-800 flex flex-col items-center gap-3">
-                            <p className="text-slate-400 text-[10px]">具体的な改善提案と入れ替え案は Pro版で公開中</p>
-                            <div className="flex gap-1">
-                                <div className="w-12 h-1.5 bg-slate-800 rounded-full animate-pulse"></div>
-                                <div className="w-8 h-1.5 bg-slate-800 rounded-full animate-pulse delay-75"></div>
-                                <div className="w-10 h-1.5 bg-slate-800 rounded-full animate-pulse delay-150"></div>
+                    {/* Suggestions Section */}
+                    <div className="space-y-4">
+                        <h4 className="text-white text-xs font-bold flex items-center gap-2">
+                            <span className="text-lg">💡</span> デッキ改善のヒント
+                        </h4>
+                        
+                        {isPro ? (
+                            <div className="space-y-4">
+                                {summary.advancedAdvice && summary.advancedAdvice.suggestions && summary.advancedAdvice.suggestions.length > 0 ? (
+                                    summary.advancedAdvice.suggestions.map((s: any, i: number) => (
+                                        <ImprovementHint key={i} suggestion={s} isPro={true} />
+                                    ))
+                                ) : (
+                                    summary.suggestions.map((s, i) => (
+                                        <LegacyHint key={i} suggestion={s} isPro={true} />
+                                    ))
+                                )}
                             </div>
-                        </div>
-                    )}
+                        ) : (
+                            <div className="space-y-4">
+                                {summary.advancedAdvice && summary.advancedAdvice.suggestions && summary.advancedAdvice.suggestions.length > 0 ? (
+                                    <ImprovementHint suggestion={summary.advancedAdvice.suggestions[0]} isPro={false} />
+                                ) : summary.suggestions && summary.suggestions.length > 0 ? (
+                                    <LegacyHint suggestion={summary.suggestions[0]} isPro={false} />
+                                ) : null}
+                                
+                                <div className="bg-slate-950/80 backdrop-blur-sm rounded-xl p-4 border border-slate-800 flex flex-col items-center gap-3">
+                                    <p className="text-slate-400 text-[10px]">複数の具体的な改善提案と入れ替え案は Pro版で公開中</p>
+                                    <div className="flex gap-1">
+                                        <div className="w-12 h-1.5 bg-slate-800 rounded-full animate-pulse"></div>
+                                        <div className="w-8 h-1.5 bg-slate-800 rounded-full animate-pulse delay-75"></div>
+                                        <div className="w-10 h-1.5 bg-slate-800 rounded-full animate-pulse delay-150"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
 
                     <div className="flex justify-center">
                         <button 
@@ -254,6 +225,85 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType }) => {
     );
 };
 
+const ImprovementHint: React.FC<{ suggestion: any; isPro: boolean }> = ({ suggestion, isPro }) => {
+    const s = suggestion;
+    const baseClass = isPro 
+        ? "bg-gradient-to-r from-purple-900/20 to-indigo-900/20 border border-purple-500/30 rounded-xl p-4"
+        : "rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5 shadow-[0_0_15px_rgba(16,185,129,0.1)]";
+
+    return (
+        <div className={baseClass}>
+            <h5 className="text-purple-300 text-xs font-bold mb-2 pb-2 border-b border-purple-500/20">{s.title}</h5>
+            <div className={!isPro ? 'blur-[3px] select-none opacity-30 pointer-events-none' : ''}>
+                <p className="text-slate-300 text-[10px] mb-2 leading-relaxed">
+                    <span className="text-indigo-400 font-bold mr-1">【診断】</span>{s.diagnosis}
+                </p>
+                {isPro && (
+                    <>
+                        <p className="text-slate-300 text-[10px] mb-2 leading-relaxed">
+                            <span className="text-red-400 font-bold mr-1">【影響】</span>{s.whyItHurts}
+                        </p>
+                        <p className="text-slate-200 text-[10px] font-bold mb-3 leading-relaxed">
+                            <span className="text-green-400 font-bold mr-1">【方針】</span>{s.action}
+                        </p>
+                        {s.candidateCards && s.candidateCards.length > 0 && (
+                            <div className="mb-2">
+                                <span className="text-slate-400 text-[10px] block mb-1">おすすめ候補カード (Standard):</span>
+                                <div className="flex flex-wrap gap-1">
+                                    {s.candidateCards.map((c: any, ci: number) => (
+                                        <span key={ci} className="bg-indigo-900/50 text-indigo-200 text-[9px] px-2 py-0.5 rounded border border-indigo-500/30">
+                                            {c.name}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        {s.cutGuidance && s.cutGuidance.length > 0 && (
+                            <div>
+                                <span className="text-slate-400 text-[10px] block mb-1">抜き候補の目安:</span>
+                                <ul className="list-disc pl-4 text-slate-500 text-[9px]">
+                                    {s.cutGuidance.map((c: string, ci: number) => (
+                                        <li key={ci}>{c}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
+            {!isPro && (
+                <p className="text-emerald-400 text-[9px] font-bold mt-2 italic">※ 詳細な改善手順と候補カードリストはPro版で公開</p>
+            )}
+        </div>
+    );
+};
+
+const LegacyHint: React.FC<{ suggestion: any; isPro: boolean }> = ({ suggestion, isPro }) => {
+    const s = suggestion;
+    const baseClass = isPro 
+        ? "bg-gradient-to-r from-purple-900/20 to-indigo-900/20 border border-purple-500/30 rounded-xl p-4"
+        : "rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5 shadow-[0_0_15px_rgba(16,185,129,0.1)]";
+
+    return (
+        <div className={baseClass}>
+            <div className={!isPro ? 'blur-[3px] select-none opacity-30 pointer-events-none' : ''}>
+                <p className="text-slate-200 text-xs mb-3 leading-relaxed">
+                    {s.reason}
+                </p>
+                <div className="flex items-center gap-2 text-[10px] font-black">
+                    <span className="text-red-400 bg-red-400/10 px-2 py-0.5 rounded">OUT</span>
+                    <span className="text-slate-400">{s.outCards[0].cardName}</span>
+                    <span className="text-indigo-400">→</span>
+                    <span className="text-green-400 bg-green-400/10 px-2 py-0.5 rounded">IN</span>
+                    <span className="text-slate-200">{s.inCards[0].cardName}</span>
+                </div>
+            </div>
+            {!isPro && (
+                <p className="text-emerald-400 text-[9px] font-bold mt-2 italic">※ 詳細な入れ替え理由はPro版で公開</p>
+            )}
+        </div>
+    );
+};
 const MetricBar: React.FC<{ label: string; rate: number }> = ({ label, rate }) => {
     const percentage = Math.round(rate * 100);
     return (

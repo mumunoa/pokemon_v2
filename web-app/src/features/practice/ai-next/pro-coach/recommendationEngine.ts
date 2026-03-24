@@ -28,6 +28,19 @@ function inferArchetype(state: CoachGameState, profiles: CardRoleProfile[]): str
   return state.selectedArchetype ?? "generic";
 }
 
+function formatArchetype(arc: string): string {
+  switch (arc?.toLowerCase()) {
+    case "dragapult_ex": return "ドラパルトex";
+    case "charizard_ex": return "リザードンex";
+    case "gardevoir_ex": return "サーナイトex";
+    case "rocket_control": return "ロケット団";
+    case "stage2_midrange": return "2進化ミッドレンジ";
+    case "spread_control": return "バラマキ型";
+    case "generic": return "汎用";
+    default: return arc || "不明";
+  }
+}
+
 function replyPenalty(action: LegalAction): number {
   switch (action.kind) {
     case "play_supporter":
@@ -78,11 +91,12 @@ function thoughts(params: {
   oppPrizesRemaining: number;
   bestLineText: string;
 }) {
+  const phaseLabel = params.phase === "opening" ? "序盤" : params.phase === "midgame" ? "中盤" : "終盤";
   return [
-    `【思考1: 勝利条件の確認】${params.phase.toUpperCase()}です。サイド ${params.ownPrizesRemaining}-${params.oppPrizesRemaining} の取り切りルートを優先します。`,
-    "【思考2: 盤面の守備力チェック】相手の次ターン最大打点と、こちらの2 prize の露出を確認します。",
-    "【思考3: リソース管理】終盤のボス・ナンジャモ・回収札まで見て、今使う札と残す札を分けます。",
-    `【思考4: 最短勝ち筋】現時点では「${params.bestLineText}」がもっとも勝ち筋に直結します。`,
+    `【思考1: 勝利条件】${phaseLabel}です。サイド ${params.ownPrizesRemaining}-${params.oppPrizesRemaining} の取り切りルートを優先します。`,
+    "【思考2: 守備力】相手の次ターン最大打点と、こちらのサイド2枚のポケモンの露出を確認します。",
+    "【思考3: リソース】終盤のボス・ナンジャモ・回収札を見据え、今使う札と温存する札を判断します。",
+    `【思考4: 勝ち筋】現時点では「${params.bestLineText}」がもっとも勝ち筋に直結します。`,
   ];
 }
 
@@ -206,7 +220,7 @@ export function buildProfessionalCoachResult(params: {
   return {
     phase: features.phase,
     archetype,
-    boardStateSummary: `phase=${features.phase} / archetype=${archetype} / setupNeed=${features.setupNeed} / drawNeed=${features.drawNeed}`,
+    boardStateSummary: `${features.phase === 'opening' ? '序盤' : features.phase === 'midgame' ? '中盤' : '終盤'} / ${formatArchetype(archetype)}型 / 展開要求=${features.setupNeed} / ドロー要求=${features.drawNeed}`,
     thoughts: thoughts({
       phase: features.phase,
       ownPrizesRemaining: features.ownPrizesRemaining,

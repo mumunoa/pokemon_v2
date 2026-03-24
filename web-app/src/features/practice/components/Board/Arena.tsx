@@ -534,8 +534,13 @@ export const Arena: React.FC = () => {
                             isValidDrop = false;
                         }
                     }
-                    else if (targetCard.instanceId && sourceZone && isTargetInHand) {
-                        moveCard(cardId, sourceZone, finalTargetZone);
+                    else if (isTargetInHand && (sourceZone || energySourcePokemonId)) {
+                        if (sourceZone) {
+                            moveCard(cardId, sourceZone, finalTargetZone);
+                        } else if (energySourcePokemonId) {
+                            // Attached energy: detach and move to hand
+                            detachEnergy(cardId, energySourcePokemonId, finalTargetZone);
+                        }
                         isValidDrop = true;
                     }
                     else {

@@ -61,7 +61,7 @@ export function CoachPanel({ result, isLoading, onRun, isProUser = false, onUpgr
       <div className="mb-6 flex items-start justify-between gap-4 border-b border-white/10 pb-4">
         <div>
           <h2 className="flex items-center gap-2 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-2xl font-black tracking-tight text-transparent">
-            PRO COACH ANALYSIS
+            AIプロコーチ分析
             {isProUser && (
               <span className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.2)]">PRO</span>
             )}
@@ -75,7 +75,7 @@ export function CoachPanel({ result, isLoading, onRun, isProUser = false, onUpgr
         {/* Phase 3 (Free/Pro共通): Micro Optimization & Probability */}
         <ThoughtPhase 
           number="★" 
-          title="今ターンの最適解 (Best Recommendation)" 
+          title="今ターンの最適解 (推奨アクション)" 
           color="emerald"
         >
           <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5 shadow-[0_0_15px_rgba(16,185,129,0.1)]">

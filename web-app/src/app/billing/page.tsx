@@ -139,11 +139,11 @@ export default function BillingPage() {
                     </div>
                 )}
 
-                <div className="flex md:grid md:grid-cols-3 gap-6 md:gap-8 items-start overflow-x-auto md:overflow-x-visible pt-6 pb-8 md:pb-0 px-4 -mx-4 snap-x snap-mandatory hide-scrollbar">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-start pt-6 pb-8 md:pb-0 px-4">
                     {plans.map((plan) => (
                         <div
                             key={plan.id}
-                            className={`relative group bg-slate-900/40 rounded-[32px] p-8 border hover:scale-[1.02] transition-all duration-300 min-w-[280px] sm:min-w-[320px] md:min-w-0 snap-center ${plan.highlight ? 'border-purple-500/50 shadow-2xl shadow-purple-500/10' : 'border-slate-800'}`}
+                            className={`relative group bg-slate-900/40 rounded-[32px] p-8 border hover:scale-[1.02] transition-all duration-300 ${plan.highlight ? 'border-purple-500/50 shadow-2xl shadow-purple-500/10' : 'border-slate-800'}`}
                         >
                             {plan.highlight && (
                                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full shadow-lg uppercase tracking-widest z-10">
