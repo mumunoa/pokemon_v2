@@ -167,6 +167,10 @@ export interface GameState {
     aiAnalysis?: AiAnalysisResult;
     coachResult?: any; // To allow lazy import from ai-next
     coachLoading: boolean;
+    turnFlags: {
+        player1: { supporterUsed: boolean; energyAttachedThisTurn: boolean };
+        player2: { supporterUsed: boolean; energyAttachedThisTurn: boolean };
+    };
 
     // History
     pastStates: {

@@ -3,17 +3,45 @@ import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { useGameStore } from '@/features/practice/store/useGameStore';
 import { CardInstance } from '@/types/game';
 
-export const getEnergyIcon = (energyName: string) => {
-    // Map energy names to types
-    if (energyName.includes('雷') || energyName.includes('lightning') || energyName.includes('electric')) return '/assets/symbols/lightning.png';
-    if (energyName.includes('草') || energyName.includes('grass')) return '/assets/symbols/grass.png';
-    if (energyName.includes('炎') || energyName.includes('fire')) return '/assets/symbols/fire.png';
-    if (energyName.includes('水') || energyName.includes('water')) return '/assets/symbols/water.png';
-    if (energyName.includes('超') || energyName.includes('psychic')) return '/assets/symbols/psychic.png';
-    if (energyName.includes('闘') || energyName.includes('fighting')) return '/assets/symbols/fighting.png';
-    if (energyName.includes('悪') || energyName.includes('darkness') || energyName.includes('dark')) return '/assets/symbols/darkness.png';
-    if (energyName.includes('鋼') || energyName.includes('metal') || energyName.includes('steel')) return '/assets/symbols/metal.png';
-    if (energyName.includes('ドラゴン') || energyName.includes('dragon')) return '/assets/symbols/dragon.png';
+export const getEnergyIcon = (energyCard: CardInstance | string) => {
+    // 互換性のため、文字列が渡された場合は名前として処理
+    const name = typeof energyCard === 'string' ? energyCard : (energyCard.name || '');
+    const types = typeof energyCard === 'object' ? energyCard.types : [];
+    const kinds = typeof energyCard === 'object' ? energyCard.kinds : '';
+
+    // エネルギーの種類を判定するヘルパー
+    const checkMatch = (val: any) => {
+        if (!val) return null;
+        const s = String(val).toLowerCase();
+        if (s.includes('雷') || s.includes('lightning') || s.includes('electric')) return 'lightning';
+        if (s.includes('草') || s.includes('grass')) return 'grass';
+        if (s.includes('炎') || s.includes('fire')) return 'fire';
+        if (s.includes('水') || s.includes('water')) return 'water';
+        if (s.includes('超') || s.includes('psychic')) return 'psychic';
+        if (s.includes('闘') || s.includes('fighting')) return 'fighting';
+        if (s.includes('悪') || s.includes('darkness') || s.includes('dark')) return 'darkness';
+        if (s.includes('鋼') || s.includes('metal') || s.includes('steel')) return 'metal';
+        if (s.includes('ドラゴン') || s.includes('dragon')) return 'dragon';
+        return null;
+    };
+
+    // 1. types 配列を確認 (優先順位：高)
+    if (types && Array.isArray(types)) {
+        for (const t of types) {
+            const found = checkMatch(t);
+            if (found) return `/assets/symbols/${found}.png`;
+        }
+    }
+
+    // 2. kinds を確認
+    const foundKind = checkMatch(kinds);
+    if (foundKind) return `/assets/symbols/${foundKind}.png`;
+
+    // 3. 名前を確認
+    const foundName = checkMatch(name);
+    if (foundName) return `/assets/symbols/${foundName}.png`;
+
+    // 全て不適合なら無色アイコン（特殊エネルギーなど）
     return '/assets/symbols/colorless.png';
 };
 
@@ -44,7 +72,7 @@ const AttachedEnergyIcon: React.FC<{ energyId: string, zIndex: number }> = ({ en
             style={dndStyle}
             onClick={(e) => e.stopPropagation()}
         >
-            <img src={getEnergyIcon(energyCard.name)} alt={energyCard.name} className="w-full h-full object-cover mix-blend-multiply pointer-events-none" />
+            <img src={getEnergyIcon(energyCard)} alt={energyCard.name} className="w-full h-full object-cover mix-blend-multiply pointer-events-none" />
         </div>
     );
 };
@@ -86,7 +114,7 @@ export const Card: React.FC<CardProps> = React.memo(({ card, style = {}, classNa
         data: card,
         // 手札にある場合は全てのカードをドロップターゲットとして有効にする（手札への移動を容易にするため）
         // フィールドではエネルギー等の付与対象としてポケモンのみを有効にする
-        disabled: card.type !== 'pokemon' && !(zoneName && zoneName.includes('hand')),
+        disabled: card.type?.toLowerCase() !== 'pokemon' && !(zoneName && zoneName.includes('hand')),
     });
 
     // Combine refs so we can drag AND drop on the card

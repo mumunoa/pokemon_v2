@@ -87,6 +87,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     isAnalyzing: false,
     coachResult: null,
     coachLoading: false,
+    turnFlags: {
+        player1: { supporterUsed: false, energyAttachedThisTurn: false },
+        player2: { supporterUsed: false, energyAttachedThisTurn: false }
+    },
 
     // Actions
     getGameState: () => get(),
@@ -439,6 +443,9 @@ export const useGameStore = create<GameState>((set, get) => ({
                     [fromZone]: sourceArray,
                     [toZone]: destArray
                 },
+                turnFlags: (fromZone.endsWith('-hand') && card?.kinds === 'supporter') 
+                    ? { ...state.turnFlags, [state.currentTurnPlayer]: { ...state.turnFlags[state.currentTurnPlayer], supporterUsed: true } }
+                    : state.turnFlags,
                 logs: [...state.logs, logMsg],
                 structuredLogs: [...state.structuredLogs, structuredLog],
                 coachResult: null
@@ -502,6 +509,9 @@ export const useGameStore = create<GameState>((set, get) => ({
                         attachedEnergyIds: [...(pokemon.attachedEnergyIds || []), energyId]
                     }
                 },
+                turnFlags: (sourceZone?.endsWith('-hand'))
+                    ? { ...state.turnFlags, [state.currentTurnPlayer]: { ...state.turnFlags[state.currentTurnPlayer], energyAttachedThisTurn: true } }
+                    : state.turnFlags,
                 logs: [...state.logs, logMsg],
                 structuredLogs: [...state.structuredLogs, structuredLog]
             };
@@ -800,7 +810,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     endTurn: () => {
         set((state) => {
             const nextPlayer = state.currentTurnPlayer === 'player1' ? 'player2' : 'player1';
-            const nextTurnCount = state.currentTurnPlayer === 'player2' ? state.turnCount + 1 : state.turnCount;
+            const nextTurnCount = nextPlayer === 'player1' ? state.turnCount + 1 : state.turnCount;
 
             const logMsg = `ターン終了: Player ${nextPlayer} の番です (Turn ${nextTurnCount})`;
 

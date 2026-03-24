@@ -468,7 +468,7 @@ export const Arena: React.FC = () => {
             }
 
             // 1. Dropped on a Pokemon (Attach Energy, Evolve, Tool)
-            if (targetCard && targetCard.type === 'pokemon') {
+            if (targetCard && targetCard.type?.toLowerCase() === 'pokemon') {
                 const isTargetInHand = finalTargetZone === 'player1-hand' || finalTargetZone === 'player2-hand';
 
                 if (!isTargetInHand) {
@@ -485,7 +485,7 @@ export const Arena: React.FC = () => {
                         }
                         isValidDrop = true;
                     }
-                    else if (draggedCard && draggedCard.type === 'pokemon') {
+                    else if (draggedCard && draggedCard.type?.toLowerCase() === 'pokemon') {
                         // Evolution Stacking: Transfer attached Energy & Damage to new top Pokemon. Clear status/ability.
                         const updates: Partial<CardInstance> = {};
                         if (targetCard.attachedEnergyIds && targetCard.attachedEnergyIds.length > 0) {
@@ -517,7 +517,7 @@ export const Arena: React.FC = () => {
                         }
                         isValidDrop = true;
                     }
-                    else if (draggedCard && draggedCard.type === 'trainer' && draggedCard.kinds === 'tool') {
+                    else if (draggedCard && draggedCard.type?.toLowerCase() === 'trainer' && draggedCard.kinds?.toLowerCase() === 'tool') {
                         // Tool Stacking at bottom
                         let targetZoneForTool: ZoneType | null = null;
                         for (const [zName, cardIds] of Object.entries(zones)) {
@@ -572,11 +572,12 @@ export const Arena: React.FC = () => {
                     }
                 } else {
                     // Feature: Drop Constraints
-                    const isFieldSlot = finalTargetZone.startsWith('player1-bench') || finalTargetZone === 'player1-active';
+                    const isFieldSlot = finalTargetZone.includes('-bench') || finalTargetZone.includes('-active');
                     const isEmptyFieldSlot = isFieldSlot && zones[finalTargetZone].length === 0;
 
                     // Handle return to Hand or Deck or Trash or Prizes for resetting equipped cards and statuses
-                    if (['player1-hand', 'player1-deck', 'player1-trash', 'player1-prizes'].includes(finalTargetZone) && draggedCard.type === 'pokemon') {
+                    const isResetZone = finalTargetZone.includes('-hand') || finalTargetZone.includes('-deck') || finalTargetZone.includes('-trash') || finalTargetZone.includes('-prizes');
+                    if (isResetZone && draggedCard.type?.toLowerCase() === 'pokemon') {
                         if (draggedCard.attachedEnergyIds && draggedCard.attachedEnergyIds.length > 0) {
                             const energies = [...draggedCard.attachedEnergyIds];
                             useGameStore.getState().updateCardState(cardId, { attachedEnergyIds: [] });
@@ -593,13 +594,13 @@ export const Arena: React.FC = () => {
                     }
 
                     // Restrict dropping non-Pokemon onto empty Active/Bench slots
-                    if (isEmptyFieldSlot && draggedCard.type !== 'pokemon') {
+                    if (isEmptyFieldSlot && draggedCard.type?.toLowerCase() !== 'pokemon') {
                         // Invalid Drop: Treat exactly like a cancel
                         isValidDrop = false;
                     }
                     // Intercept drops on populated field slots
                     else if (isFieldSlot && !isEmptyFieldSlot) {
-                        const pokemonIdInZone = [...zones[finalTargetZone]].reverse().find(id => cards[id]?.type === 'pokemon');
+                        const pokemonIdInZone = [...zones[finalTargetZone]].reverse().find(id => cards[id]?.type?.toLowerCase() === 'pokemon');
 
                         if (pokemonIdInZone) {
                             const draggedType = draggedCard?.type?.trim().toLowerCase();
@@ -614,7 +615,7 @@ export const Arena: React.FC = () => {
                                 }
                                 isValidDrop = true;
                             }
-                            else if (draggedCard.type === 'pokemon') {
+                            else if (draggedCard && draggedCard.type?.toLowerCase() === 'pokemon') {
                                 const tCard = cards[pokemonIdInZone];
                                 const updates: Partial<CardInstance> = {};
 
@@ -642,7 +643,7 @@ export const Arena: React.FC = () => {
                                 }
                                 isValidDrop = true;
                             }
-                            else if (draggedCard.type === 'trainer' && draggedCard.kinds === 'tool') {
+                            else if (draggedCard && draggedCard.type?.toLowerCase() === 'trainer' && draggedCard.kinds?.toLowerCase() === 'tool') {
                                 if (sourceZone) moveCard(cardId, sourceZone, finalTargetZone, 0);
                                 isValidDrop = true;
                             }

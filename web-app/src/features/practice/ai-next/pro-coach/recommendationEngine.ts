@@ -175,7 +175,24 @@ export function buildProfessionalCoachResult(params: {
     };
   }).sort((a, b) => b.lineScore - a.lineScore);
 
-  const bestLine = lines[0] ?? null;
+  const mappedLines: any[] = lines.map((line) => {
+    const total = Number.isFinite(line.nextEval.total) ? line.nextEval.total : 0;
+    const penalty = Number.isFinite(line.replyPenalty) ? line.replyPenalty : 0;
+    const score = Number.isFinite(line.lineScore) ? line.lineScore : total;
+
+    return {
+      ...line,
+      id: line.action.kind + "_" + (line.action.kind === "attack" ? line.action.attackName : "cardId" in line.action ? line.action.cardId : "sourceId" in line.action ? line.action.sourceId : ""),
+      cardName: "cardName" in line.action ? line.action.cardName : "sourceName" in line.action ? line.action.sourceName : "ポケモンの入れ替え",
+      line: actionLineText(line.action),
+      score,
+      priority: score > 80 ? 'high' : score > 40 ? 'medium' : 'low',
+      reasons: line.primitiveReasons.length > 0 ? line.primitiveReasons : line.nextEval.reasons,
+      dynamicRoles: line.dynamicRoles,
+    };
+  });
+
+  const bestAction = mappedLines[0] ?? null;
   const openingMetrics =
     params.deckForOpeningSimulation && params.deckForOpeningSimulation.length > 0
       ? simulateOpeningMetrics({
@@ -189,17 +206,32 @@ export function buildProfessionalCoachResult(params: {
   return {
     phase: features.phase,
     archetype,
-    boardSummary: `phase=${features.phase} / archetype=${archetype} / setupNeed=${features.setupNeed} / drawNeed=${features.drawNeed}`,
+    boardStateSummary: `phase=${features.phase} / archetype=${archetype} / setupNeed=${features.setupNeed} / drawNeed=${features.drawNeed}`,
     thoughts: thoughts({
       phase: features.phase,
       ownPrizesRemaining: features.ownPrizesRemaining,
       oppPrizesRemaining: features.oppPrizesRemaining,
-      bestLineText: bestLine ? actionLineText(bestLine.action) : "有力手なし",
+      bestLineText: bestAction ? bestAction.line : "有力手なし",
     }),
-    bestLine,
-    alternatives: lines.slice(1, 6),
+    bestAction,
+    alternatives: mappedLines.slice(1, 6),
     keyCards: keyCards(handProfiles),
     openingMetrics,
     handProfiles,
-  };
+    analysis: `現在の局面は${features.phase}です。${bestAction ? bestAction.line : '有力な候補が見つかりませんでした'}。`,
+    timestamp: new Date().toISOString(),
+    version: "2.2.0",
+    opponentThreat: {
+      expectedMaxDamage: features.tempoNeed > 50 ? 120 : 30, 
+      requiredCards: Math.floor(features.drawNeed / 20) + 1,
+      lethalThreat: features.safetyNeed > 60,
+      disruptValue: features.gustNeed > 50 ? 20 : 5
+    },
+    macroStrategy: {
+      activePlan: archetype.includes("control") ? "control_lo" : "2-2-2_route",
+      estimatedTurnsToWin: Math.min(6, features.ownPrizesRemaining),
+      opponentEstimatedTurnsToWin: Math.min(6, features.oppPrizesRemaining),
+      description: `【${archetype.toUpperCase()}戦略】サイド残り ${features.ownPrizesRemaining}-${features.oppPrizesRemaining} です。現在のリソース（手札 ${params.state.players.player1.hand.length}枚）を考慮し、${features.phase === "opening" ? "盤面展開" : "サイド取得"}を優先してください。`
+    }
+  } as any;
 }

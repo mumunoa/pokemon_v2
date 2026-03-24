@@ -38,6 +38,40 @@ import { buildEffectSpecForCard } from "../effects/effectSpecCatalog";
 import type { EffectContext } from "../effects/effectSpecTypes";
 import { extractBoardFeatures } from "./featureExtractor";
 
+function inferPlayableCategory(card: CoachCard, profile?: CardRoleProfile):
+  | "supporter"
+  | "item"
+  | "stadium"
+  | "tool"
+  | "energy"
+  | "unknown" {
+  // 1. 物理的な種別が確定している場合 (信頼度高)
+  const kinds = card.kinds?.toLowerCase();
+  if (card.type === "trainer" && kinds === "supporter") return "supporter";
+  if (card.type === "trainer" && kinds === "item") return "item";
+  if (card.type === "trainer" && kinds === "stadium") return "stadium";
+  if (card.type === "trainer" && kinds === "tool") return "tool";
+  if (card.type === "energy") return "energy";
+
+  // 名前によるヒューリスティック (物理種別が欠落している場合の救済)
+  const name = card.name || "";
+  if (name.includes("ボール") || name.includes("ポフィン") || name.includes("いれかえ") || name.includes("回収")) return "item";
+  if (name.includes("博士") || name.includes("研究") || name.includes("指令") || name.includes("ジャッジマン")) return "supporter";
+
+  // 2. Profile (役割) による推論
+  if (!profile) return "unknown";
+  const roles = new Set(profile.staticRoles);
+  const primitives = new Set(profile.primitives ?? []);
+
+  if (roles.has("draw" as any) || roles.has("hand_refresh" as any) || roles.has("gust" as any) || roles.has("disrupt" as any)) return "supporter";
+  if (roles.has("basic_search" as any) || roles.has("pokemon_search" as any) || roles.has("bench_setup" as any) || primitives.has("search_deck_to_bench")) return "item";
+  if (roles.has("stadium_control" as any) || roles.has("board_expansion" as any)) return "stadium";
+  if (roles.has("pivot" as any) || roles.has("damage_boost" as any)) return "tool";
+  if (roles.has("energy_accel" as any) || roles.has("energy_recovery" as any) || card.type === "energy") return "energy";
+
+  return "unknown";
+}
+
 export function generateLegalActions(
   state: CoachGameState,
   profiles: CardRoleProfile[],
@@ -73,7 +107,9 @@ export function generateLegalActions(
 
     if (spec && spec.canPlay && !spec.canPlay(ctx)) continue;
 
-    if (card.type === "trainer" && card.kinds === "supporter" && !me.supporterUsed) {
+    const playableCat = inferPlayableCategory(card, profile);
+
+    if (playableCat === "supporter" && !me.supporterUsed) {
       if (category === "gust") {
         for (const target of opp.bench) {
           actions.push({
@@ -95,7 +131,7 @@ export function generateLegalActions(
       }
     }
 
-    if (card.type === "trainer" && card.kinds === "item") {
+    if (playableCat === "item") {
       actions.push({
         kind: "play_item",
         cardId: idOf(card),
@@ -107,7 +143,7 @@ export function generateLegalActions(
       });
     }
 
-    if (card.type === "trainer" && card.kinds === "stadium") {
+    if (playableCat === "stadium") {
       actions.push({
         kind: "play_stadium",
         cardId: idOf(card),
@@ -116,7 +152,7 @@ export function generateLegalActions(
       });
     }
 
-    if (card.type === "trainer" && card.kinds === "tool") {
+    if (playableCat === "tool") {
       for (const target of allOwnPokemon) {
         actions.push({
           kind: "play_tool",
@@ -128,7 +164,7 @@ export function generateLegalActions(
       }
     }
 
-    if (card.type === "energy" && !me.energyAttachedThisTurn) {
+    if (playableCat === "energy" && !me.energyAttachedThisTurn) {
       for (const target of allOwnPokemon) {
         actions.push({
           kind: "attach_energy",
@@ -177,6 +213,22 @@ export function generateLegalActions(
         attackName: String(attack.name ?? "ワザ"),
         targetName: opp.active?.name,
       });
+    }
+  }
+
+  // Fallback: もしアクションが0件なら、手札から可能な基本アクションを絞り出す
+  if (actions.length === 0) {
+    for (const card of me.hand) {
+      const profile = profiles.find((p) => p.cardName === card.name);
+      const cat = inferPlayableCategory(card, profile);
+      if (cat === "supporter" && !me.supporterUsed) {
+        actions.push({ kind: "play_supporter", cardId: idOf(card), cardName: card.name, category: "generic" });
+        break; 
+      }
+      if (cat === "item") {
+        actions.push({ kind: "play_item", cardId: idOf(card), cardName: card.name, category: "generic" });
+        break;
+      }
     }
   }
 
