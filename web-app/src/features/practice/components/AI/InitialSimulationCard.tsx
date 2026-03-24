@@ -132,7 +132,7 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType }) => {
                                 <span className="text-lg">🌱</span> たねポケモンの初手登場率
                             </h4>
                             <div className={`relative ${!isPro ? 'rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : ''}`}>
-                                <div className={`grid grid-cols-2 gap-2 ${!isPro ? 'blur-[2px] select-none opacity-40 pointer-events-none' : ''}`}>
+                                <div className={`grid grid-cols-2 gap-2 ${!isPro ? 'blur-[4px] select-none opacity-20 pointer-events-none' : ''}`}>
                                     {summary.basicPokemonHitRates.map((h, i) => (
                                         <div key={i} className="bg-slate-950/40 border border-slate-800 rounded-lg p-2 flex flex-col gap-1">
                                             <div className="flex justify-between items-center text-[10px]">
@@ -148,6 +148,7 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType }) => {
                                         </div>
                                     ))}
                                 </div>
+                                {!isPro && <TeaserOverlay />}
                             </div>
                         </div>
                     )}
@@ -158,7 +159,7 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType }) => {
                             <span className="text-lg">📉</span> 失敗原因の内訳
                         </h4>
                         <div className={`relative ${!isPro ? 'rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : ''}`}>
-                            <div className={`grid grid-cols-2 gap-2 ${!isPro ? 'blur-[2px] select-none opacity-40 pointer-events-none' : ''}`}>
+                            <div className={`grid grid-cols-2 gap-2 ${!isPro ? 'blur-[4px] select-none opacity-20 pointer-events-none' : ''}`}>
                                 {summary.failureBreakdown.map((f, i) => (
                                     <div key={i} className="bg-slate-950/40 border border-slate-800 rounded-lg p-2 flex justify-between items-center text-[10px]">
                                         <div className="flex items-center gap-2">
@@ -169,6 +170,7 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType }) => {
                                     </div>
                                 ))}
                             </div>
+                            {!isPro && <TeaserOverlay />}
                         </div>
                     </div>
 
@@ -210,7 +212,7 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType }) => {
                         )}
                     </div>
 
-                    <div className="flex justify-center">
+                    <div className="flex flex-col items-center gap-4 mt-4">
                         <button 
                             onClick={runSimulation}
                             className="text-slate-500 hover:text-indigo-400 text-[10px] font-bold transition-colors flex items-center gap-1"
@@ -218,9 +220,27 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType }) => {
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                             再シミュレーション
                         </button>
+                        
+                        {!isPro && (
+                            <button 
+                                onClick={() => window.location.href = '/billing'}
+                                className="w-full max-w-[220px] bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-xs font-black py-3 rounded-full shadow-[0_0_20px_rgba(245,158,11,0.2)] transform transition-all active:scale-95 flex items-center justify-center gap-2"
+                            >
+                                <span>🚀</span>
+                                PROプランにアップグレード
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
+        </div>
+    );
+};
+
+const TeaserOverlay: React.FC = () => {
+    return (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-4 text-center">
+            <p className="text-white text-[10px] font-bold shadow-lg bg-black/40 px-3 py-1 rounded-lg backdrop-blur-sm border border-white/10">Pro版で公開</p>
         </div>
     );
 };
@@ -229,12 +249,12 @@ const ImprovementHint: React.FC<{ suggestion: any; isPro: boolean }> = ({ sugges
     const s = suggestion;
     const baseClass = isPro 
         ? "bg-gradient-to-r from-purple-900/20 to-indigo-900/20 border border-purple-500/30 rounded-xl p-4"
-        : "rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5 shadow-[0_0_15px_rgba(16,185,129,0.1)]";
+        : "relative rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5 shadow-[0_0_15px_rgba(16,185,129,0.1)]";
 
     return (
         <div className={baseClass}>
             <h5 className="text-purple-300 text-xs font-bold mb-2 pb-2 border-b border-purple-500/20">{s.title}</h5>
-            <div className={!isPro ? 'blur-[3px] select-none opacity-30 pointer-events-none' : ''}>
+            <div className={!isPro ? 'blur-[5px] select-none opacity-10 pointer-events-none' : ''}>
                 <p className="text-slate-300 text-[10px] mb-2 leading-relaxed">
                     <span className="text-indigo-400 font-bold mr-1">【診断】</span>{s.diagnosis}
                 </p>
@@ -271,9 +291,7 @@ const ImprovementHint: React.FC<{ suggestion: any; isPro: boolean }> = ({ sugges
                     </>
                 )}
             </div>
-            {!isPro && (
-                <p className="text-emerald-400 text-[9px] font-bold mt-2 italic">※ 詳細な改善手順と候補カードリストはPro版で公開</p>
-            )}
+            {!isPro && <TeaserOverlay />}
         </div>
     );
 };
@@ -282,11 +300,11 @@ const LegacyHint: React.FC<{ suggestion: any; isPro: boolean }> = ({ suggestion,
     const s = suggestion;
     const baseClass = isPro 
         ? "bg-gradient-to-r from-purple-900/20 to-indigo-900/20 border border-purple-500/30 rounded-xl p-4"
-        : "rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5 shadow-[0_0_15px_rgba(16,185,129,0.1)]";
+        : "relative rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5 shadow-[0_0_15px_rgba(16,185,129,0.1)]";
 
     return (
         <div className={baseClass}>
-            <div className={!isPro ? 'blur-[3px] select-none opacity-30 pointer-events-none' : ''}>
+            <div className={!isPro ? 'blur-[5px] select-none opacity-10 pointer-events-none' : ''}>
                 <p className="text-slate-200 text-xs mb-3 leading-relaxed">
                     {s.reason}
                 </p>
@@ -298,9 +316,7 @@ const LegacyHint: React.FC<{ suggestion: any; isPro: boolean }> = ({ suggestion,
                     <span className="text-slate-200">{s.inCards[0].cardName}</span>
                 </div>
             </div>
-            {!isPro && (
-                <p className="text-emerald-400 text-[9px] font-bold mt-2 italic">※ 詳細な入れ替え理由はPro版で公開</p>
-            )}
+            {!isPro && <TeaserOverlay />}
         </div>
     );
 };
