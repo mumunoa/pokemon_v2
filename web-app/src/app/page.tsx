@@ -9,6 +9,7 @@ import './styles/app.css'; // Future implementation of customized non-tailwind C
 
 export default function Home() {
   const { turnCount, currentTurnPlayer, logs, isGameStarted } = useGameStore();
+  const player1Deck = useGameStore(s => s.player1Deck);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLogOpen, setIsLogOpen] = useState(false);
   const [showSettingsTutorial, setShowSettingsTutorial] = useState(false);
@@ -19,8 +20,13 @@ export default function Home() {
       if (!hasSeen) {
         setShowSettingsTutorial(true);
       }
+
+      // デッキが読み込まれていない場合は設定画面を自動で開く
+      if (player1Deck.length === 0) {
+        setIsSettingsOpen(true);
+      }
     }
-  }, []);
+  }, [player1Deck.length]);
 
   const handleOpenSettings = (e: React.MouseEvent) => {
     e.stopPropagation();

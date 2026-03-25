@@ -27,6 +27,12 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
         player1: '',
         player2: ''
     });
+
+    const sampleDecks = [
+        { name: 'リザードンex', code: 'FppkFk-3f8wZy-5kk5FF' },
+        { name: 'パオジアンex', code: 'fkkFF5-f8wZy3-kFpkkF' },
+        { name: 'サーナイトex', code: 'Zy3f8w-5fkkFF-k5Fpkk' }
+    ];
     const [loading, setLoading] = useState<Record<PlayerId, boolean>>({
         player1: false,
         player2: false
@@ -128,9 +134,11 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                     <div className="flex gap-2">
                                         <input
                                             type="text"
+                                            id={`input-${pid}`}
                                             placeholder="デッキコード"
                                             value={deckCodes[pid]}
                                             onChange={(e) => setDeckCodes(prev => ({ ...prev, [pid]: e.target.value }))}
+                                            autoFocus={pid === 'player1'}
                                             className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-base focus:outline-none focus:ring-1 focus:ring-green-500/50 transition-all placeholder:text-slate-700"
                                         />
                                         <button
@@ -146,6 +154,25 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                             ) : '読込'}
                                         </button>
                                     </div>
+
+                                    {/* Sample Decks */}
+                                    {pid === 'player1' && p1Count === 0 && (
+                                        <div className="flex flex-wrap gap-1.5 px-1 mt-1">
+                                            <span className="text-[9px] text-slate-500 w-full mb-0.5">サンプルデッキを試す:</span>
+                                            {sampleDecks.map(sd => (
+                                                <button
+                                                    key={sd.code}
+                                                    onClick={() => {
+                                                        setDeckCodes(prev => ({ ...prev, [pid]: sd.code }));
+                                                        setTimeout(() => handleLoadDeck(pid), 0);
+                                                    }}
+                                                    className="bg-slate-700/50 hover:bg-slate-700 text-slate-300 text-[10px] px-2 py-0.5 rounded border border-slate-600 transition-colors"
+                                                >
+                                                    {sd.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                     {errors[pid] && (
                                         <p className="text-red-400 text-[10px] px-1">{errors[pid]}</p>
                                     )}
