@@ -65,13 +65,17 @@
 /* iPhone SE / Short Portrait Responsive scaling adjustments */
 @media (max-height: 700px) and (orientation: portrait) {
   :root {
-    --card-w: clamp(50px, 14vw, 90px);
-    --btn-fs: clamp(5px, 1.1vw + 0.7vh, 11px);
-    --hand-h-mult: 0.65;
-    --row-s-opp-active: 0.65;
-    --row-s-self-active: 0.8;
-    --row-s-opp-bench: 0.6;
-    --row-s-self-bench: 0.85;
+    --card-w: clamp(50px, 13vw, 85px);
+    --btn-fs: clamp(5px, 1.0vw + 0.6vh, 10px);
+    --hand-h-mult: 0.6;
+    --row-s-opp-active: 0.6;
+    --row-s-self-active: 0.75;
+    --row-s-opp-bench: 0.55;
+    --row-s-self-bench: 0.8;
+    --spacer-f-opp: 0.02;
+    --spacer-f-self: 0.02;
+    --spacer-f-top: 0;
+    --field-f-self: 1.2;
   }
   .battle-arena {
     padding-bottom: 20px; /* Space for home indicator */
