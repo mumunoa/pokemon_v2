@@ -1062,11 +1062,9 @@ export const Arena: React.FC = () => {
                             <div key={cardId} className="w-[var(--card-w)] h-[calc(var(--card-h)*1.4)] bg-slate-700 rounded shadow-md border border-slate-600 scale-[0.6] origin-top" style={{ backgroundImage: "url('/image-proxy/assets/images/card_images/back.png')", backgroundSize: "cover" }} />
                         ))}
 
-                        {/* Opponent Hand Display & Log Button Placeholder */}
-                        <div className="absolute -bottom-6 right-[5%] flex flex-col items-center gap-1 z-[100]">
-                            <div className="bg-slate-900/80 text-white text-[9px] px-2 py-0.5 rounded-md border border-slate-700 shadow-xl backdrop-blur-sm font-mono font-bold">
-                                手札 : {zones[`${playerId}-hand` as ZoneType].length}
-                            </div>
+                        {/* Opponent Hand Display - Mirroring player's display */}
+                        <div className="absolute bottom-4 left-4 text-slate-400 text-[var(--btn-font-size)] scale-[0.9] origin-left font-bold font-mono bg-slate-900/80 px-3 py-1.5 rounded-full border border-slate-700 shadow-xl z-[100] backdrop-blur-sm rotate-180">
+                            手札 : {zones[`${playerId}-hand` as ZoneType].length}
                         </div>
                     </Zone>
                 ) : (

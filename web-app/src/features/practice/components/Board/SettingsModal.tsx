@@ -29,9 +29,9 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
     });
 
     const sampleDecks = [
-        { name: 'リザードンex', code: 'FppkFk-3f8wZy-5kk5FF' },
-        { name: 'パオジアンex', code: 'fkkFF5-f8wZy3-kFpkkF' },
-        { name: 'サーナイトex', code: 'Zy3f8w-5fkkFF-k5Fpkk' }
+        { name: 'ドラパルトexデッキ', code: 'NNnNgn-BArOp8-9NL6gn' },
+        { name: 'タケルライコexデッキ', code: '5F515V-z9mey2-5ffbkV' },
+        { name: 'メガルカリオexデッキ', code: 'MEp2yX-7wFGpK-RyMppM' }
     ];
     const [loading, setLoading] = useState<Record<PlayerId, boolean>>({
         player1: false,
@@ -62,7 +62,7 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
     };
 
     const handleStartGame = () => {
-        if (player1Deck.length === 0 && player1Deck.length === 0) return;
+        if (player1Deck.length === 0 && player2Deck.length === 0) return;
         initializeDeck(player1Deck, player2Deck);
         onClose();
     };
@@ -71,14 +71,14 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
     const p2Count = player2Deck.reduce((s, c) => s + c.count, 0);
 
     const modes: { id: 'text' | 'compact' | 'local-image', label: string, labelEn: string, description: string }[] = [
-/*
-        {
-            id: 'text',
-            label: 'テキストモード',
-            labelEn: 'Text Mode',
-            description: 'カード名とHPのみの超軽量表示です。'
-        },
-*/
+        /*
+                {
+                    id: 'text',
+                    label: 'テキストモード',
+                    labelEn: 'Text Mode',
+                    description: 'カード名とHPのみの超軽量表示です。'
+                },
+        */
         {
             id: 'compact',
             label: 'コンパクトモード',
@@ -189,11 +189,10 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                             </div>
                                             <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
                                                 {history.map((deckCodeInfo, idx) => (
-                                                    <div 
+                                                    <div
                                                         key={`${pid}-hist-${idx}-${deckCodeInfo.code}`}
-                                                        className={`flex items-center gap-1.5 p-1.5 rounded-lg border transition-colors group cursor-pointer ${
-                                                            deckCodes[pid] === deckCodeInfo.code ? 'bg-blue-900/40 border-blue-500/50' : 'bg-slate-800/80 border-slate-700 hover:border-slate-500 hover:bg-slate-700'
-                                                        }`}
+                                                        className={`flex items-center gap-1.5 p-1.5 rounded-lg border transition-colors group cursor-pointer ${deckCodes[pid] === deckCodeInfo.code ? 'bg-blue-900/40 border-blue-500/50' : 'bg-slate-800/80 border-slate-700 hover:border-slate-500 hover:bg-slate-700'
+                                                            }`}
                                                         onClick={() => {
                                                             if (editingName?.id !== deckCodeInfo.code) {
                                                                 setDeckCodes(prev => ({ ...prev, [pid]: deckCodeInfo.code }));
@@ -201,11 +200,11 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                                         }}
                                                     >
                                                         {isPro && (
-                                                            <button 
+                                                            <button
                                                                 onClick={(e) => { e.stopPropagation(); togglePin(deckCodeInfo.code); }}
                                                                 className={`p-1 rounded transition-all shrink-0 ${deckCodeInfo.pinned ? 'text-yellow-400 opacity-100' : 'text-slate-500 hover:text-slate-300 opacity-40 hover:opacity-100'}`}
                                                             >
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill={deckCodeInfo.pinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5"/><path d="M9 10.5V7a3 3 0 0 1 6 0v3.5M15 10.5h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2"/></svg>
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill={deckCodeInfo.pinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5" /><path d="M9 10.5V7a3 3 0 0 1 6 0v3.5M15 10.5h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2" /></svg>
                                                             </button>
                                                         )}
                                                         <div className="flex-1 min-w-0 flex flex-col justify-center">
@@ -214,9 +213,9 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                                             </span>
                                                             <span className="text-[9px] text-slate-500 font-mono tracking-widest leading-none mt-0.5">{deckCodeInfo.code}</span>
                                                         </div>
-                                                        <button 
-                                                            onClick={(e) => { 
-                                                                e.stopPropagation(); 
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
                                                                 const newName = window.prompt("デッキ名を入力してください", deckCodeInfo.name || "");
                                                                 if (newName !== null) {
                                                                     updateDeckName(deckCodeInfo.code, newName.trim() || "名称未設定デッキ");
@@ -227,11 +226,11 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                                         >
                                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
                                                         </button>
-                                                        <button 
+                                                        <button
                                                             onClick={(e) => { e.stopPropagation(); removeDeck(deckCodeInfo.code); }}
                                                             className="p-1 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded transition-all opacity-40 hover:opacity-100 shrink-0"
                                                         >
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
                                                         </button>
                                                     </div>
                                                 ))}
