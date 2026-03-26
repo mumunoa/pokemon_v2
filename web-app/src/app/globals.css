@@ -50,9 +50,9 @@
 }
 
 :root {
-  --spacer-f-opp: 0;
-  --spacer-f-self: 0.1;
-  --spacer-f-top: 0;
+  --spacer-f-opp: 1.0;
+  --spacer-f-self: 0.05;
+  --spacer-f-top: 0.05;
   --field-f-opp: 0.5;
   --field-f-self: 1.0;
   --hand-h-mult: 0.9;
@@ -72,9 +72,10 @@
     --row-s-self-active: 0.85;
     --row-s-opp-bench: 0.6;
     --row-s-self-bench: 0.9;
-    --spacer-f-opp: 2.5;
+    --spacer-f-opp: 0.05;
     --spacer-f-self: 0.05;
-    --spacer-f-top: 1;
+    --spacer-f-top: 0;
+    --field-f-opp: 0.4;
     --field-f-self: 1.1;
   }
 
