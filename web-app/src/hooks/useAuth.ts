@@ -84,7 +84,8 @@ export function useAuth() {
     }
 
     const trialUntil = profile?.pro_trial_until ? new Date(profile.pro_trial_until) : null;
-    const isPro = profile?.plan_type === 'pro' || profile?.plan_type === 'elite' || (trialUntil !== null && trialUntil > new Date());
+    const isEarlyCampaign = process.env.NEXT_PUBLIC_CAMPAIGN_EARLY_ACCESS === 'true';
+    const isPro = isEarlyCampaign || profile?.plan_type === 'pro' || profile?.plan_type === 'elite' || (trialUntil !== null && trialUntil > new Date());
 
     return {
         user: clerkUser.user,

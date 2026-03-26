@@ -16,24 +16,25 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { data: userProfile, error: userError } = await supabase
-            .from('users')
-            .select('plan_type, ai_tickets, pro_trial_until')
-            .eq('id', userId)
-            .single();
+        const { createSupabaseClient } = await import('@/lib/supabase');
+        const supabase = createSupabaseClient();
+        if (!supabase) throw new Error('Supabase client error');
 
-        if (userError || !userProfile) {
+        const { checkAndResetTickets, deductTicket } = await import('@/lib/ai/ticketHelper');
+        let ticketInfo;
+        try {
+            ticketInfo = await checkAndResetTickets(supabase, userId);
+        } catch (e) {
             return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
         }
 
-        const trialUntil = userProfile.pro_trial_until ? new Date(userProfile.pro_trial_until) : null;
-        const isPro = userProfile.plan_type === 'pro' || userProfile.plan_type === 'elite' || (trialUntil !== null && trialUntil > new Date());
+        const { ai_tickets, isPro, plan_type } = ticketInfo;
 
-        if (!isPro && userProfile.ai_tickets <= 0) {
+        if (!isPro && ai_tickets <= 0) {
             return NextResponse.json({ 
                 error: 'Ticket limit reached',
                 errorType: 'TICKETS_EMPTY',
-                message: 'チケットが不足しています。Proプランへアップグレードしてください。'
+                message: '本日の無料AI分析チケットを使い果たしました。明日の回復をお待ちいただくか、Proプランをご検討ください。'
             }, { status: 403 });
         }
 
@@ -63,7 +64,7 @@ ${candidates.slice(0, 3).map((c: any, i: number) => `${i+1}. アクション: ${
                 'anthropic-version': '2023-06-01'
             },
             body: JSON.stringify({
-                model: isEliteAnalysis && userProfile.plan_type === 'elite' ? 'claude-3-opus-20240229' : 'claude-3-5-sonnet-20241022',
+                model: isEliteAnalysis && plan_type === 'elite' ? 'claude-3-opus-20240229' : 'claude-3-5-sonnet-20241022',
                 max_tokens: 300,
                 messages: [
                     { role: 'user', content: prompt }
@@ -81,11 +82,8 @@ ${candidates.slice(0, 3).map((c: any, i: number) => `${i+1}. アクション: ${
         const analysisText = claudeData.content[0].text;
 
         // Deduct ticket if free user
-        if (!isPro && userProfile.ai_tickets > 0) {
-            await supabase
-                .from('users')
-                .update({ ai_tickets: userProfile.ai_tickets - 1 })
-                .eq('id', userId);
+        if (!isPro) {
+            await deductTicket(supabase, userId, ai_tickets);
         }
 
         return NextResponse.json({ analysis: analysisText });

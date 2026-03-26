@@ -39,27 +39,20 @@ export async function POST(req: Request) {
         if (supabase) {
             // 1. ログインユーザー本人のチケット枚数・有料プランチェック
             if (clerkUserId) {
-                const { data: userRecord, error: fetchError } = await supabase
-                    .from('users')
-                    .select('ai_tickets, pro_trial_until, plan_type')
-                    .eq('id', clerkUserId)
-                    .single();
+                const { checkAndResetTickets } = await import('@/lib/ai/ticketHelper');
+                try {
+                    const ticketInfo = await checkAndResetTickets(supabase, clerkUserId);
+                    isPro = ticketInfo.isPro;
+                    userTickets = ticketInfo.ai_tickets;
 
-                if (!fetchError && userRecord) {
-                    const now = new Date();
-                    const trialUntil = userRecord.pro_trial_until ? new Date(userRecord.pro_trial_until) : null;
-                    const isTrialActive = trialUntil !== null && trialUntil > now;
-                    
-                    const actualPlan = userRecord.plan_type || 'free';
-                    isPro = actualPlan === 'pro' || actualPlan === 'elite' || isTrialActive;
-                    userTickets = userRecord.ai_tickets;
-
-                    if (!isPro && userRecord.ai_tickets <= 0) {
+                    if (!isPro && userTickets <= 0) {
                         return NextResponse.json(
                             { error: 'TICKETS_EMPTY', details: 'AI分析のチケットが不足しています。明日の回復をお待ちください。' },
                             { status: 403 }
                         );
                     }
+                } catch (e) {
+                    console.error('Error in checkAndResetTickets (Coach):', e);
                 }
             }
 
@@ -163,22 +156,9 @@ export async function POST(req: Request) {
 
                 // --- チケット消費 (Proでないユーザーのみ) ---
                 if (clerkUserId && !isPro) {
-                    // Fetch current tickets first and deduct 1
-                    const { data: currentUser } = await supabase
-                        .from('users')
-                        .select('ai_tickets')
-                        .eq('id', clerkUserId)
-                        .single();
-
-                    if (currentUser && currentUser.ai_tickets > 0) {
-                        const { error: updateError } = await supabase
-                            .from('users')
-                            .update({ ai_tickets: currentUser.ai_tickets - 1 })
-                            .eq('id', clerkUserId);
-
-                        if (updateError) console.error('Error deducting ticket:', updateError);
-                        else console.log(`AI Coach: Deducted 1 ticket for user ${clerkUserId}. Remaining: ${currentUser.ai_tickets - 1}`);
-                    }
+                    const { deductTicket } = await import('@/lib/ai/ticketHelper');
+                    await deductTicket(supabase, clerkUserId, userTickets);
+                    console.log(`AI Coach: Deducted 1 ticket for user ${clerkUserId}.`);
                 }
                 // ----------------------------------------
             }

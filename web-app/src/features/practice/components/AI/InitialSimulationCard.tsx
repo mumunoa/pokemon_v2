@@ -4,6 +4,7 @@ import {
     InitialSimulationSummary, 
     InitialSimulationResponse 
 } from '@/types/simulation';
+import { AnalysisShareCard } from './AnalysisShareCard';
 
 interface Props {
     planType: string;
@@ -13,7 +14,16 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType }) => {
     const [summary, setSummary] = useState<InitialSimulationSummary | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showShareModal, setShowShareModal] = useState(false);
     const player1Deck = useGameStore(state => state.player1Deck);
+    const gameId = useGameStore(state => state.gameId);
+
+    // デッキが変更（ロード）されたら結果をクリア
+    useEffect(() => {
+        setSummary(null);
+        setError(null);
+        setIsLoading(false);
+    }, [player1Deck, gameId]);
 
     const runSimulation = async () => {
         if (!player1Deck || player1Deck.length === 0) {
@@ -221,18 +231,42 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType }) => {
                             再シミュレーション
                         </button>
                         
-                        {!isPro && (
+                        <div className="flex w-full gap-2">
                             <button 
-                                onClick={() => window.location.href = '/billing'}
-                                className="w-full max-w-[220px] bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-xs font-black py-3 rounded-full shadow-[0_0_20px_rgba(245,158,11,0.2)] transform transition-all active:scale-95 flex items-center justify-center gap-2"
+                                onClick={() => setShowShareModal(true)}
+                                className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-black py-3 rounded-xl border border-slate-700 transition-all flex items-center justify-center gap-2"
                             >
-                                <span>🚀</span>
-                                PROプランにアップグレード
+                                <span>📤</span> SNSで結果をシェア
                             </button>
-                        )}
+
+                            {!isPro && (
+                                <button 
+                                    onClick={() => window.location.href = '/billing'}
+                                    className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-[10px] font-black py-3 rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.2)] transform transition-all active:scale-95 flex items-center justify-center gap-2"
+                                >
+                                    <span>🚀</span> Pro版へ
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {/* Share Modal */}
+            {showShareModal && (
+                <AnalysisShareCard
+                    metrics={[
+                        { label: 'たね率', rate: summary.seedRate.rate },
+                        { label: '展開成功率', rate: summary.setupRate.rate },
+                        { label: 'サポ到達率', rate: summary.supporterRate.rate },
+                        { label: 'エネ到達率', rate: summary.energyRate.rate },
+                    ]}
+                    bestLine={summary.advancedAdvice?.overallComment || summary.interpretation.headline}
+                    interpretation={summary.interpretation.summaryLines[0]}
+                    deckName="My Deck"
+                    onClose={() => setShowShareModal(false)}
+                />
+            )}
         </div>
     );
 };
