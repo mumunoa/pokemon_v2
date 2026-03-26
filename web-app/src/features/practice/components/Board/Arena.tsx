@@ -924,7 +924,7 @@ export const Arena: React.FC = () => {
         return (
             <div className={`field ${playerId}-field relative flex flex-col px-2 py-1 overflow-visible ${isOpponent ? 'rotate-180' : ''}`} style={{ flex: isOpponent ? undefined : 'var(--field-f-self)', minHeight: 0 }}>
                 <div style={{ flex: isOpponent ? "var(--spacer-f-top)" : spacerFlex }} />
-                <div className={`active-row flex justify-center items-center w-full max-w-4xl mx-auto gap-[var(--card-gap)] flex-shrink-0 ${isOpponent ? 'scale-[var(--row-s-opp-active)] origin-center' : 'scale-[var(--row-s-self-active)] origin-bottom'}`}>
+                <div className={`active-row flex justify-center items-center w-full max-w-4xl mx-auto gap-[var(--card-gap)] flex-shrink-0 ${isOpponent ? 'scale-[var(--row-s-opp-active)] origin-center' : 'scale-[var(--row-s-self-active)] origin-bottom'}`} style={{ height: `calc(var(--card-h) * ${isOpponent ? 'var(--row-s-opp-active)' : 'var(--row-s-self-active)'})` }}>
 
                     <div className="relative">
                         <Zone id={`${playerId}-prizes` as ZoneType} className="prizes-zone horizontal-prizes relative w-[var(--card-w)] h-[var(--card-h)] border border-dashed border-slate-600 bg-slate-800/50 hover:bg-slate-700/50 transition-colors cursor-pointer" onClick={() => setPopupState({ zone: `${playerId}-prizes` as ZoneType })}>
@@ -1014,7 +1014,7 @@ export const Arena: React.FC = () => {
 
                 <div style={{ flex: spacerFlex }} />
 
-                <div className={`bench-row flex justify-center w-full max-w-4xl mx-auto flex-shrink-0 ${isOpponent ? 'scale-[var(--row-s-opp-bench)] origin-top' : 'scale-[var(--row-s-self-bench)] origin-top'}`}>
+                <div className={`bench-row flex justify-center w-full max-w-4xl mx-auto flex-shrink-0 ${isOpponent ? 'scale-[var(--row-s-opp-bench)] origin-top' : 'scale-[var(--row-s-self-bench)] origin-top'}`} style={{ height: `calc(var(--card-h) * ${isOpponent ? 'var(--row-s-opp-bench)' : 'var(--row-s-self-bench)'})` }}>
                     <div className="bench-zone flex gap-[calc(var(--card-gap)*0.5)] p-1 bg-slate-800/40 rounded-lg">
                         {([1, 2, 3, 4, 5] as const).map(num => {
                             const bZone = `${playerId}-bench-${num}` as ZoneType;
