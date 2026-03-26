@@ -54,13 +54,16 @@ export const UpgradePrompt: React.FC<Props> = ({ isOpen, onClose }) => {
 
     return (
         <div 
-            className="fixed inset-0 z-[7000] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200"
+            className="fixed inset-0 z-[7000] flex items-center sm:items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto pointer-events-auto"
             onClick={onClose}
         >
             <div 
-                className="relative w-full max-w-md bg-slate-900 border border-purple-500/30 rounded-3xl overflow-y-auto max-h-[90vh] shadow-2xl shadow-purple-500/20 animate-in zoom-in-95 duration-300"
+                className="relative w-full max-w-md bg-slate-900 border border-purple-500/30 rounded-3xl overflow-hidden shadow-2xl shadow-purple-500/20 animate-in zoom-in-95 duration-300 flex flex-col my-auto"
+                style={{ WebkitOverflowScrolling: 'touch' }}
                 onClick={e => e.stopPropagation()}
             >
+                {/* Scrollable container for modal content */}
+                <div className="overflow-y-auto relative max-h-[85dvh]">
                 {/* Decorative Background */}
                 <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-purple-600/20 to-transparent"></div>
                 
@@ -117,9 +120,10 @@ export const UpgradePrompt: React.FC<Props> = ({ isOpen, onClose }) => {
                         </button>
                     </div>
 
-                    <p className="mt-6 text-[10px] text-slate-600 italic">
+                    <p className="mt-6 text-[10px] text-slate-600 italic pb-4">
                         ※いつでもキャンセル可能です
                     </p>
+                </div>
                 </div>
             </div>
         </div>
