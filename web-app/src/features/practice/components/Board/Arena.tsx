@@ -921,6 +921,9 @@ export const Arena: React.FC = () => {
     };
     const renderPlayerField = (playerId: PlayerId, isOpponent: boolean) => {
         const spacerFlex = isOpponent ? "var(--spacer-f-opp)" : "var(--spacer-f-self)";
+        const isAreaZeroActive = zones.stadium.some(id => cards[id]?.name?.includes('ゼロの大空洞'));
+        const benchSlots = isAreaZeroActive ? [1, 2, 3, 4, 5, 6, 7, 8] : [1, 2, 3, 4, 5];
+
         return (
             <div className={`field ${playerId}-field relative flex flex-col px-2 py-1 overflow-visible ${isOpponent ? 'rotate-180' : ''}`} style={{ flex: isOpponent ? undefined : 'var(--field-f-self)', minHeight: 0 }}>
                 <div style={isOpponent ? { height: 'calc(var(--spacer-f-top) * 1vh)' } : { flex: 'var(--spacer-f-top)' }} />
@@ -1014,9 +1017,9 @@ export const Arena: React.FC = () => {
 
                 <div style={isOpponent ? { height: 'calc(var(--spacer-f-opp) * 1vh)' } : { flex: spacerFlex }} />
 
-                <div className={`bench-row flex justify-center w-full max-w-4xl mx-auto flex-shrink-0 ${isOpponent ? 'scale-[var(--row-s-opp-bench)] origin-top' : 'scale-[var(--row-s-self-bench)] origin-top'}`} style={{ height: `calc(var(--card-h) * ${isOpponent ? 'var(--row-s-opp-bench)' : 'var(--row-s-self-bench)'})` }}>
-                    <div className="bench-zone flex gap-[calc(var(--card-gap)*0.5)] p-1 bg-slate-800/40 rounded-lg">
-                        {([1, 2, 3, 4, 5] as const).map(num => {
+                <div className={`bench-row flex justify-center w-full max-w-full mx-auto flex-shrink-0 overflow-x-auto scrollbar-hide pb-2 ${isOpponent ? 'scale-[var(--row-s-opp-bench)] origin-top' : 'scale-[var(--row-s-self-bench)] origin-top'}`} style={{ height: `calc(var(--card-h) * ${isOpponent ? 'var(--row-s-opp-bench)' : 'var(--row-s-self-bench)'})` }}>
+                    <div className="bench-zone flex gap-[calc(var(--card-gap)*0.5)] p-1 bg-slate-800/40 rounded-lg min-w-max">
+                        {benchSlots.map(num => {
                             const bZone = `${playerId}-bench-${num}` as ZoneType;
                             const hasPoke = escapePlayerId === playerId && zones[bZone].find(id => cards[id]?.type === 'pokemon');
                             const outlineClass = hasPoke ? 'border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.8)] animate-pulse cursor-pointer z-[5001]' : 'border-slate-600';
