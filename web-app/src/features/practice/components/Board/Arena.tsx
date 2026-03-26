@@ -1017,7 +1017,7 @@ export const Arena: React.FC = () => {
 
                 <div style={isOpponent ? { height: 'calc(var(--spacer-f-opp) * 1vh)' } : { flex: spacerFlex }} />
 
-                <div className={`bench-row flex justify-center w-full max-w-full mx-auto flex-shrink-0 overflow-x-auto scrollbar-hide pb-2 ${isOpponent ? 'scale-[var(--row-s-opp-bench)] origin-top' : 'scale-[var(--row-s-self-bench)] origin-top'}`} style={{ height: `calc(var(--card-h) * ${isOpponent ? 'var(--row-s-opp-bench)' : 'var(--row-s-self-bench)'})` }}>
+                <div className={`bench-row flex justify-center w-full max-w-full mx-auto flex-shrink-0 overflow-x-auto scrollbar-hide pb-2 relative z-[20] ${isOpponent ? 'scale-[var(--row-s-opp-bench)] origin-top' : 'scale-[var(--row-s-self-bench)] origin-top'}`} style={{ height: `calc(var(--card-h) * ${isOpponent ? 'var(--row-s-opp-bench)' : 'var(--row-s-self-bench)'})` }}>
                     <div className="bench-zone flex gap-[calc(var(--card-gap)*0.5)] p-1 bg-slate-800/40 rounded-lg min-w-max">
                         {benchSlots.map(num => {
                             const bZone = `${playerId}-bench-${num}` as ZoneType;
