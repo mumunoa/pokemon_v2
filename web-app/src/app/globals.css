@@ -72,10 +72,9 @@
     --row-s-self-active: 0.85;
     --row-s-opp-bench: 0.6;
     --row-s-self-bench: 0.9;
-    --spacer-f-opp: 0.05;
+    --spacer-f-opp: 2.5;
     --spacer-f-self: 0.05;
-    --spacer-f-top: 0;
-    --field-f-opp: 0.4;
+    --spacer-f-top: 1;
     --field-f-self: 1.1;
   }
 
