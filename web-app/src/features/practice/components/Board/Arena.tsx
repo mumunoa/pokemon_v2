@@ -1063,7 +1063,7 @@ export const Arena: React.FC = () => {
                         ))}
 
                         {/* Opponent Hand Display - Mirroring player's display */}
-                        <div className="absolute bottom-4 left-4 text-slate-400 text-[var(--btn-font-size)] scale-[0.9] origin-left font-bold font-mono bg-slate-900/80 px-3 py-1.5 rounded-full border border-slate-700 shadow-xl z-[100] backdrop-blur-sm rotate-180">
+                        <div className="absolute bottom-4 left-12 text-slate-400 text-[var(--btn-font-size)] scale-[0.9] origin-left font-bold font-mono bg-slate-900/80 px-3 py-1.5 rounded-full border border-slate-700 shadow-xl z-[100] backdrop-blur-sm rotate-180">
                             手札 : {zones[`${playerId}-hand` as ZoneType].length}
                         </div>
                     </Zone>

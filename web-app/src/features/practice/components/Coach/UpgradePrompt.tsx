@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { createSupabaseClient } from '@/lib/supabase';
 
 interface Props {
     isOpen: boolean;
@@ -6,7 +8,49 @@ interface Props {
 }
 
 export const UpgradePrompt: React.FC<Props> = ({ isOpen, onClose }) => {
+    const { profile, isSignedIn, getToken } = useAuth();
+    const [isProcessing, setIsProcessing] = useState(false);
+
     if (!isOpen) return null;
+
+    const handleMockUpgrade = async () => {
+        if (!isSignedIn) {
+            alert('ログインが必要です');
+            return;
+        }
+
+        setIsProcessing(true);
+
+        try {
+            const token = await getToken({ template: 'supabase' });
+            if (!token) throw new Error('Auth token not found');
+
+            const supabaseClient = createSupabaseClient(token);
+            if (!supabaseClient) throw new Error('Supabase client error');
+
+            // Simulate "Checkout" delay
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            const { error } = await supabaseClient
+                .from('users')
+                .update({
+                    plan_type: 'pro',
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', profile?.id);
+
+            if (error) throw error;
+
+            alert('プロプランへアップグレードしました！(Mock)');
+            window.location.reload();
+        } catch (err) {
+            console.error(err);
+            alert('アップグレードに失敗しました');
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
 
     return (
         <div 
@@ -14,7 +58,7 @@ export const UpgradePrompt: React.FC<Props> = ({ isOpen, onClose }) => {
             onClick={onClose}
         >
             <div 
-                className="relative w-full max-w-md bg-slate-900 border border-purple-500/30 rounded-3xl overflow-hidden shadow-2xl shadow-purple-500/20 animate-in zoom-in-95 duration-300"
+                className="relative w-full max-w-md bg-slate-900 border border-purple-500/30 rounded-3xl overflow-y-auto max-h-[90vh] shadow-2xl shadow-purple-500/20 animate-in zoom-in-95 duration-300"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Decorative Background */}
@@ -53,10 +97,16 @@ export const UpgradePrompt: React.FC<Props> = ({ isOpen, onClose }) => {
                     {/* Action Buttons */}
                     <div className="w-full space-y-3">
                         <button 
-                            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black py-4 rounded-2xl shadow-xl shadow-purple-500/20 transition-all active:scale-95"
-                            onClick={() => window.location.href = '/billing'}
+                            disabled={isProcessing}
+                            className={`w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black py-4 rounded-2xl shadow-xl shadow-purple-500/20 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2`}
+                            onClick={handleMockUpgrade}
                         >
-                            初月無料で Pro を試す
+                            {isProcessing ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                    処理中...
+                                </>
+                            ) : '初月無料で Pro を試す'}
                         </button>
                         
                         <button 

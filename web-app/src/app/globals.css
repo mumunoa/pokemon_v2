@@ -62,6 +62,19 @@
   --row-s-self-bench: 1.05;
 }
 
+/* iPhone SE / Short Portrait Responsive scaling adjustments */
+@media (max-height: 700px) and (orientation: portrait) {
+  :root {
+    --card-w: clamp(55px, 15vw, 100px);
+    --btn-fs: clamp(5px, 1.2vw + 0.8vh, 12px);
+    --hand-h-mult: 0.75;
+    --row-s-opp-active: 0.7;
+    --row-s-self-active: 0.85;
+    --row-s-opp-bench: 0.65;
+    --row-s-self-bench: 0.9;
+  }
+}
+
 .responsive-btn {
   font-size: var(--btn-fs) !important;
   padding-left: var(--btn-px) !important;

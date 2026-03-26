@@ -156,23 +156,28 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                     </div>
 
                                     {/* Sample Decks */}
-                                    {pid === 'player1' && p1Count === 0 && (
-                                        <div className="flex flex-wrap gap-1.5 px-1 mt-1">
-                                            <span className="text-[9px] text-slate-500 w-full mb-0.5">サンプルデッキを試す:</span>
-                                            {sampleDecks.map(sd => (
-                                                <button
-                                                    key={sd.code}
-                                                    onClick={() => {
-                                                        setDeckCodes(prev => ({ ...prev, [pid]: sd.code }));
-                                                        setTimeout(() => handleLoadDeck(pid), 0);
-                                                    }}
-                                                    className="bg-slate-700/50 hover:bg-slate-700 text-slate-300 text-[10px] px-2 py-0.5 rounded border border-slate-600 transition-colors"
-                                                >
-                                                    {sd.name}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
+                                    <div className="flex flex-wrap gap-1.5 px-1 mt-1">
+                                        <span className="text-[9px] text-slate-500 w-full mb-0.5">サンプルデッキを試す:</span>
+                                        {sampleDecks.map(sd => (
+                                            <button
+                                                key={sd.code}
+                                                onClick={() => {
+                                                    setDeckCodes(prev => ({ ...prev, [pid]: sd.code }));
+                                                    // Use a temporary function to call handleLoadDeck with the current pid
+                                                    setTimeout(() => {
+                                                        const currentInput = document.getElementById(`input-${pid}`) as HTMLInputElement;
+                                                        if (currentInput) {
+                                                            currentInput.value = sd.code;
+                                                            handleLoadDeck(pid);
+                                                        }
+                                                    }, 0);
+                                                }}
+                                                className="bg-slate-700/50 hover:bg-slate-700 text-slate-300 text-[10px] px-2 py-0.5 rounded border border-slate-700 transition-colors"
+                                            >
+                                                {sd.name}
+                                            </button>
+                                        ))}
+                                    </div>
                                     {errors[pid] && (
                                         <p className="text-red-400 text-[10px] px-1">{errors[pid]}</p>
                                     )}

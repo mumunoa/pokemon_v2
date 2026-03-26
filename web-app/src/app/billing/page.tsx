@@ -108,7 +108,7 @@ export default function BillingPage() {
     };
 
     return (
-        <main className="min-h-screen bg-slate-950 text-white selection:bg-purple-500/30">
+        <main className="h-screen overflow-y-auto bg-slate-950 text-white selection:bg-purple-500/30">
             {/* Background Decorations */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-900/20 blur-[120px] rounded-full"></div>
