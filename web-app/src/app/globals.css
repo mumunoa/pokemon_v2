@@ -72,13 +72,15 @@
     --row-s-self-active: 0.85;
     --row-s-opp-bench: 0.6;
     --row-s-self-bench: 0.9;
-    --spacer-f-opp: 0.015;
-    --spacer-f-self: 0.015;
+    --spacer-f-opp: 0.03;
+    --spacer-f-self: 0.03;
     --spacer-f-top: 0;
     --field-f-self: 1.1;
   }
+
   .battle-arena {
-    padding-bottom: 20px; /* Space for home indicator */
+    padding-bottom: 20px;
+    /* Space for home indicator */
   }
 }
 
