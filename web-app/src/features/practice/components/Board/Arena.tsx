@@ -922,8 +922,8 @@ export const Arena: React.FC = () => {
     const renderPlayerField = (playerId: PlayerId, isOpponent: boolean) => {
         const spacerFlex = isOpponent ? "var(--spacer-f-opp)" : "var(--spacer-f-self)";
         return (
-            <div className={`field ${playerId}-field relative flex flex-col px-2 py-1 overflow-visible ${isOpponent ? 'rotate-180' : ''}`} style={{ flex: isOpponent ? 'var(--field-f-opp)' : 'var(--field-f-self)', minHeight: 0 }}>
-                <div style={{ flex: isOpponent ? "var(--spacer-f-top)" : spacerFlex }} />
+            <div className={`field ${playerId}-field relative flex flex-col px-2 py-1 overflow-visible ${isOpponent ? 'rotate-180' : ''}`} style={{ flex: isOpponent ? undefined : 'var(--field-f-self)', minHeight: 0 }}>
+                <div style={isOpponent ? { height: 'var(--spacer-h-top)' } : { flex: 'var(--spacer-f-top)' }} />
                 <div className={`active-row flex justify-center items-center w-full max-w-4xl mx-auto gap-[var(--card-gap)] flex-shrink-0 ${isOpponent ? 'scale-[var(--row-s-opp-active)] origin-center' : 'scale-[var(--row-s-self-active)] origin-bottom'}`} style={{ height: `calc(var(--card-h) * ${isOpponent ? 'var(--row-s-opp-active)' : 'var(--row-s-self-active)'})` }}>
 
                     <div className="relative">
@@ -1012,7 +1012,7 @@ export const Arena: React.FC = () => {
                     </div>
                 </div>
 
-                <div style={{ flex: spacerFlex }} />
+                <div style={isOpponent ? { height: 'var(--spacer-h-opp)' } : { flex: spacerFlex }} />
 
                 <div className={`bench-row flex justify-center w-full max-w-4xl mx-auto flex-shrink-0 ${isOpponent ? 'scale-[var(--row-s-opp-bench)] origin-top' : 'scale-[var(--row-s-self-bench)] origin-top'}`} style={{ height: `calc(var(--card-h) * ${isOpponent ? 'var(--row-s-opp-bench)' : 'var(--row-s-self-bench)'})` }}>
                     <div className="bench-zone flex gap-[calc(var(--card-gap)*0.5)] p-1 bg-slate-800/40 rounded-lg">
@@ -1054,7 +1054,7 @@ export const Arena: React.FC = () => {
                     </div>
                 </div>
 
-                <div style={{ flex: spacerFlex }} />
+                <div style={isOpponent ? { height: 'var(--spacer-h-opp)' } : { flex: spacerFlex }} />
 
                 {isOpponent ? (
                     <Zone id={`${playerId}-hand` as ZoneType} className={`${playerId}-hand-opponent relative w-full flex justify-center space-x-[calc(var(--card-w)*-0.6)] overflow-visible z-[10] opacity-90 flex-shrink-0`} style={{ height: 'calc(var(--card-h) * 0.5)' }}>
