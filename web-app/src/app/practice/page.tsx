@@ -5,7 +5,7 @@ import { Arena } from '@/features/practice/components/Board/Arena';
 import { useGameStore } from '@/features/practice/store/useGameStore';
 import { SettingsModal } from '@/features/practice/components/Board/SettingsModal';
 import { LogSidePanel } from '@/features/practice/components/Board/LogSidePanel';
-import './styles/app.css'; // Future implementation of customized non-tailwind CSS if needed
+import '../styles/app.css'; // Future implementation of customized non-tailwind CSS if needed
 
 export default function Home() {
   const { turnCount, currentTurnPlayer, logs, isGameStarted } = useGameStore();
