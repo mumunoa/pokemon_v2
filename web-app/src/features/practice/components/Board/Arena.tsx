@@ -1215,9 +1215,9 @@ export const Arena: React.FC = () => {
                                         <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.04-2.44 2.5 2.5 0 0 0 2.04-2.44 2.5 2.5 0 0 0 0-4.12 2.5 2.5 0 0 0-2.04-2.44 2.5 2.5 0 0 0-2.04-2.44A2.5 2.5 0 0 0 14.5 2z" />
                                     </svg>
                                     <span>AI分析</span>
-                                    {(isClerkEnabled && isSignedIn && !isPro && tickets !== null) && (
-                                        <span className="absolute -top-1 -right-1 bg-yellow-500 text-black text-[7px] font-black px-1 rounded-full border border-yellow-300 shadow-md">
-                                            {tickets}
+                                    {(isClerkEnabled && isSignedIn && !isPro) && (
+                                        <span className={`absolute -top-1 -right-1 ${tickets === 0 ? 'bg-red-500' : 'bg-yellow-500'} text-black text-[7px] font-black px-1 rounded-full border border-yellow-300 shadow-md min-w-[12px] text-center`}>
+                                            {tickets !== null ? tickets : '...'}
                                         </span>
                                     )}
                                     {(isClerkEnabled && isSignedIn && isPro) && (

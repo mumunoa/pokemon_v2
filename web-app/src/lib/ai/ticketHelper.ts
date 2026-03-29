@@ -81,3 +81,31 @@ export async function deductTicket(supabase: SupabaseClient, userId: string, cur
         console.error('Error deducting ticket:', error);
     }
 }
+
+/**
+ * 動画視聴などでチケットを1枚回復（+1）させます。
+ */
+export async function recoverTicket(supabase: SupabaseClient, userId: string): Promise<void> {
+    const { data: userProfile, error: fetchError } = await supabase
+        .from('users')
+        .select('ai_tickets')
+        .eq('id', userId)
+        .single();
+
+    if (fetchError || !userProfile) {
+        console.error('Error fetching ticket for recovery:', fetchError);
+        return;
+    }
+
+    const { error: updateError } = await supabase
+        .from('users')
+        .update({ 
+            ai_tickets: (userProfile.ai_tickets || 0) + 1,
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+
+    if (updateError) {
+        console.error('Error recovering ticket:', updateError);
+    }
+}

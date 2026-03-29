@@ -5,9 +5,35 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useUser } from '@clerk/nextjs';
 import { AdSlot } from '@/features/monetization/components/AdSlot';
+import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
   const { isSignedIn } = useUser();
+  const router = useRouter();
+
+  const handleRecoverTicket = async () => {
+    if (!isSignedIn) {
+      alert('チケットを受け取るにはログインが必要です。');
+      return;
+    }
+
+    const confirm = window.confirm('広告を表示して分析チケットを1枚獲得しますか？\n（新しいウインドウで広告が表示されます）');
+    if (!confirm) return;
+
+    // Monetag の OnClick 等が機能している状態で API を叩く
+    try {
+      const res = await fetch('/api/user/tickets/recover', { method: 'POST' });
+      if (res.ok) {
+        alert('チケットを1枚獲得しました！ツール画面で確認してください。');
+        router.push('/practice');
+      } else {
+        alert('エラーが発生しました。時間を置いて再度お試しください。');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('通信エラーが発生しました。');
+    }
+  };
 
   const features = [
     {
@@ -162,7 +188,10 @@ export default function HomePage() {
               >
                 一人回しを始める (無料)
               </Link>
-              <button className="w-full md:w-auto px-8 py-4 rounded-2xl bg-orange-600/20 border border-orange-500/20 text-orange-400 font-bold hover:bg-orange-600/30 transition-all flex items-center justify-center gap-2 group">
+              <button 
+                onClick={handleRecoverTicket}
+                className="w-full md:w-auto px-8 py-4 rounded-2xl bg-orange-600/20 border border-orange-500/20 text-orange-400 font-bold hover:bg-orange-600/30 transition-all flex items-center justify-center gap-2 group"
+              >
                 <span className="group-hover:animate-bounce">🎁</span>
                 動画を見てチケット獲得
               </button>
