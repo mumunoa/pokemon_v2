@@ -3,8 +3,9 @@ import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Mumunoa TCG Lab | ポケカAI分析・一人回しコーチング",
+  title: "Mumunoa TCG Lab | ポケカAI分析・一人回しコーチングツール",
   description: "Mumunoa TCG Labは、AIがあなたのプレイを分析し、事故率チェックや次の一手をコーチングする最高峰のポケカ練習ツールです。",
+  keywords: ["ポケカ", "ポケモンカード", "一人回し", "シミュレーター", "AI分析", "コーチング"],
 };
 
 export default function RootLayout({

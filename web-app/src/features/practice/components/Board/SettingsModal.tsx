@@ -299,10 +299,39 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                     </section>
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-slate-800">
+                <div className="mt-8 pt-6 border-t border-slate-800 space-y-4">
+                    {/* Support & Legal Links */}
+                    <div className="grid grid-cols-2 gap-2 mb-4">
+                        <a 
+                            href="https://ofuse.me/mumunoa" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center gap-1.5 py-2 px-3 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-[11px] font-bold rounded-lg border border-orange-500/20 transition-all"
+                        >
+                            ❤️ 応援する (OFUSE)
+                        </a>
+                        <a 
+                            href="https://x.com/mumunoa_tcg" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center gap-1.5 py-2 px-3 bg-white/5 hover:bg-white/10 text-slate-300 text-[11px] font-bold rounded-lg border border-white/10 transition-all"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
+                            公式X
+                        </a>
+                    </div>
+                    
+                    <div className="flex items-center justify-center gap-4 text-[10px] text-slate-500 underline-offset-4">
+                        <a href="mailto:support@mumunoa.com" className="hover:text-slate-300 hover:underline">お問い合わせ</a>
+                        <span className="w-1 h-1 bg-slate-700 rounded-full"></span>
+                        <a href="#" className="hover:text-slate-300 hover:underline">利用規約</a>
+                        <span className="w-1 h-1 bg-slate-700 rounded-full"></span>
+                        <a href="#" className="hover:text-slate-300 hover:underline">プライバシー</a>
+                    </div>
+
                     <button
                         onClick={onClose}
-                        className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-xl transition-all border border-slate-700 active:scale-[0.98]"
+                        className="w-full bg-slate-800 hover:bg-slate-700 text-white font-extrabold py-3.5 rounded-xl transition-all border border-slate-700 active:scale-[0.98] shadow-lg shadow-black/20"
                     >
                         閉じる / Close
                     </button>
