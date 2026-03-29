@@ -4,6 +4,7 @@ import { UpgradePrompt } from '../Coach/UpgradePrompt';
 import { InitialSimulationCard } from '../AI/InitialSimulationCard';
 import { CoachPanel } from '../../ai-next';
 import { useGameStore } from '@/features/practice/store/useGameStore';
+import { useTicketUnlock } from '../../hooks/useTicketUnlock';
 import React, { useState } from 'react';
 
 interface Props {
@@ -15,7 +16,10 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
     const { isThinking, commentary, planType } = useAiCoach();
     const { runCoachAnalysis, coachResult, coachLoading } = useGameStore();
     const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
-    const isPro = planType === 'pro' || planType === 'elite';
+    const { isUnlocked, handleUnlock } = useTicketUnlock();
+
+    const isProActual = planType === 'pro' || planType === 'elite';
+    const isPro = isProActual || isUnlocked;
 
     return (
         <div
@@ -28,7 +32,8 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                     <h3 className="text-indigo-300 font-bold flex items-center gap-2">
                         <span className="text-xl">🎓</span>
                         AIプロコーチ
-                        {!isPro && <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-500/30">FREE</span>}
+                        {!isProActual && !isUnlocked && <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-500/30">FREE</span>}
+                        {isUnlocked && !isProActual && <span className="text-[10px] bg-amber-500 text-black px-1.5 py-0.5 rounded font-black border border-amber-600 shadow-[0_0_10px_rgba(245,158,11,0.3)] animate-pulse">UNLOCKED</span>}
                     </h3>
                     <p className="text-[10px] text-slate-500 mt-0.5">8レイヤー推論エンジン稼働中</p>
                 </div>
@@ -45,7 +50,11 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                         <span className="w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center text-[10px]">1</span>
                         デッキ安定度（初動AI分析）
                     </h4>
-                    <InitialSimulationCard planType={planType} />
+                    <InitialSimulationCard 
+                        planType={planType} 
+                        isUnlocked={isUnlocked}
+                        onUnlock={handleUnlock}
+                    />
                 </div>
 
                 {/* 2. Professional Tactical Analysis Section */}
@@ -57,11 +66,13 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                         </h4>
                     </div>
                    <CoachPanel 
-                       result={coachResult} 
-                       isLoading={coachLoading} 
-                       onRun={() => runCoachAnalysis()}
-                       isProUser={isPro} 
-                       onUpgradeClick={() => setIsUpgradeOpen(true)}
+                        result={coachResult} 
+                        isLoading={coachLoading} 
+                        onRun={() => runCoachAnalysis()}
+                        isProUser={isProActual} 
+                        onUpgradeClick={() => setIsUpgradeOpen(true)}
+                        isUnlocked={isUnlocked}
+                        onUnlock={handleUnlock}
                    />
                 </div>
 
@@ -83,19 +94,6 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
 
                 {commentary && (
                     <>
-                        {/* Game Context Advice (Temporarily Commented Out) */}
-                        {/* 
-                        <div className="space-y-2">
-                            {commentary.gameContext.split(/(?=【)/).map((thought, tIdx) => (
-                                <div key={tIdx} className="bg-indigo-900/10 border border-indigo-500/10 rounded-xl p-3">
-                                    <p className="text-slate-200 text-xs leading-relaxed">
-                                        {thought.trim()}
-                                    </p>
-                                </div>
-                            ))}
-                        </div>
-                        */}
-
                         {/* 3. Best Action */}
                         <div className="space-y-3 pt-6 border-t border-slate-800">
                             <h4 className="text-white text-xs font-bold flex items-center gap-2">
@@ -131,9 +129,10 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                                         ) : (
                                             <div 
                                                 className="mt-3 p-3 bg-slate-950/50 rounded-lg border border-slate-800 flex flex-col items-center gap-2 group cursor-pointer hover:border-purple-500/30 transition-colors"
-                                                onClick={() => setIsUpgradeOpen(true)}
+                                                onClick={handleUnlock}
                                             >
                                                 <div className="text-[10px] text-slate-500 font-medium">理由は Pro プランで公開中</div>
+                                                <div className="text-[9px] text-amber-500 font-bold">1チケット消費して解禁 🔓</div>
                                                 <div className="flex gap-1">
                                                     <div className="w-12 h-1.5 bg-slate-800 rounded-full animate-pulse"></div>
                                                     <div className="w-8 h-1.5 bg-slate-800 rounded-full animate-pulse delay-75"></div>
@@ -160,14 +159,12 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                                 </div>
                             </div>
                         )}
-
-                        {/* Deck Simulation Section Section is now at the top */}
                     </>
                 )}
             </div>
 
             {/* Footer / Upsell */}
-            {!isPro && (
+            {!isProActual && !isUnlocked && (
                 <div className="p-4 border-t border-slate-800 bg-gradient-to-t from-slate-950 to-slate-900 shrink-0">
                     <div 
                         className="bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-500/20 rounded-lg p-3 relative overflow-hidden group hover:border-purple-500/40 transition-colors cursor-pointer"

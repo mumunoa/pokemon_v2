@@ -8,9 +8,11 @@ import { AnalysisShareCard } from './AnalysisShareCard';
 
 interface Props {
     planType: string;
+    isUnlocked?: boolean;
+    onUnlock?: () => void;
 }
 
-export const InitialSimulationCard: React.FC<Props> = ({ planType }) => {
+export const InitialSimulationCard: React.FC<Props> = ({ planType, isUnlocked = false, onUnlock }) => {
     const [summary, setSummary] = useState<InitialSimulationSummary | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -82,15 +84,19 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType }) => {
         );
     }
 
-    const isPro = planType.toLowerCase() === 'pro' || planType.toLowerCase() === 'elite';
+    const isProActual = planType.toLowerCase() === 'pro' || planType.toLowerCase() === 'elite';
+    const isPro = isProActual || isUnlocked;
 
     return (
         <div className="space-y-6">
-            <div className="bg-slate-900/40 border border-indigo-500/20 rounded-2xl overflow-hidden shadow-2xl">
-                <div className="bg-indigo-950/40 p-4 border-b border-indigo-500/20">
+            <div className={`bg-slate-900/40 border ${isUnlocked && !isProActual ? 'border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.2)]' : 'border-indigo-500/20'} rounded-2xl overflow-hidden shadow-2xl`}>
+                <div className="bg-indigo-950/40 p-4 border-b border-indigo-500/20 flex justify-between items-center">
                     <h3 className="text-white font-black text-sm flex items-center gap-2 italic">
                         📊 1,000回初動分析レポート
                     </h3>
+                    {isUnlocked && !isProActual && (
+                        <span className="text-[9px] bg-amber-500 text-black px-1.5 py-0.5 rounded-full font-black animate-pulse">UNLOCKED</span>
+                    )}
                 </div>
 
                 <div className="p-6 space-y-6">
@@ -239,12 +245,12 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType }) => {
                                 <span>📤</span> SNSで結果をシェア
                             </button>
 
-                            {!isPro && (
+                            {!isProActual && !isUnlocked && (
                                 <button 
-                                    onClick={() => window.location.href = '/billing'}
+                                    onClick={onUnlock}
                                     className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-[10px] font-black py-3 rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.2)] transform transition-all active:scale-95 flex items-center justify-center gap-2"
                                 >
-                                    <span>🚀</span> Pro版へ
+                                    <span>🚀</span> チケット消費して見る
                                 </button>
                             )}
                         </div>

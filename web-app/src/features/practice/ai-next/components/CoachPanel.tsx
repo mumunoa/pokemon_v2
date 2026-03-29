@@ -10,9 +10,20 @@ interface CoachPanelProps {
   onRun?: () => void;
   isProUser?: boolean;
   onUpgradeClick?: () => void;
+  isUnlocked?: boolean;
+  onUnlock?: () => void;
 }
 
-export function CoachPanel({ result, isLoading, onRun, isProUser = false, onUpgradeClick }: CoachPanelProps) {
+export function CoachPanel({ 
+  result, 
+  isLoading, 
+  onRun, 
+  isProUser = false, 
+  onUpgradeClick,
+  isUnlocked = false,
+  onUnlock 
+}: CoachPanelProps) {
+  const isUnlockedPro = isProUser || isUnlocked;
   if (isLoading) {
     return (
       <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-white shadow-xl backdrop-blur-md">
@@ -62,8 +73,10 @@ export function CoachPanel({ result, isLoading, onRun, isProUser = false, onUpgr
         <div>
           <h2 className="flex items-center gap-2 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-2xl font-black tracking-tight text-transparent">
             AIプロコーチ分析
-            {isProUser && (
-              <span className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.2)]">PRO</span>
+            {isUnlockedPro && (
+              <span className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.2)]">
+                {isProUser ? 'PRO' : 'UNLOCKED'}
+              </span>
             )}
           </h2>
           <p className="mt-1 text-xs font-medium uppercase tracking-wider text-white/50">{boardStateSummary}</p>
@@ -83,9 +96,9 @@ export function CoachPanel({ result, isLoading, onRun, isProUser = false, onUpgr
             
             {bestAction && bestAction.reasons.length > 0 && (
               <div className="mt-4 space-y-2">
-                <div className="text-xs text-emerald-200/50">{isProUser ? 'プロの思考プロセス:' : '主な理由:'}</div>
+                <div className="text-xs text-emerald-200/50">{isUnlockedPro ? 'プロの思考プロセス:' : '主な理由:'}</div>
                 <ul className="space-y-1.5 list-none">
-                  {bestAction.reasons.slice(0, isProUser ? undefined : 1).map((reason, idx) => (
+                  {bestAction.reasons.slice(0, isUnlockedPro ? undefined : 1).map((reason, idx) => (
                     <li key={idx} className="flex flex-col">
                       <span className="flex items-start text-sm text-emerald-100">
                         <span className="mr-2 mt-1 block h-1 w-1 shrink-0 rounded-full bg-emerald-400"></span>
@@ -99,21 +112,26 @@ export function CoachPanel({ result, isLoading, onRun, isProUser = false, onUpgr
           </div>
         </ThoughtPhase>
 
-        {/* ========================================================= */}
         {/* FREE 版プロンプトオーバーレイ (ここから下はProのみクリア表示) */}
-        {!isProUser && (
-          <div className="absolute left-0 right-0 top-32 z-10 flex h-full flex-col items-center justify-start rounded-b-2xl bg-gradient-to-b from-transparent via-[#080d12]/90 to-[#040608] pt-32 backdrop-blur-[2px]">
+        {!isUnlockedPro && (
+          <div className="absolute left-0 right-0 top-32 z-20 flex h-full flex-col items-center justify-start rounded-b-2xl bg-gradient-to-b from-transparent via-[#080d12]/95 to-[#040608] pt-16 backdrop-blur-[2px]">
             <div className="flex w-full max-w-sm flex-col items-center rounded-2xl border border-amber-500/20 bg-black/60 p-6 text-center shadow-2xl backdrop-blur-md">
               <div className="mb-2 text-3xl">🔒</div>
-              <div className="mb-4 text-lg font-bold text-white">プロ思考プロセスを解禁する</div>
-              <div className="mb-6 text-xs leading-relaxed text-white/70">
+              <div className="mb-2 text-lg font-bold text-white">プロ思考プロセスを解禁する</div>
+              <div className="mb-4 text-[10px] leading-relaxed text-white/70">
                 1000回シミュレーション構築改善、大局観・要求値レイヤーのインサイト、代替候補とその致命的リスクなどのPro限定機能を体験してください。
               </div>
               <button 
-                onClick={onUpgradeClick}
+                onClick={onUnlock}
                 className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 py-3 text-sm font-bold text-white shadow-[0_0_15px_rgba(245,158,11,0.3)] transition-all hover:scale-105"
               >
-                PROプランにアップグレード
+                チケットを消費して見る
+              </button>
+              <button 
+                onClick={onUpgradeClick}
+                className="mt-3 text-[10px] text-white/50 hover:text-white underline"
+              >
+                プランをアップグレード
               </button>
             </div>
           </div>
@@ -122,7 +140,7 @@ export function CoachPanel({ result, isLoading, onRun, isProUser = false, onUpgr
         {/* ========================================================= */}
         
         {/* Phase 1: Macro Strategy (Pro) */}
-        <div className={!isProUser ? 'opacity-20 pointer-events-none select-none blur-sm' : ''}>
+        <div className={!isUnlockedPro ? 'opacity-20 pointer-events-none select-none blur-sm' : ''}>
           {macroStrategy && (
             <ThoughtPhase 
               number="1" 
@@ -171,7 +189,7 @@ export function CoachPanel({ result, isLoading, onRun, isProUser = false, onUpgr
         </div>
 
         {/* 新セクション: 1000回シミュ構築改善 (Pro) */}
-        <div className={!isProUser ? 'opacity-10 pointer-events-none select-none blur-md mt-6' : 'mt-6'}>
+        <div className={!isUnlockedPro ? 'opacity-10 pointer-events-none select-none blur-md mt-6' : 'mt-6'}>
           {simCoaching && (
             <ThoughtPhase 
               number="⚙️" 
@@ -211,7 +229,7 @@ export function CoachPanel({ result, isLoading, onRun, isProUser = false, onUpgr
         </div>
       </div>
 
-      <div className={`mt-8 grid gap-4 lg:grid-cols-2 ${!isProUser ? 'opacity-10 pointer-events-none select-none blur-md' : ''}`}>
+      <div className={`mt-8 grid gap-4 lg:grid-cols-2 ${!isUnlockedPro ? 'opacity-10 pointer-events-none select-none blur-md' : ''}`}>
         <div className="rounded-xl bg-white/5 p-4">
           <div className="mb-3 text-sm font-bold text-white/70">代替のプレイング（リスク許容ルート）</div>
           <div className="space-y-3">
