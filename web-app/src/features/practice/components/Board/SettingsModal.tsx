@@ -50,7 +50,7 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
         setErrors(prev => ({ ...prev, [playerId]: null }));
 
         try {
-            const result = await loadDeckFromCode(playerId, code);
+            const result = await loadDeckFromCode(playerId, code, { skipHistory: isSample });
             if (!result.success) {
                 setErrors(prev => ({ ...prev, [playerId]: result.error || '不明なエラー' }));
             } else if (!isSample) {
@@ -167,7 +167,6 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                                     setTimeout(() => {
                                                         const currentInput = document.getElementById(`input-${pid}`) as HTMLInputElement;
                                                         if (currentInput) {
-                                                            currentInput.value = sd.code;
                                                             handleLoadDeck(pid, true);
                                                         }
                                                     }, 0);

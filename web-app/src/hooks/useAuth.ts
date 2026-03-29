@@ -20,16 +20,22 @@ export function useAuth() {
     const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
     const fetchProfile = useCallback(async () => {
-        if (!isClerkEnabled || !clerkUser.isSignedIn || !clerkUser.user) {
-            setProfile(null);
-            setIsLoadingProfile(false);
+        // Clerkがロードされていない、またはサインインしていない場合はスキップ
+        if (!isClerkEnabled || !clerkUser.isLoaded || !clerkUser.isSignedIn || !clerkUser.user) {
+            if (clerkUser.isLoaded && !clerkUser.isSignedIn) {
+                setProfile(null);
+                setIsLoadingProfile(false);
+            }
             return;
         }
 
         try {
             setIsLoadingProfile(true);
             const supabaseToken = await clerkAuth.getToken({ template: 'supabase' });
-            if (!supabaseToken) throw new Error('No Supabase token');
+            if (!supabaseToken) {
+                console.warn('Supabase token not found yet (clerkAuth.getToken returned null)');
+                return;
+            }
 
             const supabase = createSupabaseClient(supabaseToken);
             if (!supabase) throw new Error('Failed to create Supabase client');
@@ -40,21 +46,29 @@ export function useAuth() {
                 .eq('id', clerkUser.user.id)
                 .single();
 
-            if (error) throw error;
+            if (error) {
+                if (error.code === 'PGRST116') {
+                    console.log('User profile not found in Supabase. This is expected for new users.');
+                } else {
+                    throw error;
+                }
+            }
 
             if (data) {
                 setProfile(data);
             }
         } catch (error) {
-            console.error('Error fetching user profile:', error);
+            console.error('Error fetching user profile from Supabase:', error);
         } finally {
             setIsLoadingProfile(false);
         }
-    }, [isClerkEnabled, clerkUser.isSignedIn, clerkUser.user?.id, clerkAuth.getToken]);
+    }, [isClerkEnabled, clerkUser.isLoaded, clerkUser.isSignedIn, clerkUser.user?.id, clerkAuth.getToken]);
 
     useEffect(() => {
-        fetchProfile();
-    }, [fetchProfile]);
+        if (isClerkEnabled && clerkUser.isLoaded) {
+            fetchProfile();
+        }
+    }, [fetchProfile, isClerkEnabled, clerkUser.isLoaded]);
 
     if (!isClerkEnabled) {
         return {

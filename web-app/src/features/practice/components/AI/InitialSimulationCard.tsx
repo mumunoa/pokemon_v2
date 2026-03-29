@@ -27,6 +27,13 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType, isUnlocked = 
         setIsLoading(false);
     }, [player1Deck, gameId]);
 
+    // 解禁状態が変化したら自動で再シミュレーション（チケット消費直後など）
+    useEffect(() => {
+        if (isUnlocked && !summary?.advancedAdvice) {
+            runSimulation();
+        }
+    }, [isUnlocked]);
+
     const runSimulation = async () => {
         if (!player1Deck || player1Deck.length === 0) {
             setError('デッキが読み込まれていません');
@@ -35,13 +42,14 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType, isUnlocked = 
         setIsLoading(true);
         setError(null);
         try {
+            const currentPlan = isUnlocked ? 'pro' : planType.toLowerCase();
             const response = await fetch('/api/ai/simulation', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     deck: player1Deck,
                     perspective: 'first',
-                    planTier: planType.toLowerCase()
+                    planTier: currentPlan
                 })
             });
 

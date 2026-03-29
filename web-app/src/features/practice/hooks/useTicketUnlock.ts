@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
  * チケット消費やリワード広告によってPro機能を解禁するための共通ロジック
  */
 export function useTicketUnlock() {
-    const { profile, isSignedIn, isPro, refreshProfile } = useAuth();
+    const { profile, isSignedIn, isPro, isLoadingProfile, refreshProfile } = useAuth();
     const [isUnlocked, setIsUnlocked] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -18,10 +18,15 @@ export function useTicketUnlock() {
             return false;
         }
 
+        if (isLoadingProfile) {
+            alert('ログイン情報を読み込み中です。少々お待ちください。');
+            return false;
+        }
+
         if (tickets > 0) {
             const confirmed = window.confirm(`チケットを消費してProバージョンを閲覧しますか？(残り${tickets}回)`);
             if (!confirmed) return false;
-
+            
             try {
                 setIsLoading(true);
                 const res = await fetch('/api/user/tickets/use', { method: 'POST' });
@@ -44,14 +49,12 @@ export function useTicketUnlock() {
             // チケットが0枚の場合
             const watchAd = window.confirm('チケットの回数がなくなりました。(毎日0時にチケット残数更新)\n広告を見てProバージョンを表示しますか？');
             if (watchAd) {
-                // 広告シミュレーション（実際は Monetag のタグが発動することを期待 or API叩く等）
+                // 広告シミュレーション
                 try {
                     setIsLoading(true);
                     // 広告視聴完了後にチケットを1枚回復させるAPIを叩く
                     const res = await fetch('/api/user/tickets/recover', { method: 'POST' });
                     if (res.ok) {
-                        // 回復直後にそのまま消費させるか、あるいは「解禁」フラグだけ立てる
-                        // ここでは「解禁」フラグを優先
                         setIsUnlocked(true);
                         await refreshProfile(); // チケット残数を更新
                         alert('広告視聴ありがとうございます。Pro版を解禁しました！');
@@ -69,8 +72,9 @@ export function useTicketUnlock() {
 
     return {
         isUnlocked: isPro || isUnlocked,
-        isLoading,
-        tickets,
+        isLoading: isLoading || isLoadingProfile,
+        isLoadingProfile,
+        tickets: isLoadingProfile ? null : tickets,
         handleUnlock
     };
 }

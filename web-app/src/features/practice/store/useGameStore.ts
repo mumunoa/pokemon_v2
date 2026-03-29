@@ -896,7 +896,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         });
     },
 
-    loadDeckFromCode: async (playerId: PlayerId, code: string) => {
+    loadDeckFromCode: async (playerId: PlayerId, code: string, options?: { skipHistory?: boolean }) => {
         try {
             const res = await fetch(`/api/deck?code=${code}`);
             const data = await res.json();
@@ -909,12 +909,16 @@ export const useGameStore = create<GameState>((set, get) => ({
 
             if (playerId === 'player1') {
                 set((state) => {
-                    const newHistory = [code, ...state.deckHistory.filter(c => c !== code)].slice(0, 4);
+                    const newHistory = options?.skipHistory 
+                        ? state.deckHistory 
+                        : [code, ...state.deckHistory.filter(c => c !== code)].slice(0, 4);
                     return { player1Deck: deckList, deckHistory: newHistory, coachResult: null };
                 });
             } else {
                 set((state) => {
-                    const newHistory = [code, ...state.deckHistory.filter(c => c !== code)].slice(0, 4);
+                    const newHistory = options?.skipHistory 
+                        ? state.deckHistory 
+                        : [code, ...state.deckHistory.filter(c => c !== code)].slice(0, 4);
                     return { player2Deck: deckList, deckHistory: newHistory, coachResult: null };
                 });
             }

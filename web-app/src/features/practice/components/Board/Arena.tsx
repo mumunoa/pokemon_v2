@@ -1216,7 +1216,7 @@ export const Arena: React.FC = () => {
                                     </svg>
                                     <span>AI分析</span>
                                     {(isClerkEnabled && isSignedIn && !isPro) && (
-                                        <span className={`absolute -top-1 -right-1 ${tickets === 0 ? 'bg-red-500' : 'bg-yellow-500'} text-black text-[7px] font-black px-1 rounded-full border border-yellow-300 shadow-md min-w-[12px] text-center`}>
+                                        <span className={`absolute -top-1 -right-1 ${tickets === 0 ? 'bg-red-500' : tickets === null ? 'bg-slate-600' : 'bg-yellow-500'} text-black text-[7px] font-black px-1 rounded-full border ${tickets === null ? 'border-slate-500' : 'border-yellow-300'} shadow-md min-w-[12px] text-center transition-colors`}>
                                             {tickets !== null ? tickets : '...'}
                                         </span>
                                     )}

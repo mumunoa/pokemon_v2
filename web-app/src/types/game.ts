@@ -240,7 +240,7 @@ export interface GameState {
     returnHandToDeck: (playerId: PlayerId) => void;
     tossCoin: () => void;
     resetGame: () => void;
-    loadDeckFromCode: (playerId: PlayerId, code: string) => Promise<{ success: boolean; error?: string }>;
+    loadDeckFromCode: (playerId: PlayerId, code: string, options?: { skipHistory?: boolean }) => Promise<{ success: boolean; error?: string; count?: number }>;
 
     // Turn control
     endTurn: () => void;
