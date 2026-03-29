@@ -24,7 +24,8 @@
 /* Landscape / Responsive scaling adjustments (Applied to all horizontal screens) */
 @media (orientation: landscape) {
   :root {
-    --card-w: clamp(45px, min(14vw, 11vh), 100px);
+    /* Tightened horizontal constraints to prevent overflow when hand is full */
+    --card-w: clamp(45px, min(13vw, 10.5vh), 95px);
     /* Slightly increased max for 700px+ height */
     --btn-fs: clamp(4.5px, calc(0.8vw + 0.6vh), 11px);
     --bar-h: clamp(14px, 4.5vh, 28px);
@@ -40,12 +41,8 @@
   }
 
   .battle-arena {
-    transform: scale(0.9);
-    transform-origin: center;
-    border-radius: 12px;
-    box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
-    padding-top: 30px;
-    /* Shift contents down by 30px as requested */
+    transform: none;
+    padding-top: 0;
   }
 }
 

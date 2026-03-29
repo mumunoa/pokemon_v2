@@ -20,19 +20,13 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <head>
-        {/* Google AdSense */}
+        {/* Google AdSense (一時停止)
         <script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2970580806456149"
           crossOrigin="anonymous"
         ></script>
-        {/* Monetag Multitag */}
-        <script 
-          src="https://quge5.com/88/tag.min.js" 
-          data-zone="224540" 
-          async 
-          data-cfasync="false"
-        ></script>
+        */}
       </head>
       <body className="antialiased font-sans">
         {/*
