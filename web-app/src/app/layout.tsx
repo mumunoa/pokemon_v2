@@ -20,10 +20,10 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <head>
-        {/* Google AdSense - 審査通過後に client-id を設定 */}
+        {/* Google AdSense */}
         <script
           async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX"
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2970580806456149"
           crossOrigin="anonymous"
         ></script>
       </head>
