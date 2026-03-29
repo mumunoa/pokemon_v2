@@ -17,13 +17,8 @@ export default function Home() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const hasSeen = localStorage.getItem('hasSeenSettingsTutorial');
-      if (!hasSeen) {
+      if (!hasSeen && player1Deck.length === 0) {
         setShowSettingsTutorial(true);
-      }
-
-      // デッキが読み込まれていない場合は設定画面を自動で開く
-      if (player1Deck.length === 0) {
-        setIsSettingsOpen(true);
       }
     }
   }, [player1Deck.length]);

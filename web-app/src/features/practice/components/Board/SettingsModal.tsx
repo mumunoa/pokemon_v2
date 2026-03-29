@@ -42,7 +42,7 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
         player2: null
     });
 
-    const handleLoadDeck = async (playerId: PlayerId) => {
+    const handleLoadDeck = async (playerId: PlayerId, isSample: boolean = false) => {
         const code = deckCodes[playerId].trim();
         if (!code) return;
 
@@ -53,7 +53,7 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
             const result = await loadDeckFromCode(playerId, code);
             if (!result.success) {
                 setErrors(prev => ({ ...prev, [playerId]: result.error || '不明なエラー' }));
-            } else {
+            } else if (!isSample) {
                 addDeck(code);
             }
         } finally {
@@ -168,7 +168,7 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                                         const currentInput = document.getElementById(`input-${pid}`) as HTMLInputElement;
                                                         if (currentInput) {
                                                             currentInput.value = sd.code;
-                                                            handleLoadDeck(pid);
+                                                            handleLoadDeck(pid, true);
                                                         }
                                                     }, 0);
                                                 }}
