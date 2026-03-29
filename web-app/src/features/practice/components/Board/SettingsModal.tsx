@@ -324,9 +324,9 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                     <div className="flex items-center justify-center gap-4 text-[10px] text-slate-500 underline-offset-4">
                         <a href="mailto:support@mumunoa.com" className="hover:text-slate-300 hover:underline">お問い合わせ</a>
                         <span className="w-1 h-1 bg-slate-700 rounded-full"></span>
-                        <a href="#" className="hover:text-slate-300 hover:underline">利用規約</a>
+                        <a href="/terms" className="hover:text-slate-300 hover:underline">利用規約</a>
                         <span className="w-1 h-1 bg-slate-700 rounded-full"></span>
-                        <a href="#" className="hover:text-slate-300 hover:underline">プライバシー</a>
+                        <a href="/privacy-policy" className="hover:text-slate-300 hover:underline">プライバシー</a>
                     </div>
 
                     <button

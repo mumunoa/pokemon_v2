@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useUser } from '@clerk/nextjs';
+import { AdSlot } from '@/features/monetization/components/AdSlot';
 
 export default function HomePage() {
   const { isSignedIn } = useUser();
@@ -14,7 +15,7 @@ export default function HomePage() {
       description: "AIが盤面を解析し、最適な次の一手やプレイの意図を論理的に解説します。",
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-400">
-          <path d="M12 2v8"/><path d="m4.93 4.93 2.83 2.83"/><path d="M2 12h8"/><path d="m4.93 19.07 2.83-2.83"/><path d="M12 22v-8"/><path d="m19.07 19.07-2.83-2.83"/><path d="M22 12h-8"/><path d="m19.07 4.93-2.83 2.83"/>
+          <path d="M12 2v8" /><path d="m4.93 4.93 2.83 2.83" /><path d="M2 12h8" /><path d="m4.93 19.07 2.83-2.83" /><path d="M12 22v-8" /><path d="m19.07 19.07-2.83-2.83" /><path d="M22 12h-8" /><path d="m19.07 4.93-2.83 2.83" />
         </svg>
       )
     },
@@ -23,7 +24,7 @@ export default function HomePage() {
       description: "デッキの回し心地や「事故率」を数秒で算出。構築の妥当性をデータで確認可能。",
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
-          <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
         </svg>
       )
     },
@@ -32,7 +33,7 @@ export default function HomePage() {
       description: "ドラッグ＆ドロップによる直感的な操作。PC・モバイル両対応で、場所を選ばず練習できます。",
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-400">
-          <rect width="18" height="18" x="3" y="3" rx="2"/><path d="m10 8 5 4-5 4V8z"/>
+          <rect width="18" height="18" x="3" y="3" rx="2" /><path d="m10 8 5 4-5 4V8z" />
         </svg>
       )
     }
@@ -45,10 +46,10 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
             <div className="relative w-8 h-8 group-hover:scale-110 transition-transform">
-              <Image 
-                src="/icon.png" 
-                alt="Logo" 
-                fill 
+              <Image
+                src="/icon.png"
+                alt="Logo"
+                fill
                 className="rounded-lg shadow-lg shadow-orange-500/20 object-contain"
               />
             </div>
@@ -62,8 +63,8 @@ export default function HomePage() {
             <Link href="https://ofuse.me/mumunoa" target="_blank" className="hover:text-white transition-colors">応援する</Link>
           </nav>
           <div className="flex items-center gap-4">
-            <Link 
-              href="/practice" 
+            <Link
+              href="/practice"
               className="px-5 py-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold shadow-lg shadow-blue-600/20 transition-all active:scale-95"
             >
               ツールを開始
@@ -74,7 +75,7 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <main>
-        <section className="relative pt-32 pb-20 px-6 overflow-hidden">
+        <section className="relative pt-32 pb-10 px-6 overflow-hidden">
           {/* Background Decorations */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-blue-600/10 blur-[120px] rounded-full -z-10" />
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-orange-500/10 blur-[80px] rounded-full -z-10" />
@@ -84,29 +85,29 @@ export default function HomePage() {
               <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
               AI搭載・ポケカ一人回しコーチングツール
             </div>
-            
+
             <h1 className="text-5xl md:text-7xl font-extrabold text-white tracking-tight mb-8 leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-100">
               あなたのプレイを<br />
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-orange-400">
                 AIが最高峰へ導く
               </span>
             </h1>
-            
+
             <p className="text-lg md:text-xl text-slate-400 mb-12 max-w-2xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
               Mumunoa TCG Labは、一人回しの精度を極限まで高めるシミュレーターです。<br className="hidden md:block" />
               AIによる次の一手分析、デッキの安定性検証、直感的な操作感を提供します。
             </p>
 
             <div className="flex flex-col md:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-300">
-              <Link 
-                href="/practice" 
+              <Link
+                href="/practice"
                 className="w-full md:w-auto px-10 py-4 rounded-2xl bg-white text-black font-extrabold text-lg hover:bg-slate-200 shadow-[0_0_30px_rgba(255,255,255,0.2)] transition-all active:scale-[0.98] flex items-center justify-center gap-2"
               >
                 一人回しを開始する
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
               </Link>
-              <Link 
-                href="https://x.com/mumunoa_tcg" 
+              <Link
+                href="https://x.com/mumunoa_tcg"
                 target="_blank"
                 className="w-full md:w-auto px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-bold text-lg hover:bg-white/10 transition-all flex items-center justify-center gap-2"
               >
@@ -116,11 +117,16 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* Hero Bottom Ad */}
+        <div className="max-w-4xl mx-auto px-6">
+          <AdSlot id="hero-bottom-ad" format="horizontal" />
+        </div>
+
         {/* Features Section */}
-        <section id="features" className="py-24 px-6 bg-white/[0.02]">
+        <section id="features" className="py-20 px-6 bg-white/[0.02]">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl font-bold text-center mb-16 text-white">主な機能 / Features</h2>
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-3 gap-8 mb-16">
               {features.map((f, i) => (
                 <div key={i} className="p-8 rounded-3xl bg-white/[0.03] border border-white/5 hover:border-white/10 transition-all group">
                   <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
@@ -133,6 +139,9 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
+
+            {/* Features Inter-space Ad */}
+            <AdSlot id="features-inter-ad" label="RECOMENDED" />
           </div>
         </section>
 
@@ -146,12 +155,22 @@ export default function HomePage() {
             <p className="text-slate-400 mb-10 max-w-md mx-auto">
               無料で始められます。AIコーチと共に、あなたのデッキとプレイを次のレベルへ。
             </p>
-            <Link 
-              href="/practice" 
-              className="inline-flex px-10 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-lg shadow-xl shadow-blue-600/40 transition-all active:scale-[0.98]"
-            >
-              一人回しを開始する (無料)
-            </Link>
+            <div className="flex flex-col md:flex-row items-center justify-center gap-4">
+              <Link
+                href="/practice"
+                className="w-full md:w-auto px-10 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-lg shadow-xl shadow-blue-600/40 transition-all active:scale-[0.98]"
+              >
+                一人回しを始める (無料)
+              </Link>
+              <button className="w-full md:w-auto px-8 py-4 rounded-2xl bg-orange-600/20 border border-orange-500/20 text-orange-400 font-bold hover:bg-orange-600/30 transition-all flex items-center justify-center gap-2 group">
+                <span className="group-hover:animate-bounce">🎁</span>
+                動画を見てチケット獲得
+              </button>
+            </div>
+            
+            <div className="mt-12 opacity-40">
+              <AdSlot id="cta-bottom-ad" format="rectangle" label="SPONSORED" />
+            </div>
           </div>
         </section>
       </main>
@@ -179,16 +198,18 @@ export default function HomePage() {
           <div>
             <h4 className="text-white font-bold mb-6 text-sm">法的情報・お問合せ</h4>
             <ul className="space-y-4 text-sm text-slate-500">
-              <li><Link href="#" className="hover:text-white transition-colors">利用規約</Link></li>
-              <li><Link href="#" className="hover:text-white transition-colors">プライバシーポリシー</Link></li>
+              <li><Link href="/terms" className="hover:text-white transition-colors">利用規約</Link></li>
+              <li><Link href="/privacy-policy" className="hover:text-white transition-colors">プライバシーポリシー</Link></li>
               <li><Link href="mailto:support@mumunoa.com" className="hover:text-white transition-colors">お問い合わせ (Email)</Link></li>
             </ul>
           </div>
         </div>
-        <div className="max-w-6xl mx-auto mt-16 pt-8 border-t border-white/5 text-center">
+        
+        <div className="max-w-6xl mx-auto mt-16 pt-8 border-t border-white/5 flex flex-col items-center gap-8">
+          <AdSlot id="footer-ad" format="horizontal" />
           <p className="text-slate-600 text-xs">
             © {new Date().getFullYear()} Mumunoa TCG Lab. 
-            ポケモンは任天堂・クリーチャーズ・ゲームフリークの登録商標です。
+            © 2024 Pokémon. © 1995-2024 Nintendo/Creatures Inc./GAME FREAK inc.
           </p>
         </div>
       </footer>

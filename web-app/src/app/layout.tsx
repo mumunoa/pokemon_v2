@@ -19,6 +19,14 @@ export default function RootLayout({
 
   return (
     <html lang="ja">
+      <head>
+        {/* Google AdSense - 審査通過後に client-id を設定 */}
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX"
+          crossOrigin="anonymous"
+        ></script>
+      </head>
       <body className="antialiased font-sans">
         {/*
           isKeyValid が false の場合でも ClerkProvider で包むことで、
