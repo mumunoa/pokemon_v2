@@ -77,6 +77,8 @@
   }
 
   .battle-arena {
+    height: 100svh !important;
+    max-height: 100svh !important;
     padding-bottom: 20px;
     /* Space for home indicator */
   }
@@ -131,7 +133,9 @@ html {
 
   margin: 0;
   padding: 0;
-  min-height: 100vh;
+  height: 100svh;
+  min-height: 100svh;
+  overflow: hidden;
   overscroll-behavior-y: none;
 }
 

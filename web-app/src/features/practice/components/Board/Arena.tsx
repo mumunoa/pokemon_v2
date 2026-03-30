@@ -1161,7 +1161,7 @@ export const Arena: React.FC = () => {
 
             <div
                 ref={arenaBoardRef}
-                className="battle-arena h-full w-full relative flex flex-col overflow-hidden bg-slate-950 overscroll-none touch-none"
+                className="battle-arena fixed inset-0 w-full h-[100svh] flex flex-col overflow-hidden bg-slate-950 overscroll-none touch-none z-10"
             >
 
                 {/* Top Field */}
