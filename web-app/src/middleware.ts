@@ -1,6 +1,14 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-export default clerkMiddleware();
+const isRootRoute = createRouteMatcher(['/']);
+
+export default clerkMiddleware(async (auth, req) => {
+    const { userId } = await auth();
+    // ログイン済みユーザーがトップページ (/) にアクセスした際、強制的に /practice へ飛ばす
+    if (isRootRoute(req) && userId) {
+        return Response.redirect(new URL('/practice', req.url));
+    }
+});
 
 export const config = {
     matcher: [
