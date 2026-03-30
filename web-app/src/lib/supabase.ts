@@ -15,16 +15,29 @@ try {
 
 export const supabase = supabaseInstance;
 
+let cachedClient: any = null;
+let lastToken: string | null = null;
+
 export const createSupabaseClient = (clerkToken?: string) => {
     try {
         if (!supabaseUrl || !supabaseAnonKey) return null;
-        return createClient(supabaseUrl, supabaseAnonKey, {
+
+        // トークンが変わらない場合はキャッシュを返す
+        if (cachedClient && lastToken === (clerkToken || null)) {
+            return cachedClient;
+        }
+
+        const client = createClient(supabaseUrl, supabaseAnonKey, {
             global: {
                 headers: clerkToken ? {
                     Authorization: `Bearer ${clerkToken}`,
                 } : {},
             },
         });
+
+        cachedClient = client;
+        lastToken = clerkToken || null;
+        return client;
     } catch (e) {
         console.error('Supabase Client Creation Error:', e);
         return null;
