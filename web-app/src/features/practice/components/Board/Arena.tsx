@@ -1454,7 +1454,7 @@ const AuthStatus: React.FC = () => {
                 </div>
             ) : isClerkEnabled ? (
                 <div className="bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold px-3 py-1 rounded-full transition-colors cursor-pointer border border-blue-400/30">
-                    <SignInButton mode="modal">ログイン</SignInButton>
+                    <SignInButton mode="modal" forceRedirectUrl="/practice">ログイン</SignInButton>
                 </div>
             ) : (
                 <div className="bg-slate-800 text-slate-500 text-[10px] font-bold px-3 py-1 rounded-full border border-slate-700">

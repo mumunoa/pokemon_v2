@@ -15,21 +15,17 @@ export default function Home() {
   const [showSettingsTutorial, setShowSettingsTutorial] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const hasSeen = localStorage.getItem('hasSeenSettingsTutorial');
-      if (!hasSeen && player1Deck.length === 0) {
-        setShowSettingsTutorial(true);
-      }
+    // デッキが空の場合のみ、常にチュートリアル（吹き出し）を表示
+    if (player1Deck.length === 0) {
+      setShowSettingsTutorial(true);
+    } else {
+      setShowSettingsTutorial(false);
     }
   }, [player1Deck.length]);
 
   const handleOpenSettings = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsSettingsOpen(true);
-    if (showSettingsTutorial) {
-      setShowSettingsTutorial(false);
-      localStorage.setItem('hasSeenSettingsTutorial', '1');
-    }
   };
 
   return (
