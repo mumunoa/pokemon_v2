@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { createSupabaseClient } from '@/lib/supabase';
+import { SAMPLE_DECKS, isSampleDeckCode } from '@/constants/sampleDecks';
 
 export interface SavedDeck {
     code: string;
@@ -132,6 +133,12 @@ export function useDeckHistory() {
     };
 
     const addDeck = (code: string) => {
+        // サンプルデッキの場合は保存をスキップ
+        if (isSampleDeckCode(code)) {
+            console.log('[useDeckHistory] Skipping addDeck for sample deck:', code);
+            return;
+        }
+
         const timestamp = Date.now();
         setHistory(prev => {
             const existing = prev.find(h => h.code === code);

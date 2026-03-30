@@ -4,6 +4,8 @@ import { useDeckHistory } from '@/hooks/useDeckHistory';
 import { useAuth } from '@/hooks/useAuth';
 import { PlayerId } from '@/types/game';
 
+import { SAMPLE_DECKS } from '@/constants/sampleDecks';
+
 interface Props {
     onClose: () => void;
 }
@@ -28,11 +30,6 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
         player2: ''
     });
 
-    const sampleDecks = [
-        { name: 'ドラパルトexデッキ', code: 'NNnNgn-BArOp8-9NL6gn' },
-        { name: 'タケルライコexデッキ', code: '5F515V-z9mey2-5ffbkV' },
-        { name: 'メガルカリオexデッキ', code: 'MEp2yX-7wFGpK-RyMppM' }
-    ];
     const [loading, setLoading] = useState<Record<PlayerId, boolean>>({
         player1: false,
         player2: false
@@ -46,14 +43,17 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
         const code = deckCodes[playerId].trim();
         if (!code) return;
 
+        // 入力されたコードがサンプルデッキの一覧に含まれるかチェック
+        const isActuallySample = isSample || SAMPLE_DECKS.some((sd: any) => sd.code === code);
+
         setLoading(prev => ({ ...prev, [playerId]: true }));
         setErrors(prev => ({ ...prev, [playerId]: null }));
 
         try {
-            const result = await loadDeckFromCode(playerId, code, { skipHistory: isSample });
+            const result = await loadDeckFromCode(playerId, code, { skipHistory: isActuallySample });
             if (!result.success) {
                 setErrors(prev => ({ ...prev, [playerId]: result.error || '不明なエラー' }));
-            } else if (!isSample) {
+            } else if (!isActuallySample) {
                 addDeck(code);
             }
         } finally {
@@ -158,7 +158,7 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                     {/* Sample Decks */}
                                     <div className="flex flex-wrap gap-1.5 px-1 mt-1">
                                         <span className="text-[9px] text-slate-500 w-full mb-0.5">サンプルデッキを試す:</span>
-                                        {sampleDecks.map(sd => (
+                                        {SAMPLE_DECKS.map((sd: any) => (
                                             <button
                                                 key={sd.code}
                                                 onClick={() => {

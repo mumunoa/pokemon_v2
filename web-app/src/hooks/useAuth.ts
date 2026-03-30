@@ -32,33 +32,43 @@ export function useAuth() {
         try {
             setIsLoadingProfile(true);
             const supabaseToken = await clerkAuth.getToken({ template: 'supabase' });
+            
+            console.log('[AuthDebug] Clerk User ID:', clerkUser.user.id);
             if (!supabaseToken) {
-                console.warn('Supabase token not found yet (clerkAuth.getToken returned null)');
+                console.warn('[AuthDebug] Supabase token not found (getToken returned null)');
                 return;
             }
 
             const supabase = createSupabaseClient(supabaseToken);
             if (!supabase) throw new Error('Failed to create Supabase client');
             
-            const { data, error } = await supabase
+            const { data, error, status } = await supabase
                 .from('users')
                 .select('*')
                 .eq('id', clerkUser.user.id)
                 .single();
 
             if (error) {
+                console.error('[AuthDebug] Supabase Error:', {
+                    code: error.code,
+                    message: error.message,
+                    details: error.details,
+                    hint: error.hint,
+                    status
+                });
+                
                 if (error.code === 'PGRST116') {
-                    console.log('User profile not found in Supabase. This is expected for new users.');
-                } else {
-                    throw error;
+                    console.log('[AuthDebug] User profile NOT FOUND in Supabase logic.');
                 }
+                // エラー時はフォールバックせず、エラーを保持するか何らかの通知を出すべき
             }
 
             if (data) {
+                console.log('[AuthDebug] Profile fetched successfully:', data);
                 setProfile(data);
             }
         } catch (error) {
-            console.error('Error fetching user profile from Supabase:', error);
+            console.error('[AuthDebug] Unexpected Error during fetchProfile:', error);
         } finally {
             setIsLoadingProfile(false);
         }

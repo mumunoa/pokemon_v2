@@ -25,8 +25,8 @@ export async function POST(req: NextRequest) {
 
         const { userId } = getAuth(req);
 
-        // プラン情報の取得
-        let planType: 'free' | 'pro' | 'elite' = 'free';
+        // プラン情報の取得 (DB設定を優先しつつ、リクエストでの指定も考慮)
+        let planType: 'free' | 'pro' | 'elite' = (body.planTier as any) || 'free';
         const supabase = createSupabaseClient();
         
         if (userId && supabase) {
@@ -39,8 +39,15 @@ export async function POST(req: NextRequest) {
             if (user) {
                 const now = new Date();
                 const isTrialActive = user.pro_trial_until && new Date(user.pro_trial_until) > now;
-                planType = (user.plan_type as 'free' | 'pro' | 'elite') || 'free';
-                if (isTrialActive && planType === 'free') planType = 'pro';
+                const dbPlan = (user.plan_type as 'free' | 'pro' | 'elite') || 'free';
+                
+                // DB側がPro以上ならそれを優先、そうでなければリクエスト指定(チケット消費)を尊重
+                if (dbPlan !== 'free') {
+                    planType = dbPlan;
+                }
+                if (isTrialActive && planType === 'free') {
+                    planType = 'pro';
+                }
             }
         }
 
