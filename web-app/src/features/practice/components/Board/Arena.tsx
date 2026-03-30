@@ -1164,10 +1164,12 @@ export const Arena: React.FC = () => {
                 className="battle-arena fixed inset-0 w-full h-[100svh] flex flex-col overflow-hidden bg-slate-950 overscroll-none touch-none z-10"
             >
 
-                {/* Top Field */}
-                {renderPlayerField(isOpponentView ? 'player1' : 'player2', true)}
+                {/* Top Field (Opponent) - Flexible & Scrollable if needed */}
+                <div className="flex-1 min-h-0 relative w-full overflow-hidden">
+                    {renderPlayerField(isOpponentView ? 'player1' : 'player2', true)}
+                </div>
 
-                {/* Middle Area */}
+                {/* Middle Area - Fixed Height */}
                 <div className="mid-divider custom-mid relative h-[var(--bar-h)] shrink-0 flex items-center px-[3vw] bg-slate-800 z-[200]">
                     <Zone id="stadium" className="stadium-slot square-stadium w-[var(--stadium-w)] h-[var(--stadium-w)] bg-indigo-950 absolute left-[calc(50%-var(--stadium-w)/2)] border-2 border-yellow-600 top-1/2 -translate-y-1/2 z-[5000] flex items-center justify-center text-center cursor-pointer shadow-xl overflow-hidden hover:border-yellow-400 transition-colors" onClick={() => setPopupState({ zone: 'stadium' })}>
                         {zones.stadium.length > 0 ? renderCardsInZone('player1', 'stadium') : <div className="text-white opacity-30 text-[10px] sm:text-xs font-bold">スタジアム</div>}
@@ -1194,7 +1196,6 @@ export const Arena: React.FC = () => {
                             {isOpponentView ? '自分視点' : '相手視点'}
                         </button>
 
-                        {/* Relocated & Resized AI/Share Buttons - Positioned below Opponent View */}
                         <div className="flex flex-col gap-1.5 absolute top-[calc(var(--bar-h)*1.2)] right-0">
                             <button
                                 className="bg-indigo-700/90 hover:bg-indigo-600 text-white rounded-lg shadow-lg font-bold border border-indigo-500/50 transition-all active:scale-95 flex flex-col items-center justify-center p-1 px-2 text-[8px] w-12 group backdrop-blur-sm"
@@ -1231,8 +1232,10 @@ export const Arena: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Bottom Field */}
-                {renderPlayerField(isOpponentView ? 'player2' : 'player1', false)}
+                {/* Bottom Field (Self) - Flexible & Scrollable if needed */}
+                <div className="flex-1 min-h-0 relative w-full overflow-hidden">
+                    {renderPlayerField(isOpponentView ? 'player2' : 'player1', false)}
+                </div>
 
             </div>
 
