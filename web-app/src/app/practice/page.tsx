@@ -28,6 +28,11 @@ export default function Home() {
     setIsSettingsOpen(true);
   };
 
+  useEffect(() => {
+    document.body.classList.add('practice-mode');
+    return () => document.body.classList.remove('practice-mode');
+  }, []);
+
   return (
     <main className="w-full h-screen h-[100dvh] bg-slate-950 flex flex-col overflow-hidden relative" onClick={() => setIsLogOpen(false)}>
       <header className="glass-panel main-header flex justify-between items-center p-1 sm:p-4 bg-slate-900/80 backdrop-blur-md border-b border-slate-700/50 shadow-lg shrink-0 z-[1000]">

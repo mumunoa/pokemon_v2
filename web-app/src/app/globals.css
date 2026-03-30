@@ -136,8 +136,14 @@ html {
 
   margin: 0;
   padding: 0;
-  height: 100svh;
   min-height: 100svh;
+  overflow-y: auto;
+}
+
+/* Practice/Arena専用の固定レイアウト設定 */
+body.practice-mode,
+body.practice-mode html {
+  height: 100svh;
   overflow: hidden;
   overscroll-behavior-y: none;
 }

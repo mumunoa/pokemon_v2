@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { createSupabaseClient } from '@/lib/supabase';
+import { createAdminClient } from '@/lib/supabase';
 import { recoverTicket } from '@/lib/ai/ticketHelper';
 
 /**
@@ -14,12 +14,12 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const supabase = createSupabaseClient();
+        const supabase = createAdminClient();
         if (!supabase) {
             return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
         }
 
-        // チケットを1枚回復
+        // チケットを1枚回復 (特権権限で確実に更新)
         await recoverTicket(supabase, userId);
 
         return NextResponse.json({ success: true });

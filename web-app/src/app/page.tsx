@@ -22,7 +22,7 @@ export default function HomePage() {
 
     // Monetag の OnClick 等が機能している状態で API を叩く
     try {
-      const res = await fetch('/api/user/tickets/recover', { method: 'POST' });
+      const res = await fetch('/api/monetization/tickets/recover', { method: 'POST' });
       if (res.ok) {
         alert('チケットを1枚獲得しました！ツール画面で確認してください。');
         router.push('/practice');
@@ -112,10 +112,11 @@ export default function HomePage() {
               AI搭載・ポケカ一人回しコーチングツール
             </div>
 
-            <h1 className="text-5xl md:text-7xl font-extrabold text-white tracking-tight mb-8 leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-100">
-              あなたのプレイを<br />
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold text-white tracking-tight mb-8 leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-100">
+              あなたのプレイを<br className="sm:hidden" />
+              AIが<br className="hidden sm:block" />
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-orange-400">
-                AIが最高峰へ導く
+                最高峰へ導く
               </span>
             </h1>
 

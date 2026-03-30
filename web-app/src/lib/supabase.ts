@@ -13,7 +13,18 @@ try {
     console.error('Supabase Initialization Error:', e);
 }
 
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
 export const supabase = supabaseInstance;
+
+// 特権クライアント (Server-side exclusive)
+export const createAdminClient = () => {
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
+        console.error('Supabase admin credentials missing');
+        return null;
+    }
+    return createClient(supabaseUrl, supabaseServiceRoleKey);
+};
 
 let cachedClient: any = null;
 let lastToken: string | null = null;

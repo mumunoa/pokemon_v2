@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { createSupabaseClient } from '@/lib/supabase';
+import { createAdminClient } from '@/lib/supabase';
 import { deductTicket } from '@/lib/ai/ticketHelper';
 
 /**
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const supabase = createSupabaseClient();
+        const supabase = createAdminClient();
         if (!supabase) {
             return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
         }
@@ -27,6 +27,7 @@ export async function POST(req: Request) {
             .single();
 
         if (fetchError || !profile) {
+            console.error('User not found in Ticket Use API:', fetchError);
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'TICKETS_EMPTY' }, { status: 403 });
         }
 
-        // チケットを1枚消費
+        // チケットを1枚消費 (Admin権限で確実に実行)
         await deductTicket(supabase, userId, profile.ai_tickets);
 
         return NextResponse.json({ success: true, remainingTickets: profile.ai_tickets - 1 });

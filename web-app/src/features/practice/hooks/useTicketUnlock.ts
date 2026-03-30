@@ -29,7 +29,7 @@ export function useTicketUnlock() {
             
             try {
                 setIsLoading(true);
-                const res = await fetch('/api/user/tickets/use', { method: 'POST' });
+                const res = await fetch('/api/monetization/tickets/use', { method: 'POST' });
                 if (res.ok) {
                     setIsUnlocked(true);
                     await refreshProfile(); // チケット残数を更新
