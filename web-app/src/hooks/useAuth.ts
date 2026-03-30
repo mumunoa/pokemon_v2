@@ -52,15 +52,31 @@ export function useAuth() {
                 console.error('[AuthDebug] Supabase Error:', {
                     code: error.code,
                     message: error.message,
-                    details: error.details,
-                    hint: error.hint,
                     status
                 });
                 
                 if (error.code === 'PGRST116') {
-                    console.log('[AuthDebug] User profile NOT FOUND in Supabase logic.');
+                    console.log('[AuthDebug] User profile NOT FOUND. Creating initial record...');
+                    const { data: newData, error: createError } = await supabase
+                        .from('users')
+                        .upsert({
+                            id: clerkUser.user.id,
+                            email: clerkUser.user.primaryEmailAddress?.emailAddress || '',
+                            plan_type: 'free',
+                            tickets: 3,
+                            updated_at: new Date().toISOString()
+                        })
+                        .select()
+                        .single();
+
+                    if (createError) {
+                        console.error('[AuthDebug] Failed to create initial user record:', createError);
+                    } else if (newData) {
+                        console.log('[AuthDebug] Initial profile created:', newData);
+                        setProfile(newData);
+                        return;
+                    }
                 }
-                // エラー時はフォールバックせず、エラーを保持するか何らかの通知を出すべき
             }
 
             if (data) {

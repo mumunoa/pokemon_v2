@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { createSupabaseClient } from '@/lib/supabase';
 import { SAMPLE_DECKS, isSampleDeckCode } from '@/constants/sampleDecks';
+import { Database } from "@/types/supabase";
 
 export interface SavedDeck {
     code: string;
@@ -31,7 +32,7 @@ export function useDeckHistory() {
 
             if (error) throw error;
             if (data) {
-                const dbDecks: SavedDeck[] = data.map(d => ({
+                const dbDecks: SavedDeck[] = data.map((d: Database['public']['Tables']['user_decks']['Row']) => ({
                     code: d.code,
                     name: d.name || undefined,
                     pinned: d.pinned,
@@ -120,7 +121,9 @@ export function useDeckHistory() {
     // 履歴を保存する（上限管理とソート仕様）
     const updateLocalHistory = (newHistory: SavedDeck[]) => {
         const limit = isPro ? 20 : 4;
-        const sorted = [...newHistory].sort((a, b) => {
+        // サンプルデッキを除外
+        const filtered = newHistory.filter(h => !isSampleDeckCode(h.code));
+        const sorted = [...filtered].sort((a, b) => {
             if (a.pinned && !b.pinned) return -1;
             if (!a.pinned && b.pinned) return 1;
             return b.updatedAt - a.updatedAt;

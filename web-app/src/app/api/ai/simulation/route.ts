@@ -41,12 +41,13 @@ export async function POST(req: NextRequest) {
                 const isTrialActive = user.pro_trial_until && new Date(user.pro_trial_until) > now;
                 const dbPlan = (user.plan_type as 'free' | 'pro' | 'elite') || 'free';
                 
-                // DB側がPro以上ならそれを優先、そうでなければリクエスト指定(チケット消費)を尊重
-                if (dbPlan !== 'free') {
-                    planType = dbPlan;
-                }
-                if (isTrialActive && planType === 'free') {
-                    planType = 'pro';
+                // チケット消費リクエスト（planTypeが既にpro以上）でない場合のみ、DBプランやトライアルを適用
+                if (planType === 'free') {
+                    if (dbPlan !== 'free') {
+                        planType = dbPlan;
+                    } else if (isTrialActive) {
+                        planType = 'pro';
+                    }
                 }
             }
         }
