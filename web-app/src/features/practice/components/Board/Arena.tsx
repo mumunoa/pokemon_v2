@@ -925,7 +925,7 @@ export const Arena: React.FC = () => {
         const benchSlots = isAreaZeroActive ? [1, 2, 3, 4, 5, 6, 7, 8] : [1, 2, 3, 4, 5];
 
         return (
-            <div className={`field ${playerId}-field relative flex flex-col px-2 py-1 overflow-visible ${isOpponent ? 'rotate-180 pt-[60px]' : ''}`} style={{ flex: isOpponent ? undefined : 'var(--field-f-self)', minHeight: 0 }}>
+            <div className={`field ${playerId}-field relative flex flex-col px-2 py-1 overflow-visible ${isOpponent ? 'rotate-180' : ''}`} style={{ flex: isOpponent ? undefined : 'var(--field-f-self)', minHeight: 0 }}>
                 <div style={isOpponent ? { height: 'calc(var(--spacer-f-top) * 1vh)' } : { flex: 'var(--spacer-f-top)' }} />
                 <div className={`active-row flex justify-center items-center w-full max-w-4xl mx-auto gap-[var(--card-gap)] flex-shrink-0 ${isOpponent ? 'scale-[var(--row-s-opp-active)] origin-center' : 'scale-[var(--row-s-self-active)] origin-bottom'}`} style={{ height: `calc(var(--card-h) * ${isOpponent ? 'var(--row-s-opp-active)' : 'var(--row-s-self-active)'})` }}>
 
@@ -1163,6 +1163,8 @@ export const Arena: React.FC = () => {
                 ref={arenaBoardRef}
                 className="battle-arena fixed inset-0 w-full h-[100svh] flex flex-col overflow-hidden bg-slate-950 overscroll-none touch-none z-10"
             >
+                {/* Header Spacer - Prevents overlap with settings bar */}
+                <div className="h-[60px] shrink-0" />
 
                 {/* Top Field */}
                 {renderPlayerField(isOpponentView ? 'player1' : 'player2', true)}

@@ -37,6 +37,9 @@
     --row-s-opp-active: 0.7;
     --row-s-self-active: 0.9;
     --row-s-opp-bench: 0.65;
+    --row-s-opp-active: 0.85;
+    --row-s-self-active: 0.95;
+    --row-s-opp-bench: 0.75;
     --row-s-self-bench: 0.85;
   }
 
