@@ -1,213 +1,178 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { createSupabaseClient } from '@/lib/supabase';
-import Link from 'next/link';
+import { PUBLIC_PLANS, ADD_ONS } from '@/lib/billing/plans';
+import { useEntitlement } from '@/hooks/useEntitlement';
+import type { AddOnId, PublicPlanId } from '@/types/monetization';
+
+function mapPlanToLegacy(planId: PublicPlanId): 'free' | 'pro' | 'elite' {
+  if (planId === 'basic') return 'pro';
+  if (planId === 'pro') return 'elite';
+  return 'free';
+}
 
 export default function BillingPage() {
-    const { profile, isSignedIn, getToken, isLoadingProfile } = useAuth();
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [message, setMessage] = useState('');
+  const { profile, isSignedIn, getToken, isLoadingProfile, refreshProfile } = useAuth();
+  const entitlement = useEntitlement();
+  const [isProcessing, setIsProcessing] = useState<string | null>(null);
+  const [message, setMessage] = useState('');
 
-    const handleMockUpgrade = async (plan: string) => {
-        if (!isSignedIn) {
-            alert('ログインが必要です');
-            return;
-        }
+  const currentPlanId = useMemo<PublicPlanId>(() => {
+    const type = (profile?.plan_type ?? 'free').toLowerCase();
+    if (type === 'elite') return 'pro';
+    if (type === 'pro') return 'basic';
+    return 'free';
+  }, [profile?.plan_type]);
 
-        setIsProcessing(true);
-        setMessage('');
+  const updateProfileForMockPlan = async (planId: PublicPlanId) => {
+    const token = await getToken({ template: 'supabase' });
+    if (!token) throw new Error('Auth token not found');
+    const supabase = createSupabaseClient(token);
+    if (!supabase) throw new Error('Supabase client error');
+    const { error } = await supabase.from('users').update({ plan_type: mapPlanToLegacy(planId), updated_at: new Date().toISOString() }).eq('id', profile?.id);
+    if (error) throw error;
+    await refreshProfile();
+  };
 
-        try {
-            const token = await getToken({ template: 'supabase' });
-            if (!token) throw new Error('Auth token not found');
+  const updateProfileForMockAddOn = async (addOnId: AddOnId) => {
+    const token = await getToken({ template: 'supabase' });
+    if (!token) throw new Error('Auth token not found');
+    const supabase = createSupabaseClient(token);
+    if (!supabase) throw new Error('Supabase client error');
+    const existing = Array.isArray((profile as any)?.pro_ai_addons) ? (profile as any).pro_ai_addons : [];
+    const merged = Array.from(new Set([...existing, addOnId]));
+    const { error } = await supabase.from('users').update({ pro_ai_addons: merged, updated_at: new Date().toISOString() } as any).eq('id', profile?.id);
+    if (error) throw error;
+    await refreshProfile();
+  };
 
-            const supabase = createSupabaseClient(token);
-            if (!supabase) throw new Error('Supabase client error');
+  const handlePlanCheckout = async (planId: PublicPlanId) => {
+    if (!isSignedIn) {
+      alert('ログインが必要です');
+      return;
+    }
+    setIsProcessing(`plan:${planId}`);
+    setMessage('');
+    try {
+      const res = await fetch('/api/billing/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'plan', planId }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error ?? 'checkout failed');
+      if (data.mode === 'redirect' && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      await updateProfileForMockPlan(planId);
+      setMessage(`${PUBLIC_PLANS.find((p) => p.id === planId)?.name ?? planId} プランを反映しました。`);
+    } catch (err) {
+      console.error(err);
+      alert('プラン更新に失敗しました');
+    } finally {
+      setIsProcessing(null);
+    }
+  };
 
-            // Simulate some delay for "Checkout"
-            await new Promise(resolve => setTimeout(resolve, 1500));
+  const handleAddOnCheckout = async (addOnId: AddOnId) => {
+    if (!isSignedIn) {
+      alert('ログインが必要です');
+      return;
+    }
+    setIsProcessing(`addon:${addOnId}`);
+    setMessage('');
+    try {
+      const res = await fetch('/api/billing/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'add_on', addOnId }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error ?? 'checkout failed');
+      if (data.mode === 'redirect' && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      await updateProfileForMockAddOn(addOnId);
+      setMessage(`${ADD_ONS.find((p) => p.id === addOnId)?.name ?? addOnId} を反映しました。`);
+    } catch (err) {
+      console.error(err);
+      alert('Add-on更新に失敗しました');
+    } finally {
+      setIsProcessing(null);
+    }
+  };
 
-            const { error } = await supabase
-                .from('users')
-                .update({
-                    plan_type: plan,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', profile?.id);
+  return (
+    <div className="min-h-screen bg-slate-950 text-white px-6 py-10">
+      <div className="mx-auto max-w-6xl">
+        <div className="flex items-center justify-between gap-4">
+          <Link href="/" className="text-sm text-slate-400 hover:text-white">← 戻る</Link>
+          <div className="text-sm text-slate-400">現在のプラン: <span className="font-bold text-white">{PUBLIC_PLANS.find((p) => p.id === currentPlanId)?.name ?? 'Free'}</span></div>
+        </div>
 
-            if (error) throw error;
+        <div className="mt-8">
+          <div className="text-xs uppercase tracking-[0.24em] text-slate-500">Billing</div>
+          <h1 className="mt-3 text-4xl font-black">レベルアップ。</h1>
+          <p className="mt-3 max-w-3xl text-slate-300">Free / Basic / Pro と Pro AI Add-on を分離し、無料導線を壊さずに継続課金へ接続します。</p>
+        </div>
 
-            setMessage(`${plan === 'pro' ? 'プロ' : 'エリート'}プランへアップグレードしました！`);
-            // Force reload or let useAuth re-fetch naturally
-            window.location.reload();
-        } catch (err) {
-            console.error(err);
-            alert('アップグレードに失敗しました');
-        } finally {
-            setIsProcessing(false);
-        }
-    };
+        {message ? <div className="mt-6 rounded-2xl border border-emerald-700/40 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-100">{message}</div> : null}
 
-    const plans = [
-        {
-            id: 'free',
-            name: '無料',
-            price: '¥0',
-            description: 'ポケカAIの精度を試したい方向け',
-            features: [
-                'おすすめの一手表示',
-                '基本的な盤面分析',
-                '1日10回程度の制限',
-            ],
-            buttonText: '現在のプラン',
-            isCurrent: profile?.plan_type === 'free' || !profile?.plan_type,
-            gradient: 'from-slate-700 to-slate-800'
-        },
-        {
-            id: 'pro',
-            name: 'プロ',
-            price: '¥980',
-            period: '/月',
-            description: '勝率を本気で上げたい中級者向け',
-            features: [
-                '行動理由の詳細解説',
-                'メリット・デメリット提示',
-                'リスク分析・負け筋警告',
-                '優先サーバー利用',
-            ],
-            buttonText: 'プロへアップグレード',
-            isCurrent: profile?.plan_type === 'pro',
-            highlight: true,
-            gradient: 'from-purple-600 to-indigo-700'
-        },
-        {
-            id: 'elite',
-            name: 'エリート',
-            price: '¥2,980',
-            period: '/月',
-            description: '世界を目指すガチ勢・競技プレイヤー向け',
-            features: [
-                '相手のサイド落ち/手札推定',
-                'デッキ相性メタ分析',
-                'Claude 3.5 高度相談室',
-                'プレイ履歴ミス解析',
-            ],
-            buttonText: 'エリートへアップグレード',
-            isCurrent: profile?.plan_type === 'elite',
-            gradient: 'from-amber-500 to-orange-700'
-        }
-    ];
+        <section className="mt-10 grid gap-4 lg:grid-cols-3">
+          {PUBLIC_PLANS.map((plan) => {
+            const isCurrent = currentPlanId === plan.id;
+            return (
+              <article key={plan.id} className={`rounded-3xl border p-6 ${plan.recommended ? 'border-indigo-500 bg-indigo-950/20' : 'border-slate-800 bg-slate-900/70'}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Plan</div>
+                    <h2 className="mt-2 text-2xl font-black">{plan.name}</h2>
+                  </div>
+                  {plan.recommended ? <span className="rounded-full bg-indigo-500/20 px-3 py-1 text-xs font-bold text-indigo-200">人気</span> : null}
+                </div>
+                <div className="mt-4 text-3xl font-black">¥{plan.monthlyPriceJpy.toLocaleString()}<span className="ml-1 text-sm font-bold text-slate-400">/月</span></div>
+                <p className="mt-3 text-sm text-slate-300">{plan.description}</p>
+                <ul className="mt-4 space-y-2 text-sm text-slate-200">{plan.features.map((feature) => <li key={feature}>✦ {feature}</li>)}</ul>
+                <button onClick={() => handlePlanCheckout(plan.id)} disabled={isLoadingProfile || isCurrent || isProcessing !== null} className={`mt-6 w-full rounded-2xl px-4 py-3 text-sm font-black transition ${isCurrent ? 'bg-slate-800 text-slate-500' : 'bg-white text-slate-950 hover:bg-slate-200'} disabled:cursor-not-allowed disabled:opacity-60`}>
+                  {isCurrent ? '現在のプラン' : isProcessing === `plan:${plan.id}` ? '処理中...' : `${plan.name}へ進む`}
+                </button>
+              </article>
+            );
+          })}
+        </section>
 
-    const getPlanDisplayName = (type: string | undefined) => {
-        const t = (type || 'free').toLowerCase();
-        if (t === 'pro') return 'プロ';
-        if (t === 'elite') return 'エリート';
-        return '無料';
-    };
-
-    return (
-        <main className="h-screen overflow-y-auto bg-slate-950 text-white selection:bg-purple-500/30">
-            {/* Background Decorations */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-900/20 blur-[120px] rounded-full"></div>
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-900/20 blur-[120px] rounded-full"></div>
+        <section className="mt-12 rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Pro AI Add-on</div>
+              <h2 className="mt-2 text-2xl font-black">プロプレイヤー別 AI をあと付けで解禁</h2>
+              <p className="mt-2 text-sm text-slate-300">Basic / Pro の継続課金を主軸にしつつ、思考スタイルごとに追加販売します。</p>
             </div>
-
-            <header className="relative z-10 p-6 flex justify-between items-center max-w-7xl mx-auto">
-                <Link href="/" className="flex items-center gap-2 group">
-                    <span className="text-2xl group-hover:-translate-x-1 transition-transform">←</span>
-                    <span className="font-bold text-slate-400 group-hover:text-white transition-colors">戻る</span>
-                </Link>
-                <div className="text-sm font-medium bg-slate-900/50 px-4 py-2 rounded-full border border-slate-800">
-                    現在のプラン: <span className="text-purple-400 font-bold uppercase">{getPlanDisplayName(profile?.plan_type)}</span>
-                </div>
-            </header>
-
-            <div className="relative z-10 max-w-7xl mx-auto px-6 py-12 md:py-20 text-center">
-                <h1 className="text-4xl md:text-6xl font-black mb-6 bg-gradient-to-r from-white via-slate-200 to-slate-500 bg-clip-text text-transparent italic tracking-tighter">
-                    レベルアップ。
-                </h1>
-                <p className="text-slate-400 max-w-2xl mx-auto mb-16 text-lg">
-                    AIコーチング知能を解禁して、あなたのプレイングを科学的に進化させましょう。
-                </p>
-
-                {message && (
-                    <div className="mb-8 p-4 bg-green-500/20 border border-green-500/50 text-green-300 rounded-2xl animate-in fade-in slide-in-from-top-4 duration-300">
-                        {message}
-                    </div>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-start pt-6 pb-8 md:pb-0 px-4">
-                    {plans.map((plan) => (
-                        <div
-                            key={plan.id}
-                            className={`relative group bg-slate-900/40 rounded-[32px] p-8 border hover:scale-[1.02] transition-all duration-300 ${plan.highlight ? 'border-purple-500/50 shadow-2xl shadow-purple-500/10' : 'border-slate-800'}`}
-                        >
-                            {plan.highlight && (
-                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full shadow-lg uppercase tracking-widest z-10">
-                                    人気
-                                </div>
-                            )}
-
-                            <div className="mb-8">
-                                <h3 className="text-2xl font-bold mb-2">{plan.name}プラン</h3>
-                                <div className="flex items-baseline justify-center gap-1 mb-4">
-                                    <span className="text-4xl font-black">{plan.price}</span>
-                                    {plan.period && <span className="text-slate-500 text-sm font-bold">{plan.period}</span>}
-                                </div>
-                                <p className="text-slate-400 text-xs min-h-[32px]">
-                                    {plan.description}
-                                </p>
-                            </div>
-
-                            <div className="space-y-4 mb-10 text-left">
-                                {plan.features.map((feature, i) => (
-                                    <div key={i} className="flex items-start gap-3">
-                                        <span className="text-indigo-400">✦</span>
-                                        <span className="text-slate-300 text-sm leading-tight">{feature}</span>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <button
-                                disabled={plan.isCurrent || isProcessing}
-                                onClick={() => handleMockUpgrade(plan.id)}
-                                className={`w-full py-4 rounded-2xl font-black text-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${plan.isCurrent ? 'bg-slate-800 text-slate-500' : `bg-gradient-to-br ${plan.gradient} text-white shadow-xl shadow-indigo-500/10 hover:shadow-indigo-500/20`}`}
-                            >
-                                {isProcessing && !plan.isCurrent ? (
-                                    <span className="flex items-center justify-center gap-2">
-                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                        処理中...
-                                    </span>
-                                ) : plan.buttonText}
-                            </button>
-                        </div>
-                    ))}
-                </div>
-
-                <div className="mt-20 p-10 bg-slate-900/20 border border-slate-800/50 rounded-[40px] text-left max-w-4xl mx-auto">
-                    <h4 className="text-xl font-bold mb-6 flex items-center gap-3">
-                        <span className="text-2xl">🛡️</span>
-                        安心のサポート
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 text-sm">
-                        <div>
-                            <p className="text-slate-200 font-bold mb-2">いつでもキャンセル可能</p>
-                            <p className="text-slate-500">
-                                全ての有料プランは設定からいつでもワンクリックで解約できます。解約後も期間終了まで全機能をご利用いただけます。
-                            </p>
-                        </div>
-                        <div>
-                            <p className="text-slate-200 font-bold mb-2">安全な決済</p>
-                            <p className="text-slate-500">
-                                世界シェアNo.1のStripeを採用。カード情報は当サービスのサーバーを介さず直接Stripeに送信されるため安心です。
-                            </p>
-                        </div>
-                    </div>
-                </div>
+            <div className="rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-slate-300">
+              有効中: {[
+                entitlement.canUseProAiDefault && 'Standard',
+                entitlement.canUseProAiAggressive && 'Aggressive',
+                entitlement.canUseProAiConservative && 'Conservative',
+                entitlement.canUseProAiTournament && 'Tournament',
+              ].filter(Boolean).join(', ') || 'なし'}
             </div>
-        </main>
-    );
+          </div>
+          <div className="mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+            {ADD_ONS.map((addOn) => {
+              const active = ((profile as any)?.pro_ai_addons ?? []).includes(addOn.id);
+              const requiresBasePlan = currentPlanId !== 'free';
+              return (
+                <article key={addOn.id} className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
+                  <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Add-on</div>
+                  <h3 className="mt-2 text-lg font-black">{addOn.name}</h3>
+                  <div className="mt-2 text-2xl font-black">¥{addOn.monthlyPriceJpy.toLocaleString()}<span className="ml-1 text-sm text-slate-400">/月</span></div>
+                  <p className="mt-3 text-sm text-slate-300">{addOn.description}</p>
+                  <button onClick={() => handleAddOnCheckout(addOn.id)} disabled={!requiresBasePlan || active || isProcessing !== null} className="mt-5 w-full rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-black text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50">
+                    {!requiresBasePlan ? 'Basic以上で解禁可能' : active ? '反映済み' : isProcessing === `addon:${addOn.id}` ? '処理中...' : 'Add-on を追加'}
+                  </button>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      </div>
+    </div>
+  );
 }

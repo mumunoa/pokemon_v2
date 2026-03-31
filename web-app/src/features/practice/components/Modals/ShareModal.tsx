@@ -1,167 +1,127 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import html2canvas from 'html2canvas';
+import { TextShareSheet } from '../Coach/TextShareSheet';
+import { buildShareSummary } from '@/lib/share/buildShareSummary';
+import { createXShareTextVariants } from '@/lib/share/xShareText';
+import type { ShareScoreSummary } from '@/types/monetization';
 
 interface Props {
-    boardRef: React.RefObject<HTMLDivElement | null>;
-    isOpen: boolean;
-    onClose: () => void;
-    aiCommentary?: string;
-    turnCount: number;
-    currentTurnPlayer: string;
+  boardRef: React.RefObject<HTMLDivElement>;
+  isOpen: boolean;
+  onClose: () => void;
+  aiCommentary?: string;
+  turnCount: number;
+  currentTurnPlayer: string;
+  scoreSummary?: ShareScoreSummary | null;
 }
 
-export const ShareModal: React.FC<Props> = ({ boardRef, isOpen, onClose, aiCommentary, turnCount, currentTurnPlayer }) => {
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [isCopied, setIsCopied] = useState(false);
+export const ShareModal: React.FC<Props> = ({ boardRef, isOpen, onClose, aiCommentary, turnCount, currentTurnPlayer, scoreSummary }) => {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+  const [isTextShareOpen, setIsTextShareOpen] = useState(false);
 
-    useEffect(() => {
-        if (isOpen && boardRef.current) {
-            setIsLoading(true);
-            setIsCopied(false);
-            
-            // Wait slightly for any animations to finish
-            setTimeout(() => {
-                if (!boardRef.current) return;
-                
-                    html2canvas(boardRef.current, {
-                        backgroundColor: '#0F172A', // slate-950
-                        scale: 1.5, // slightly higher res
-                        useCORS: true, 
-                    }).then(canvas => {
-                    const dataUrl = canvas.toDataURL('image/png');
-                    setPreviewUrl(dataUrl);
-                    setIsLoading(false);
-                }).catch(err => {
-                    console.error('Screenshot failed:', err);
-                    setIsLoading(false);
-                });
-            }, 300);
-        } else {
-            setPreviewUrl(null);
-        }
-    }, [isOpen, boardRef]);
+  const summary = useMemo(() => scoreSummary ?? buildShareSummary({
+    deckName: `ターン${turnCount}の盤面`,
+    commentary: { bestActions: aiCommentary ? [{ title: aiCommentary.slice(0, 36), cons: [] }] : [] },
+    fallbackSource: 'pro_coach',
+  }), [scoreSummary, turnCount, aiCommentary]);
 
-    if (!isOpen) return null;
+  const variants = useMemo(() => summary ? createXShareTextVariants(summary) : [], [summary]);
 
-    const buildShareText = () => {
-        let text = `この盤面、あなたならどう動く？🤔\n【ターン${turnCount}：${currentTurnPlayer === 'player1' ? 'プレイヤー1' : 'プレイヤー2'}の番】\n\n`;
-        
-        if (aiCommentary) {
-            text += `💬 プロコーチAIの解答:\n「${aiCommentary.substring(0, 100)}${aiCommentary.length > 100 ? '...' : ''}」\n\n`;
-            text += `👇リンクから実際の盤面を見て、あなたの考えを試そう！\n`;
-        } else {
-            text += `👇ポケカAIプロコーチはどう動くのか？リンクから解答を見る！\n`;
-        }
-        
-        const shareUrl = window.location.href; // In future, add ?board=xxx
-        text += `${shareUrl}\n\n#ポケカ #ポケモンカード #ポケカAI #PTCG`;
-        return text;
-    };
+  useEffect(() => {
+    if (!isOpen || !boardRef.current) {
+      setPreviewUrl(null);
+      return;
+    }
+    setIsLoading(true);
+    setIsCopied(false);
+    const timeoutId = window.setTimeout(() => {
+      if (!boardRef.current) return;
+      html2canvas(boardRef.current, { backgroundColor: '#0F172A', scale: 1.5, useCORS: true })
+        .then((canvas) => {
+          setPreviewUrl(canvas.toDataURL('image/png'));
+          setIsLoading(false);
+        })
+        .catch((err) => {
+          console.error('Screenshot failed:', err);
+          setIsLoading(false);
+        });
+    }, 300);
+    return () => window.clearTimeout(timeoutId);
+  }, [isOpen, boardRef]);
 
-    const handleCopyAndShare = async () => {
-        const text = buildShareText();
-        try {
-            // Text copy
-            await navigator.clipboard.writeText(text);
+  if (!isOpen) return null;
 
-            // Try image copy if supported and we have image
-            if (previewUrl && navigator.clipboard && navigator.clipboard.write) {
-                try {
-                    const res = await fetch(previewUrl);
-                    const blob = await res.blob();
-                    await navigator.clipboard.write([
-                        new ClipboardItem({ 'image/png': blob })
-                    ]);
-                } catch (e) {
-                    console.warn('Image clipboard not supported, only text copied.', e);
-                }
-            }
-            
-            setIsCopied(true);
-            
-            // Open X (Twitter) Intent
-            // Since we copied image directly to clipboard to bypass twitter not supporting image via URL.
-            // Text is also in clipboard, but we can pass text via URL anyway.
-            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
-            
-            setTimeout(() => {
-                onClose();
-            }, 2000);
-        } catch (e) {
-            console.error('Clipboard copy failed:', e);
-            alert('コピーに失敗しました。');
-        }
-    };
+  const fallbackText = `ターン${turnCount} ${currentTurnPlayer === 'player1' ? 'プレイヤー1' : 'プレイヤー2'} の盤面を共有中 #ポケカAI #ポケカ`;
+  const bestText = variants[0]?.text ?? fallbackText;
 
-    return (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
-            <div 
-                className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl animate-in fade-in zoom-in duration-200"
-                onClick={e => e.stopPropagation()}
-            >
-                <div className="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
-                    <h3 className="text-xl text-white font-black flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-blue-400">
-                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-                            <polyline points="16 6 12 2 8 6"/>
-                            <line x1="12" y1="2" x2="12" y2="15"/>
-                        </svg>
-                        盤面をX(Twitter)にシェア
-                    </h3>
-                    <button className="text-slate-500 hover:text-white transition-colors" onClick={onClose}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    </button>
-                </div>
+  const handleCopyText = async () => {
+    try {
+      await navigator.clipboard.writeText(bestText);
+      setIsCopied(true);
+      window.setTimeout(() => setIsCopied(false), 1500);
+    } catch (e) {
+      console.error('Clipboard copy failed:', e);
+      alert('コピーに失敗しました。');
+    }
+  };
 
-                <div className="space-y-4">
-                    <div className="bg-slate-950 rounded-xl overflow-hidden min-h-[160px] flex items-center justify-center border border-slate-800 relative">
-                        {isLoading ? (
-                            <div className="flex flex-col items-center gap-3">
-                                <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
-                                <span className="text-slate-500 text-xs font-bold">スクリーンショットを生成中...</span>
-                            </div>
-                        ) : previewUrl ? (
-                            <img src={previewUrl} alt="Board Preview" className="w-full h-auto object-contain max-h-[300px]" />
-                        ) : (
-                            <span className="text-slate-500 text-sm">プレビューを生成できませんでした</span>
-                        )}
-                        <div className="absolute inset-0 ring-1 ring-inset ring-slate-800/50 rounded-xl pointer-events-none"></div>
-                    </div>
+  const handleDownloadImage = () => {
+    if (!previewUrl) return;
+    const link = document.createElement('a');
+    link.href = previewUrl;
+    link.download = `board-turn-${turnCount}.png`;
+    link.click();
+  };
 
-                    <div className="bg-slate-800/50 rounded-lg p-4 font-sans border border-slate-700">
-                        <p className="whitespace-pre-wrap text-xs text-slate-300 leading-relaxed font-bold">
-                            {buildShareText()}
-                        </p>
-                    </div>
+  const handleOpenX = () => {
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(bestText)}`, '_blank', 'noopener,noreferrer');
+  };
 
-                    <div className="bg-blue-900/30 border border-blue-500/50 text-blue-200 text-[11px] p-3 rounded-lg flex gap-2 items-start">
-                        <span className="text-base shrink-0">💡</span>
-                        <p className="leading-relaxed">
-                            X(Twitter)への画像自動添付はブラウザ制限によりできないため、<strong>ボタンを押すと画像とテキストがクリップボードにコピーされます。</strong> そのままXの投稿画面で「貼り付け(Paste)」を行ってください。
-                        </p>
-                    </div>
-
-                    {isCopied ? (
-                        <div className="w-full bg-green-600 border border-green-500 text-white font-bold py-3 px-4 rounded-xl text-center shadow-lg animate-in slide-in-from-bottom-2">
-                            ✓ コピー完了！Xを開きます...
-                        </div>
-                    ) : (
-                        <button 
-                            disabled={isLoading}
-                            onClick={handleCopyAndShare}
-                            className={`w-full font-bold py-3 px-4 rounded-xl shadow-xl transition-all active:scale-[0.98] mt-2 flex justify-center items-center gap-2 ${
-                                isLoading 
-                                ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                                : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white shadow-blue-900/40 border border-blue-500'
-                            }`}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>
-                            コピーしてX(Twitter)を開く
-                        </button>
-                    )}
-                </div>
+  return (
+    <>
+      <div className="fixed inset-0 z-[9700] flex items-center justify-center bg-black/80 p-4" onClick={onClose}>
+        <div className="w-full max-w-3xl rounded-3xl border border-slate-700 bg-slate-950 p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Share</div>
+              <h3 className="mt-1 text-xl font-black text-white">画像なし前提のテキストシェア</h3>
+              <p className="mt-1 text-sm text-slate-400">Xの画像制限を前提に、120文字以内の文面を優先表示します。</p>
             </div>
+            <button className="text-slate-400 hover:text-white" onClick={onClose}>閉じる</button>
+          </div>
+
+          <div className="mt-4 grid gap-4 lg:grid-cols-[1.15fr,0.85fr]">
+            <div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4 text-sm text-slate-100 whitespace-pre-wrap">{bestText}</div>
+              <div className="mt-3 grid gap-2">
+                {variants.map((variant) => (
+                  <div key={variant.id} className="rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2 text-xs text-slate-300">
+                    <div className="mb-1 font-bold text-slate-200">{variant.id} / {variant.length}文字</div>
+                    <div>{variant.text}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <button onClick={handleCopyText} className="flex-1 rounded-xl bg-slate-800 px-4 py-3 text-sm font-bold text-white hover:bg-slate-700">{isCopied ? 'コピー済み' : '文言をコピー'}</button>
+                <button onClick={handleOpenX} className="flex-1 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white hover:bg-indigo-500">Xで投稿</button>
+                <button onClick={() => setIsTextShareOpen(true)} className="flex-1 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-600">シェアシートを開く</button>
+              </div>
+            </div>
+            <div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+                <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Optional board preview</div>
+                <div className="mt-3 min-h-[240px] rounded-2xl border border-slate-800 bg-slate-950 flex items-center justify-center overflow-hidden">
+                  {isLoading ? <div className="text-sm text-slate-500">盤面プレビューを生成中...</div> : previewUrl ? <img src={previewUrl} alt="Board preview" className="w-full h-full object-contain" /> : <div className="text-sm text-slate-500">プレビューを生成できませんでした</div>}
+                </div>
+                <button onClick={handleDownloadImage} disabled={!previewUrl} className="mt-4 w-full rounded-xl bg-slate-800 px-4 py-3 text-sm font-bold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50">盤面画像を保存</button>
+              </div>
+            </div>
+          </div>
         </div>
-    );
+      </div>
+      <TextShareSheet isOpen={isTextShareOpen} onClose={() => setIsTextShareOpen(false)} summary={summary} shareUrl={typeof window !== 'undefined' ? window.location.href : undefined} />
+    </>
+  );
 };

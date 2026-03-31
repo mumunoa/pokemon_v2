@@ -1,11 +1,10 @@
-import React, { useRef } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
+import { TextShareSheet } from '../Coach/TextShareSheet';
+import { createXShareTextVariants } from '@/lib/share/xShareText';
+import type { ShareScoreSummary } from '@/types/monetization';
 
-interface Metric {
-    label: string;
-    rate: number;
-}
-
+interface Metric { label: string; rate: number; }
 interface Props {
     metrics: Metric[];
     bestLine: string;
@@ -14,18 +13,24 @@ interface Props {
     onClose: () => void;
 }
 
+function buildSummary(metrics: Metric[], bestLine: string, interpretation: string, deckName: string): ShareScoreSummary {
+    const setupRate = Math.round((metrics.find((m) => /初動|setup/i.test(m.label))?.rate ?? 0.7) * 100);
+    const accidentRate = Math.round((metrics.find((m) => /事故|accident/i.test(m.label))?.rate ?? 0.25) * 100);
+    const overallScore = Math.max(0, Math.min(100, Math.round(setupRate * 0.8 + (100 - accidentRate) * 0.2)));
+    const overallTier = overallScore >= 85 ? 'S' : overallScore >= 72 ? 'A' : overallScore >= 58 ? 'B' : 'C';
+    return { deckName: deckName || 'Master Deck', overallTier, overallScore, setupRate, accidentRate, environmentRankPercent: Math.max(1, 100 - overallScore), bestAction: bestLine, caution: interpretation, source: 'ai_analysis' };
+}
+
 export const AnalysisShareCard: React.FC<Props> = ({ metrics, bestLine, interpretation, deckName, onClose }) => {
     const cardRef = useRef<HTMLDivElement>(null);
+    const [isTextShareOpen, setIsTextShareOpen] = useState(false);
+    const summary = useMemo(() => buildSummary(metrics, bestLine, interpretation, deckName), [metrics, bestLine, interpretation, deckName]);
+    const variants = useMemo(() => createXShareTextVariants(summary), [summary]);
 
     const handleDownload = async () => {
         if (!cardRef.current) return;
         try {
-            const canvas = await html2canvas(cardRef.current, {
-                backgroundColor: '#020617', // slate-950
-                scale: 3, // 高解像度
-                logging: false,
-                useCORS: true,
-            });
+            const canvas = await html2canvas(cardRef.current, { backgroundColor: '#020617', scale: 3, logging: false, useCORS: true });
             const link = document.createElement('a');
             link.download = `poke-ai-report-${deckName || 'deck'}.png`;
             link.href = canvas.toDataURL('image/png');
@@ -36,96 +41,63 @@ export const AnalysisShareCard: React.FC<Props> = ({ metrics, bestLine, interpre
         }
     };
 
+    const handleCopyBestText = async () => {
+        const best = variants[0]?.text;
+        if (!best) return;
+        try {
+            await navigator.clipboard.writeText(best);
+            alert('シェア文言をコピーしました');
+        } catch (err) {
+            console.error(err);
+            alert('コピーに失敗しました');
+        }
+    };
+
     return (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-300">
-            <div className="flex flex-col gap-6 max-w-full items-center">
-                {/* The card to be captured */}
-                <div 
-                    ref={cardRef}
-                    className="w-[360px] bg-slate-950 border-2 border-indigo-500/50 rounded-[40px] overflow-hidden shadow-[0_0_80px_rgba(79,70,229,0.3)] relative"
-                    style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
-                >
-                    {/* Background Glow */}
-                    <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-indigo-600/20 to-transparent pointer-events-none"></div>
-
-                    {/* Header */}
-                    <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 p-8 text-center border-b-2 border-indigo-500/20 relative">
-                        <div className="text-[10px] font-black tracking-[0.3em] text-indigo-200 uppercase mb-2">Internal Simulation Analysis</div>
-                        <h2 className="text-white text-3xl font-black italic tracking-tighter leading-none">POKEMON AI COACH</h2>
-                    </div>
-
-                    <div className="p-8 space-y-8 relative">
-                        {/* Deck Name */}
-                        <div className="text-center space-y-1">
-                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Target Deck</span>
-                            <div className="text-xl text-white font-black truncate px-4">{deckName || 'Master Deck'}</div>
-                        </div>
-
-                        {/* Metrics Grid */}
-                        <div className="grid grid-cols-2 gap-4">
+        <>
+            <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-300">
+                <div className="flex flex-col gap-6 max-w-full items-center">
+                    <div ref={cardRef} className="w-[360px] bg-slate-950 border border-slate-800 rounded-[28px] p-6 shadow-[0_0_50px_rgba(99,102,241,0.25)] text-white">
+                        <div className="text-xs uppercase tracking-[0.24em] text-slate-400">Internal Simulation Analysis</div>
+                        <div className="mt-2 text-2xl font-black">POKEMON AI COACH</div>
+                        <div className="mt-6 text-xs text-slate-400">Target Deck</div>
+                        <div className="mt-1 text-xl font-black">{deckName || 'Master Deck'}</div>
+                        <div className="mt-6 grid grid-cols-2 gap-3">
                             {metrics.map((m, i) => (
-                                <div key={i} className="bg-slate-900/60 border border-slate-800/80 rounded-[24px] p-4 flex flex-col items-center justify-center gap-1 shadow-inner">
-                                    <div className="text-[9px] text-slate-500 font-black uppercase tracking-tight">{m.label}</div>
-                                    <div className={`text-2xl font-black ${m.rate > 0.8 ? 'text-emerald-400' : m.rate > 0.6 ? 'text-amber-400' : 'text-rose-400'}`}>
-                                        {Math.round(m.rate * 100)}<span className="text-sm ml-0.5">%</span>
-                                    </div>
+                                <div key={i} className="rounded-2xl border border-slate-800 bg-slate-900/80 px-4 py-3">
+                                    <div className="text-[11px] text-slate-400">{m.label}</div>
+                                    <div className={`mt-1 text-2xl font-black ${m.rate > 0.8 ? 'text-emerald-400' : m.rate > 0.6 ? 'text-amber-400' : 'text-rose-400'}`}>{Math.round(m.rate * 100)}%</div>
                                 </div>
                             ))}
                         </div>
-
-                        {/* Key Recommendation */}
-                        <div className="bg-indigo-950/40 border-2 border-indigo-500/20 rounded-[28px] p-5 shadow-lg relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-2 opacity-20">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-indigo-400">
-                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                                </svg>
-                            </div>
-                            <div className="text-[10px] text-indigo-400 font-black uppercase mb-3 flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]"></span>
-                                AI Core Advice
-                            </div>
-                            <p className="text-white text-[13px] font-bold leading-relaxed italic">
-                                "{bestLine}"
-                            </p>
+                        <div className="mt-6 rounded-2xl border border-indigo-500/30 bg-indigo-500/10 p-4">
+                            <div className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-300">AI Core Advice</div>
+                            <div className="mt-2 text-lg font-bold leading-snug">{bestLine}</div>
                         </div>
+                        <div className="mt-4 text-sm text-slate-300 leading-relaxed">{interpretation}</div>
+                        <div className="mt-6 border-t border-slate-800 pt-4 text-xs text-slate-500 flex items-center justify-between"><span>Powered by pokemon-v2.app</span><span>#ポケカAI</span></div>
+                    </div>
 
-                        {/* Interpretation */}
-                        <p className="text-slate-400 text-[11px] leading-relaxed text-center px-6 italic font-medium">
-                            {interpretation}
-                        </p>
-
-                        {/* Footer Branding */}
-                        <div className="pt-6 border-t border-slate-900/60 flex justify-between items-center text-[10px]">
-                            <div className="flex flex-col gap-0.5">
-                                <span className="text-slate-600 font-bold uppercase tracking-tighter">Powered by</span>
-                                <span className="text-indigo-400 font-black tracking-tight">pokemon-v2.app</span>
-                            </div>
-                            <div className="px-4 py-1.5 bg-indigo-600/10 rounded-full border border-indigo-500/20 text-indigo-300 font-black tracking-widest uppercase italic">
-                                #ポケカAI
-                            </div>
+                    <div className="w-full max-w-[720px] rounded-3xl border border-slate-800 bg-slate-950/95 p-5">
+                        <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Text Share First</div>
+                        <div className="mt-3 grid gap-2">
+                            {variants.map((variant) => (
+                                <div key={variant.id} className="rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-100">
+                                    <div className="mb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">{variant.id} / {variant.length}文字</div>
+                                    {variant.text}
+                                </div>
+                            ))}
+                        </div>
+                        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                            <button onClick={onClose} className="flex-1 rounded-2xl bg-slate-800 px-4 py-3 font-bold text-white hover:bg-slate-700">キャンセル</button>
+                            <button onClick={handleCopyBestText} className="flex-1 rounded-2xl bg-slate-700 px-4 py-3 font-bold text-white hover:bg-slate-600">文言をコピー</button>
+                            <button onClick={() => setIsTextShareOpen(true)} className="flex-1 rounded-2xl bg-indigo-600 px-4 py-3 font-bold text-white hover:bg-indigo-500">テキストシェア</button>
+                            <button onClick={handleDownload} className="flex-1 rounded-2xl bg-emerald-600 px-4 py-3 font-bold text-white hover:bg-emerald-500">画像を保存</button>
                         </div>
                     </div>
                 </div>
-
-                {/* UI Buttons (not captured) */}
-                <div className="flex flex-col w-full gap-3 sm:flex-row sm:w-[360px]">
-                    <button 
-                        onClick={onClose}
-                        className="flex-1 py-4 bg-slate-800/80 hover:bg-slate-700 text-white font-bold rounded-2xl transition-all active:scale-95"
-                    >
-                        キャンセル
-                    </button>
-                    <button 
-                        onClick={handleDownload}
-                        className="flex-[2] py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black rounded-2xl shadow-2xl shadow-indigo-500/20 transform transition-all active:scale-95 flex items-center justify-center gap-2"
-                    >
-                        <span>📸</span>
-                        画像を保存する
-                    </button>
-                </div>
-
-                <p className="text-slate-500 text-[11px] font-bold">画像をXやTikTokでシェアして実績を公開しよう！</p>
             </div>
-        </div>
+            <TextShareSheet isOpen={isTextShareOpen} onClose={() => setIsTextShareOpen(false)} summary={summary} shareUrl={typeof window !== 'undefined' ? window.location.href : undefined} />
+        </>
     );
 };
