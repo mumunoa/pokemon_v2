@@ -18,17 +18,21 @@ export const AdSlot: React.FC<AdSlotProps> = ({
   label = 'SPONSORED'
 }) => {
   useEffect(() => {
-    try {
-      if (typeof window !== 'undefined' && (window as any).adsbygoogle) {
-        ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
+    // コンテナの描画・サイズ確定を待ってから広告を初期化
+    const timer = setTimeout(() => {
+      try {
+        if (typeof window !== 'undefined' && (window as any).adsbygoogle) {
+          ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
+        }
+      } catch (e) {
+        console.error('Adsbygoogle error:', e);
       }
-    } catch (e) {
-      console.error('Adsbygoogle error:', e);
-    }
+    }, 100);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
-    <div className={`w-full overflow-hidden my-6 ${className}`}>
+    <div className={`w-full overflow-hidden my-6 ${className}`} style={{ minWidth: '250px' }}>
       <div className="flex items-center justify-center gap-2 mb-2">
         <div className="h-[1px] flex-1 bg-white/5" />
         <span className="text-[10px] font-bold text-slate-600 tracking-[0.2em] uppercase">
