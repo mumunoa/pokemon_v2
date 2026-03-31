@@ -6,7 +6,7 @@ import { createXShareTextVariants } from '@/lib/share/xShareText';
 import type { ShareScoreSummary } from '@/types/monetization';
 
 interface Props {
-  boardRef: React.RefObject<HTMLDivElement>;
+  boardRef: React.RefObject<HTMLDivElement | null>;
   isOpen: boolean;
   onClose: () => void;
   aiCommentary?: string;
@@ -37,8 +37,9 @@ export const ShareModal: React.FC<Props> = ({ boardRef, isOpen, onClose, aiComme
     setIsLoading(true);
     setIsCopied(false);
     const timeoutId = window.setTimeout(() => {
-      if (!boardRef.current) return;
-      html2canvas(boardRef.current, { backgroundColor: '#0F172A', scale: 1.5, useCORS: true })
+      const element = boardRef.current;
+      if (!element) return;
+      html2canvas(element, { backgroundColor: '#0F172A', scale: 1.5, useCORS: true })
         .then((canvas) => {
           setPreviewUrl(canvas.toDataURL('image/png'));
           setIsLoading(false);
