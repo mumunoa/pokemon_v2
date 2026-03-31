@@ -35,7 +35,7 @@ export const TextShareSheet: React.FC<Props> = ({ isOpen, onClose, summary, shar
 
   return (
     <div className="fixed inset-0 z-[9000] flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
-      <div className="w-full max-w-xl rounded-3xl border border-slate-700 bg-slate-950 p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-700 bg-slate-950 p-5 shadow-2xl scrollbar-hide" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Text Share</div>
