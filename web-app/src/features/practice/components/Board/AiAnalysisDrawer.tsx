@@ -99,6 +99,7 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-5 space-y-8">
+                {/* 現在の盤面機能は一時非表示
                 <BoardInsightCard 
                     uiState={uiState}
                     boardInsight={boardInsight}
@@ -109,6 +110,7 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                     }}
                     onOpenShare={() => setIsShareOpen(true)}
                 />
+                */}
 
                 <div className="space-y-4">
                     <h4 className="text-white text-xs font-bold flex items-center gap-2">

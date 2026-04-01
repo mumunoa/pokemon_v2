@@ -133,40 +133,13 @@ export default function BillingPage() {
           })}
         </section>
 
+        {/* Pro AI Add-on セクションは一時非表示
         <section className="mt-12 rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
           <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div>
-              <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Pro AI Add-on</div>
-              <h2 className="mt-2 text-2xl font-black">プロプレイヤー別 AI をあと付けで解禁</h2>
-              <p className="mt-2 text-sm text-slate-300">Pro / Elite の継続課金を主軸にしつつ、思考スタイルごとに追加販売します。</p>
-            </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-slate-300">
-              有効中: {[
-                entitlement.canUseProAiDefault && 'Standard',
-                entitlement.canUseProAiAggressive && 'Aggressive',
-                entitlement.canUseProAiConservative && 'Conservative',
-                entitlement.canUseProAiTournament && 'Tournament',
-              ].filter(Boolean).join(', ') || 'なし'}
-            </div>
-          </div>
-          <div className="mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
-            {ADD_ONS.map((addOn) => {
-              const active = ((profile as any)?.pro_ai_addons ?? []).includes(addOn.id);
-              const requiresBasePlan = currentPlanId !== 'free';
-              return (
-                <article key={addOn.id} className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
-                  <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Add-on</div>
-                  <h3 className="mt-2 text-lg font-black">{addOn.name}</h3>
-                  <div className="mt-2 text-2xl font-black">¥{addOn.monthlyPriceJpy.toLocaleString()}<span className="ml-1 text-sm text-slate-400">/月</span></div>
-                  <p className="mt-3 text-sm text-slate-300">{addOn.description}</p>
-                  <button onClick={() => handleAddOnCheckout(addOn.id)} disabled={!requiresBasePlan || active || isProcessing !== null} className="mt-5 w-full rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-black text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50">
-                    {!requiresBasePlan ? 'Pro以上で解禁可能' : active ? '反映済み' : isProcessing === `addon:${addOn.id}` ? '処理中...' : 'Add-on を追加'}
-                  </button>
-                </article>
-              );
-            })}
+            ...
           </div>
         </section>
+        */}
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import type { ShareScoreSummary, XShareTextVariant } from '@/types/monetization'
 
 const MAX_X_SHARE_LENGTH = 120;
 const TAGS = '#ポケカAI #ポケカ';
+const APP_URL = 'https://poke-ai.app'; // または適切な URL
 
 function compactPercent(value?: number) {
   if (typeof value !== 'number' || Number.isNaN(value)) return '--';
@@ -24,10 +25,8 @@ export function createXShareTextVariants(summary: ShareScoreSummary): XShareText
   const accident = compactPercent(summary.accidentRate);
 
   const candidates = [
-    `診断:${summary.deckName} ${summary.overallTier} 初動${setup}${rank ? ` ${rank}` : ''} ${TAGS}`,
-    `${summary.deckName}は${summary.overallTier}評価。事故率${accident}。${TAGS}`,
-    `${summary.deckName}の最善手:${summary.bestAction ?? '要確認'} ${TAGS}`,
-    `${summary.deckName} 改善点:${summary.caution ?? '細部調整'} ${TAGS}`,
+    `【ポケカAI診断】${summary.deckName}の結果は${summary.overallTier}評価！🎯 初動安定率は${setup}でした。1,000回の一人回し分析を今すぐチェック⚡️ ${APP_URL} ${TAGS}`,
+    `${summary.deckName}をAIが徹底分析！${summary.overallTier}評価（上位${rank}）を獲得。事故率${accident}を克服するヒントはこちら 💡 ${APP_URL} ${TAGS}`,
   ];
 
   const ids: XShareTextVariant['id'][] = ['flex', 'strong', 'cta', 'warning'];
