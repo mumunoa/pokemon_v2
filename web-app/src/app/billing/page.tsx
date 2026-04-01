@@ -9,9 +9,7 @@ import { useEntitlement } from '@/hooks/useEntitlement';
 import type { AddOnId, PublicPlanId } from '@/types/monetization';
 
 function mapPlanToLegacy(planId: PublicPlanId): 'free' | 'pro' | 'elite' {
-  if (planId === 'basic') return 'pro';
-  if (planId === 'pro') return 'elite';
-  return 'free';
+  return planId;
 }
 
 export default function BillingPage() {
@@ -21,10 +19,7 @@ export default function BillingPage() {
   const [message, setMessage] = useState('');
 
   const currentPlanId = useMemo<PublicPlanId>(() => {
-    const type = (profile?.plan_type ?? 'free').toLowerCase();
-    if (type === 'elite') return 'pro';
-    if (type === 'pro') return 'basic';
-    return 'free';
+    return (profile?.plan_type ?? 'free') as PublicPlanId;
   }, [profile?.plan_type]);
 
   const updateProfileForMockPlan = async (planId: PublicPlanId) => {
@@ -110,7 +105,7 @@ export default function BillingPage() {
         <div className="mt-8">
           <div className="text-xs uppercase tracking-[0.24em] text-slate-500">Billing</div>
           <h1 className="mt-3 text-4xl font-black">レベルアップ。</h1>
-          <p className="mt-3 max-w-3xl text-slate-300">Free / Basic / Pro と Pro AI Add-on を分離し、無料導線を壊さずに継続課金へ接続します。</p>
+          <p className="mt-3 max-w-3xl text-slate-300">Free / Pro / Elite と Pro AI Add-on を分離し、無料導線を壊さずに継続課金へ接続します。</p>
         </div>
 
         {message ? <div className="mt-6 rounded-2xl border border-emerald-700/40 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-100">{message}</div> : null}
@@ -143,7 +138,7 @@ export default function BillingPage() {
             <div>
               <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Pro AI Add-on</div>
               <h2 className="mt-2 text-2xl font-black">プロプレイヤー別 AI をあと付けで解禁</h2>
-              <p className="mt-2 text-sm text-slate-300">Basic / Pro の継続課金を主軸にしつつ、思考スタイルごとに追加販売します。</p>
+              <p className="mt-2 text-sm text-slate-300">Pro / Elite の継続課金を主軸にしつつ、思考スタイルごとに追加販売します。</p>
             </div>
             <div className="rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-slate-300">
               有効中: {[
@@ -165,7 +160,7 @@ export default function BillingPage() {
                   <div className="mt-2 text-2xl font-black">¥{addOn.monthlyPriceJpy.toLocaleString()}<span className="ml-1 text-sm text-slate-400">/月</span></div>
                   <p className="mt-3 text-sm text-slate-300">{addOn.description}</p>
                   <button onClick={() => handleAddOnCheckout(addOn.id)} disabled={!requiresBasePlan || active || isProcessing !== null} className="mt-5 w-full rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-black text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50">
-                    {!requiresBasePlan ? 'Basic以上で解禁可能' : active ? '反映済み' : isProcessing === `addon:${addOn.id}` ? '処理中...' : 'Add-on を追加'}
+                    {!requiresBasePlan ? 'Pro以上で解禁可能' : active ? '反映済み' : isProcessing === `addon:${addOn.id}` ? '処理中...' : 'Add-on を追加'}
                   </button>
                 </article>
               );
