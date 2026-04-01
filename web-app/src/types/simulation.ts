@@ -2,7 +2,7 @@ import { DeckCard } from './game'
 import { DeckArchetype, SetupTargetConfig } from './deck-analysis'
 
 export type SimulationPerspective = 'first' | 'second'
-export type SimulationPlanTier = 'free' | 'pro'
+export type SimulationPlanTier = 'free' | 'pro' | 'elite';
 
 export type FailureReasonType =
   | 'NO_BASIC'

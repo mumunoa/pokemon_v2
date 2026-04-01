@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
         let iterations = body.iterations || 1000;
         if (planType === 'free') iterations = Math.min(iterations, 100);
         else if (planType === 'pro') iterations = Math.min(iterations, 500);
+        else if (planType === 'elite') iterations = Math.min(iterations, 1000);
         // Eliteは1000回（または制限なし）を許可
 
         const simulator = new MonteCarloDeckSimulator();

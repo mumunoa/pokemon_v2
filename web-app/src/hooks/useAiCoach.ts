@@ -18,7 +18,7 @@ export function useAiCoach() {
     const [latestAnalysis, setLatestAnalysis] = useState<CoachCommentary | null>(null);
 
     // ユーザーのプラン判定
-    const planType = isPro ? 'pro' : 'free';
+    const planType = isPro ? (profile?.plan_type === 'elite' ? 'elite' : 'pro') : 'free';
 
     useEffect(() => {
         // 1. デバウンス処理（頻繁な再計算を避けるため、最後の変更から500ms待つ）
@@ -67,7 +67,7 @@ export function useAiCoach() {
      */
     const filteredCommentary = useMemo(() => {
         if (!latestAnalysis) return null;
-        if (planType === 'pro') return latestAnalysis;
+        if (planType === 'pro' || planType === 'elite') return latestAnalysis;
 
         // Free版のフィルタリング
         return {
