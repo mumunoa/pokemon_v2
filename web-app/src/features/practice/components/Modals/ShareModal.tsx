@@ -87,8 +87,7 @@ export const ShareModal: React.FC<Props> = ({ boardRef, isOpen, onClose, aiComme
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Share</div>
-              <h3 className="mt-1 text-xl font-black text-white">画像なし前提のテキストシェア</h3>
-              <p className="mt-1 text-sm text-slate-400">Xの画像制限を前提に、120文字以内の文面を優先表示します。</p>
+              <h3 className="mt-1 text-xl font-black text-white">診断結果をフォロワーに教える</h3>
             </div>
             <button className="text-slate-400 hover:text-white" onClick={onClose}>閉じる</button>
           </div>
@@ -96,23 +95,14 @@ export const ShareModal: React.FC<Props> = ({ boardRef, isOpen, onClose, aiComme
           <div className="mt-4 grid gap-4 lg:grid-cols-[1.15fr,0.85fr]">
             <div>
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4 text-sm text-slate-100 whitespace-pre-wrap">{bestText}</div>
-              <div className="mt-3 grid gap-2">
-                {variants.map((variant) => (
-                  <div key={variant.id} className="rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2 text-xs text-slate-300">
-                    <div className="mb-1 font-bold text-slate-200">{variant.id} / {variant.length}文字</div>
-                    <div>{variant.text}</div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                <button onClick={handleCopyText} className="flex-1 rounded-xl bg-slate-800 px-4 py-3 text-sm font-bold text-white hover:bg-slate-700">{isCopied ? 'コピー済み' : '文言をコピー'}</button>
-                <button onClick={handleOpenX} className="flex-1 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white hover:bg-indigo-500">Xで投稿</button>
-                <button onClick={() => setIsTextShareOpen(true)} className="flex-1 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-600">シェアシートを開く</button>
+              {/* バリエーション一覧は非表示 */}
+              <div className="mt-4 flex flex-col gap-2">
+                <button onClick={handleOpenX} className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white hover:bg-indigo-500">Xで投稿してポケカ仲間を増やす</button>
               </div>
             </div>
             <div>
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
-                <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Optional board preview</div>
+                <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Bord Preview</div>
                 <div className="mt-3 min-h-[240px] rounded-2xl border border-slate-800 bg-slate-950 flex items-center justify-center overflow-hidden">
                   {isLoading ? <div className="text-sm text-slate-500">盤面プレビューを生成中...</div> : previewUrl ? <img src={previewUrl} alt="Board preview" className="w-full h-full object-contain" /> : <div className="text-sm text-slate-500">プレビューを生成できませんでした</div>}
                 </div>
@@ -122,7 +112,7 @@ export const ShareModal: React.FC<Props> = ({ boardRef, isOpen, onClose, aiComme
           </div>
         </div>
       </div>
-      <TextShareSheet isOpen={isTextShareOpen} onClose={() => setIsTextShareOpen(false)} summary={summary} shareUrl={typeof window !== 'undefined' ? window.location.href : undefined} />
+      <TextShareSheet isOpen={isTextShareOpen} onClose={() => setIsTextShareOpen(false)} summary={summary} shareUrl={'https://mumunoa.com/practice'} />
     </>
   );
 };

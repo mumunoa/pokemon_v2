@@ -58,7 +58,7 @@ export const AnalysisShareCard: React.FC<Props> = ({ metrics, bestLine, interpre
             <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-300 overflow-y-auto">
                 <div className="flex flex-col gap-6 max-w-full items-center my-auto min-h-min p-4">
                     <div ref={cardRef} className="w-[360px] bg-slate-950 border border-slate-800 rounded-[28px] p-6 shadow-[0_0_50px_rgba(99,102,241,0.25)] text-white shrink-0">
-                        <div className="text-xs uppercase tracking-[0.24em] text-slate-400">Internal Simulation Analysis</div>
+                        <div className="text-xs uppercase tracking-[0.24em] text-slate-400">Board Insight Report</div>
                         <div className="mt-2 text-2xl font-black">POKEMON AI COACH</div>
                         <div className="mt-6 text-xs text-slate-400">Target Deck</div>
                         <div className="mt-1 text-xl font-black">{deckName || 'Master Deck'}</div>
@@ -74,23 +74,22 @@ export const AnalysisShareCard: React.FC<Props> = ({ metrics, bestLine, interpre
                             <div className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-300">AI Core Advice</div>
                             <div className="mt-2 text-lg font-bold leading-snug">{bestLine}</div>
                         </div>
-                        <div className="mt-4 text-sm text-slate-300 leading-relaxed">{interpretation}</div>
-                        <div className="mt-6 border-t border-slate-800 pt-4 text-xs text-slate-500 flex items-center justify-between"><span>Powered by pokemon-v2.app</span><span>#ポケカAI</span></div>
+                        <div className="mt-4 text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{interpretation}</div>
+                        <div className="mt-6 border-t border-slate-800 pt-4 text-xs text-slate-500 flex items-center justify-between"><span>Powered by mumunoa.com</span><span>#ポケカAI</span></div>
                     </div>
 
                     <div className="w-full max-w-[360px] rounded-3xl border border-slate-800 bg-slate-950/95 p-5 shrink-0">
                         <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Share Message</div>
                         <div className="mt-3">
-                            <div className="rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-100 leading-relaxed">
+                            <div className="rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-100 leading-relaxed whitespace-pre-wrap">
                                 {variants[0]?.text}
                             </div>
                         </div>
                         <div className="mt-4 flex flex-col gap-2">
                              <div className="flex gap-2">
-                                <button onClick={handleCopyBestText} className="flex-1 rounded-2xl bg-slate-700 px-4 py-3 font-bold text-white hover:bg-slate-600 transition-colors">文言コピー</button>
-                                <button onClick={() => setIsTextShareOpen(true)} className="flex-1 rounded-2xl bg-indigo-600 px-4 py-3 font-bold text-white hover:bg-indigo-500 transition-colors">SNSでシェア</button>
+                                <button onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(variants[0]?.text)}`, '_blank')} className="flex-1 rounded-2xl bg-indigo-600 px-4 py-3 font-bold text-white hover:bg-indigo-500 transition-colors">Xでポスト</button>
                             </div>
-                            <button onClick={handleDownload} className="w-full rounded-2xl bg-emerald-600 px-4 py-3 font-bold text-white hover:bg-emerald-500 transition-colors">画像を保存</button>
+                            <button onClick={handleDownload} className="w-full rounded-2xl bg-emerald-600 px-4 py-3 font-bold text-white hover:bg-emerald-500 transition-colors">レポート画像を保存</button>
                             <button onClick={onClose} className="w-full rounded-2xl bg-slate-900 border border-slate-800 px-4 py-2 text-xs font-bold text-slate-400 hover:text-white transition-colors">閉じる</button>
                         </div>
                     </div>
