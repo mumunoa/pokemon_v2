@@ -6,9 +6,12 @@ import { CoachPanel } from '../../ai-next';
 import { useGameStore } from '@/features/practice/store/useGameStore';
 import { useTicketUnlock } from '../../hooks/useTicketUnlock';
 import { useEntitlement } from '@/hooks/useEntitlement';
-import { buildShareSummary } from '@/lib/share/buildShareSummary';
-import { ShareResultPanel } from '../Coach/ShareResultPanel';
-import { TextShareSheet } from '../Coach/TextShareSheet';
+import { buildBoardScore } from '@/features/practice/lib/boardScore';
+import { buildBoardScoreReason } from '@/features/practice/lib/boardScoreReason';
+import { buildBoardInsightShareSummary } from '@/features/practice/lib/boardInsightShare';
+import { BoardInsightCard } from '../Coach/BoardInsightCard';
+import { BoardInsightShareSheet } from '../Coach/BoardInsightShareSheet';
+import type { BoardInsightMeta, BoardInsightUiState } from '@/types/board-insight';
 
 interface Props {
     isOpen: boolean;
@@ -17,7 +20,7 @@ interface Props {
 
 export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
     const { isThinking, commentary, planType } = useAiCoach();
-    const { runCoachAnalysis, coachResult, coachLoading, aiAnalysis } = useGameStore();
+    const { runCoachAnalysis, coachResult, coachLoading, openingEvaluation, player1Deck } = useGameStore();
     const { isUnlocked, handleUnlock } = useTicketUnlock();
     const entitlement = useEntitlement();
     const [isShareOpen, setIsShareOpen] = useState(false);
@@ -25,13 +28,56 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
     const isProActual = planType === 'pro' || planType === 'elite';
     const isPro = isProActual || isUnlocked || entitlement.canUseAdvancedCoach;
 
-    const shareSummary = useMemo(() => buildShareSummary({
-        deckName: '現在の盤面',
-        aiAnalysis,
-        commentary,
-        coachResult,
-        fallbackSource: coachResult ? 'pro_coach' : 'ai_analysis',
-    }), [aiAnalysis, commentary, coachResult]);
+    // 現在の盤面メタデータの構築
+    const boardInsight = useMemo<BoardInsightMeta | null>(() => {
+        if (!coachResult) return null;
+
+        // 既存の初動分析結果があればマッピング、なければ coachResult 内のものを使用
+        const openingMetrics = openingEvaluation ? {
+            openingScore: openingEvaluation.seedRate?.rate,
+            consistencyScore: openingEvaluation.setupRate?.rate,
+            riskScore: openingEvaluation.failureBreakdown?.length > 0 ? 50 : 20, // 簡易マッピング
+        } : coachResult.openingMetrics;
+
+        const breakdown = buildBoardScore({
+            openingMetrics,
+            coachResult,
+            tacticalConfidence: coachResult.confidenceScore
+        });
+
+        const reason = buildBoardScoreReason(breakdown);
+
+        return {
+            breakdown,
+            reason,
+            generatedAt: new Date().toISOString()
+        };
+    }, [coachResult, openingEvaluation]);
+
+    // UI状態の管理
+    const uiState = useMemo<BoardInsightUiState>(() => {
+        let accessLevel: BoardInsightUiState['accessLevel'] = 'pre_analysis';
+        if (boardInsight) {
+            if (isProActual || entitlement.canUseAdvancedCoach) accessLevel = 'pro';
+            else if (isUnlocked) accessLevel = 'ticket_unlocked';
+            else accessLevel = 'free_summary';
+        }
+
+        return {
+            status: coachLoading ? 'running' : (boardInsight ? 'ready' : 'idle'),
+            accessLevel
+        };
+    }, [boardInsight, coachLoading, isProActual, entitlement.canUseAdvancedCoach, isUnlocked]);
+
+    // シェアサマリの構築
+    const shareSummary = useMemo(() => {
+        if (!boardInsight) return null;
+        return buildBoardInsightShareSummary({
+            deckName: player1Deck?.[0]?.name ? `${player1Deck[0].name}デッキ` : '現在の盤面',
+            boardInsight,
+            bestAction: coachResult?.bestAction
+        });
+    }, [boardInsight, player1Deck, coachResult]);
 
     return (
         <div className={`fixed inset-y-0 right-0 w-[400px] bg-slate-900/95 backdrop-blur-xl border-l border-indigo-500/30 shadow-2xl shadow-indigo-500/20 z-[9500] flex flex-col transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`} onClick={e => e.stopPropagation()}>
@@ -51,7 +97,14 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-5 space-y-8">
-                {shareSummary ? <ShareResultPanel summary={shareSummary} onOpenShare={() => setIsShareOpen(true)} /> : null}
+                <BoardInsightCard 
+                    uiState={uiState}
+                    boardInsight={boardInsight}
+                    onRun={runCoachAnalysis}
+                    onUnlock={handleUnlock}
+                    onUpgrade={() => window.open('/billing', '_blank', 'noopener,noreferrer')}
+                    onOpenShare={() => setIsShareOpen(true)}
+                />
 
                 <div className="space-y-4">
                     <h4 className="text-white text-xs font-bold flex items-center gap-2">
@@ -149,7 +202,12 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                 )}
             </div>
 
-            <TextShareSheet isOpen={isShareOpen} onClose={() => setIsShareOpen(false)} summary={shareSummary} shareUrl={typeof window !== 'undefined' ? window.location.href : undefined} />
+            <BoardInsightShareSheet 
+                isOpen={isShareOpen} 
+                onClose={() => setIsShareOpen(false)} 
+                summary={shareSummary} 
+                shareUrl={typeof window !== 'undefined' ? window.location.href : undefined} 
+            />
         </div>
     );
 };

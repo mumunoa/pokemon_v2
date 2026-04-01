@@ -93,6 +93,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     isAnalyzing: false,
     coachResult: null,
     coachLoading: false,
+    openingEvaluation: null,
+    aiAnalysis: null,
     turnFlags: {
         player1: { supporterUsed: false, energyAttachedThisTurn: false },
         player2: { supporterUsed: false, energyAttachedThisTurn: false }
@@ -945,6 +947,10 @@ export const useGameStore = create<GameState>((set, get) => ({
         } finally {
             set({ coachLoading: false });
         }
+    },
+
+    setOpeningEvaluation: (evaluation: any) => {
+        set({ openingEvaluation: evaluation });
     },
 
     analyzeGame: async () => {

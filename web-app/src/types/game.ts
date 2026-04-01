@@ -106,12 +106,12 @@ export interface StateSnapshot {
     createdAt: string;
 }
 
-export interface AiAnalysisResult {
+export type AiAnalysisResult = {
     accidentRate: number; // 0-100
     setupRate: number;    // 0-100
     recommendedAction: string;
     description: string;
-}
+} | null;
 
 export type PlayerId = 'player1' | 'player2';
 
@@ -170,9 +170,10 @@ export interface GameState {
     deckHistory: string[];
     isGameStarted: boolean;
     isAnalyzing: boolean;
-    aiAnalysis?: AiAnalysisResult;
+    aiAnalysis?: AiAnalysisResult | null;
     coachResult?: any; // To allow lazy import from ai-next
     coachLoading: boolean;
+    openingEvaluation?: any | null;
     turnFlags: {
         player1: { supporterUsed: boolean; energyAttachedThisTurn: boolean };
         player2: { supporterUsed: boolean; energyAttachedThisTurn: boolean };
@@ -227,6 +228,7 @@ export interface GameState {
     startGame: () => void;
     restoreToLog: (logIndex: number) => void;
 
+    setOpeningEvaluation: (evaluation: any) => void;
     initializeDeck: (deckList1: DeckCard[], deckList2: DeckCard[]) => void;
     moveCard: (cardId: string, fromZone: ZoneType, toZone: ZoneType, newIndex?: number) => void;
     attachEnergy: (energyId: string, pokemonId: string) => void;

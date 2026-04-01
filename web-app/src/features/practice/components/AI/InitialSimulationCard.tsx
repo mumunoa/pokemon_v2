@@ -56,6 +56,8 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType, isUnlocked = 
             const data: InitialSimulationResponse = await response.json();
             if (data.success && data.summary) {
                 setSummary(data.summary);
+                // Store に保存して他コンポーネント（BoardInsightCard）から参照可能にする
+                useGameStore.getState().setOpeningEvaluation(data.summary);
             } else {
                 throw new Error(data.error || 'シミュレーションに失敗しました');
             }
