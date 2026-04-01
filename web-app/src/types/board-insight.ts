@@ -1,5 +1,5 @@
 export type BoardInsightGrade = 'S' | 'A' | 'B' | 'C' | 'D';
-export type BoardInsightAccessLevel = 'pre_analysis' | 'free_summary' | 'ticket_unlocked' | 'pro';
+export type BoardInsightAccessLevel = 'pre_analysis' | 'free_summary' | 'ticket_unlocked' | 'pro' | 'elite';
 
 export type BoardInsightBreakdown = {
   openingScore: number;

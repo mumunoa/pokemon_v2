@@ -1,6 +1,6 @@
 export type LegacyPlanType = 'free' | 'pro' | 'elite';
 
-export type PublicPlanId = 'free' | 'basic' | 'pro';
+export type PublicPlanId = 'free' | 'pro' | 'elite';
 export type AddOnId = 'pro_ai_default' | 'pro_ai_aggressive' | 'pro_ai_conservative' | 'pro_ai_tournament';
 export type BillingInterval = 'month' | 'year';
 

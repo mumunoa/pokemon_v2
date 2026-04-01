@@ -26,7 +26,7 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
     const [isShareOpen, setIsShareOpen] = useState(false);
 
     const isProActual = planType === 'pro' || planType === 'elite';
-    const isPro = isProActual || isUnlocked || entitlement.canUseAdvancedCoach;
+    const isPro = isProActual || isUnlocked;
 
     // 現在の盤面メタデータの構築
     const boardInsight = useMemo<BoardInsightMeta | null>(() => {
@@ -58,7 +58,9 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
     const uiState = useMemo<BoardInsightUiState>(() => {
         let accessLevel: BoardInsightUiState['accessLevel'] = 'pre_analysis';
         if (boardInsight) {
-            if (isProActual || entitlement.canUseAdvancedCoach) accessLevel = 'pro';
+            if (isProActual) {
+                accessLevel = planType === 'elite' ? 'elite' : 'pro';
+            }
             else if (isUnlocked) accessLevel = 'ticket_unlocked';
             else accessLevel = 'free_summary';
         }
@@ -102,7 +104,9 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                     boardInsight={boardInsight}
                     onRun={runCoachAnalysis}
                     onUnlock={handleUnlock}
-                    onUpgrade={() => window.open('/billing', '_blank', 'noopener,noreferrer')}
+                    onUpgrade={() => {
+                        window.location.href = '/billing';
+                    }}
                     onOpenShare={() => setIsShareOpen(true)}
                 />
 
@@ -121,31 +125,14 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                             プロタクティカル分析
                         </h4>
                     </div>
-                    <CoachPanel result={coachResult} isLoading={coachLoading} onRun={() => runCoachAnalysis()} isProUser={isProActual || entitlement.canUseAdvancedCoach} onUpgradeClick={() => window.open('/billing', '_blank', 'noopener,noreferrer')} isUnlocked={isUnlocked} onUnlock={handleUnlock} />
+                    <CoachPanel result={coachResult} isLoading={coachLoading} onRun={() => runCoachAnalysis()} isProUser={isProActual} onUpgradeClick={() => { window.location.href = '/billing'; }} isUnlocked={isUnlocked} onUnlock={handleUnlock} />
                 </div>
 
+                 {/* 
                 <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-                    <div className="flex items-center justify-between gap-3">
-                        <div>
-                            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Pro AI Persona</div>
-                            <div className="mt-1 text-sm font-bold text-white">判断スタイルを切り替える拡張枠</div>
-                        </div>
-                        <Link href="/billing" className="rounded-xl bg-slate-800 px-3 py-2 text-xs font-bold text-white hover:bg-slate-700">プランを見る</Link>
-                    </div>
-                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                        {[
-                            ['Standard', entitlement.canUseProAiDefault],
-                            ['Aggressive', entitlement.canUseProAiAggressive],
-                            ['Conservative', entitlement.canUseProAiConservative],
-                            ['Tournament', entitlement.canUseProAiTournament],
-                        ].map(([label, enabled]) => (
-                            <div key={String(label)} className={`rounded-xl border px-3 py-2 ${enabled ? 'border-emerald-700/40 bg-emerald-950/30 text-emerald-100' : 'border-slate-800 bg-slate-900 text-slate-400'}`}>
-                                <div className="font-bold">{label}</div>
-                                <div className="mt-1 text-[10px]">{enabled ? '利用可能' : 'Add-onで解禁'}</div>
-                            </div>
-                        ))}
-                    </div>
+                    ... (Pro AI Personaセクション - 実装まで非表示)
                 </div>
+                */}
 
                 {isThinking && (
                     <div className="flex items-center gap-2 px-3 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
@@ -158,7 +145,7 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
 
                 {commentary && (
                     <>
-                        <div className="space-y-3 pt-6 border-t border-slate-800">
+                        <div className="space-y-3 pt-6 border-t border-slate-800 relative">
                             <h4 className="text-white text-xs font-bold flex items-center gap-2">
                                 <span className="w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center text-[10px]">3</span>
                                 おすすめの一手
@@ -181,6 +168,14 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                                             </div>
                                         )}
                                     </div>
+                                    
+                                    {!isPro && (
+                                        <div className="absolute inset-x-0 bottom-0 top-[60px] bg-indigo-950/40 backdrop-blur-[2px] flex items-center justify-center border-t border-indigo-500/10">
+                                            <div className="px-3 py-1 bg-indigo-500/20 rounded border border-indigo-500/30 text-[10px] font-bold text-indigo-300">
+                                                実装準備中
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>

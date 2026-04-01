@@ -38,12 +38,12 @@ export const BoardInsightCard: React.FC<Props> = ({
         <button onClick={onRun} className="mt-4 w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white hover:bg-indigo-500">
           盤面を分析する
         </button>
-        <div className="mt-2 text-xs text-slate-500">無料で概要を表示 / 詳細はチケット・Proで解放</div>
+        <div className="mt-2 text-xs text-slate-500">無料で概要を表示 / 詳細はチケット・Proプランで解放</div>
       </section>
     );
   }
 
-  const isDetailed = uiState.accessLevel === 'ticket_unlocked' || uiState.accessLevel === 'pro';
+  const isDetailed = uiState.accessLevel === 'ticket_unlocked' || uiState.accessLevel === 'pro' || uiState.accessLevel === 'elite';
 
   return (
     <section className="rounded-2xl border border-slate-700 bg-slate-900/90 p-4 shadow-xl">
@@ -104,14 +104,14 @@ export const BoardInsightCard: React.FC<Props> = ({
         <div className="mt-4 rounded-xl border border-amber-700/40 bg-amber-950/30 p-4">
           <div className="text-sm font-bold text-amber-200">詳細はロック中</div>
           <p className="mt-1 text-sm text-amber-100">
-            展開力・勝ち筋接続・裏目警戒・推奨アクションは、チケット消費またはProで解放します。
+            展開力・勝ち筋接続・裏目警戒・推奨アクションは、チケット消費またはProプランで解放します。
           </p>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
             <button onClick={onUnlock} className="flex-1 rounded-xl bg-amber-500 px-4 py-3 text-sm font-black text-slate-950 hover:bg-amber-400">
               チケットで詳細を見る
             </button>
             <button onClick={onUpgrade} className="flex-1 rounded-xl border border-indigo-500/40 bg-indigo-600 px-4 py-3 text-sm font-black text-white hover:bg-indigo-500">
-              Proで常時解放
+              Proプランで常時解放
             </button>
           </div>
         </div>

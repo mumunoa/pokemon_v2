@@ -227,7 +227,7 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType, isUnlocked = 
                                 ) : null}
                                 
                                 <div className="bg-slate-950/80 backdrop-blur-sm rounded-xl p-4 border border-slate-800 flex flex-col items-center gap-3">
-                                    <p className="text-slate-400 text-[10px]">複数の具体的な改善提案と入れ替え案は Pro版で公開中</p>
+                                    <p className="text-slate-400 text-[10px]">複数の具体的な改善提案と入れ替え案は Proプランで公開中</p>
                                     <div className="flex gap-1">
                                         <div className="w-12 h-1.5 bg-slate-800 rounded-full animate-pulse"></div>
                                         <div className="w-8 h-1.5 bg-slate-800 rounded-full animate-pulse delay-75"></div>
@@ -290,7 +290,7 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType, isUnlocked = 
 const TeaserOverlay: React.FC = () => {
     return (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-4 text-center">
-            <p className="text-white text-[10px] font-bold shadow-lg bg-black/40 px-3 py-1 rounded-lg backdrop-blur-sm border border-white/10">Pro版で公開</p>
+            <p className="text-white text-[10px] font-bold shadow-lg bg-black/40 px-3 py-1 rounded-lg backdrop-blur-sm border border-white/10">Proプランで公開</p>
         </div>
     );
 };

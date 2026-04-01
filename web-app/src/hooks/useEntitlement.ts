@@ -26,9 +26,9 @@ export function useEntitlement() {
     return {
       isLoading: isLoadingProfile,
       snapshot,
-      canUseAdvancedCoach: !!snapshot.entitlements['analysis.advanced'],
-      canUseUnlimitedAnalysis: !!snapshot.entitlements['analysis.unlimited'],
-      canReplayLogs: !!snapshot.entitlements['coach.log_replay'],
+      canUseAdvancedCoach: snapshot.legacyPlanType === 'pro' || snapshot.legacyPlanType === 'elite',
+      canUseUnlimitedAnalysis: snapshot.legacyPlanType === 'elite',
+      canReplayLogs: snapshot.legacyPlanType === 'elite',
       canUseProAiDefault: !!snapshot.entitlements['coach.pro_persona.default'],
       canUseProAiAggressive: !!snapshot.entitlements['coach.pro_persona.aggressive'],
       canUseProAiConservative: !!snapshot.entitlements['coach.pro_persona.conservative'],

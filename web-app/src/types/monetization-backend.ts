@@ -1,10 +1,10 @@
-export type SubscriptionPlanCode = 'free' | 'basic' | 'pro';
+export type SubscriptionPlanCode = 'free' | 'pro' | 'elite';
 export type AddOnCode =
   | 'pro_ai_single_default'
   | 'pro_ai_single_aggressive'
   | 'pro_ai_single_conservative'
   | 'pro_ai_single_tournament'
-  | 'pro_ai_bundle';
+  | 'elite_ai_bundle';
 
 export type PlanOrAddOnCode = SubscriptionPlanCode | AddOnCode;
 
@@ -30,8 +30,8 @@ export type FeatureCode =
   | 'analysis.environment_compare'
   | 'analysis.priority_queue'
   | 'opening_simulation.full'
-  | 'coach.basic'
   | 'coach.pro'
+  | 'coach.elite'
   | 'coach.log_replay'
   | 'coach.pro_persona.default'
   | 'coach.pro_persona.aggressive'

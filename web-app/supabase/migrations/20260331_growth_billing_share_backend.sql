@@ -30,13 +30,13 @@ create table if not exists public.subscriptions (
   constraint subscriptions_plan_code_check check (
     plan_code in (
       'free',
-      'basic',
       'pro',
+      'elite',
       'pro_ai_single_default',
       'pro_ai_single_aggressive',
       'pro_ai_single_conservative',
       'pro_ai_single_tournament',
-      'pro_ai_bundle'
+      'elite_ai_bundle'
     )
   )
 );
@@ -66,8 +66,8 @@ create table if not exists public.feature_entitlements (
       'analysis.environment_compare',
       'analysis.priority_queue',
       'opening_simulation.full',
-      'coach.basic',
       'coach.pro',
+      'coach.elite',
       'coach.log_replay',
       'coach.pro_persona.default',
       'coach.pro_persona.aggressive',
