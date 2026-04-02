@@ -34,11 +34,15 @@ export async function checkAndResetTickets(supabase: SupabaseClient, userId: str
         return { ai_tickets: 999, isPro: true, plan_type };
     }
 
-    // デイリーリセット判定 (UTCベースで日付が変わっているか)
+    // デイリーリセット判定 (JST 0:00ベースで日付が変わっているか)
+    const jstOffset = 9 * 60 * 60 * 1000;
+    const jstNow = new Date(now.getTime() + jstOffset);
     const lastReset = userProfile.last_ticket_reset_at ? new Date(userProfile.last_ticket_reset_at) : new Date(0);
-    const isDifferentDay = lastReset.getUTCFullYear() !== now.getUTCFullYear() ||
-                          lastReset.getUTCMonth() !== now.getUTCMonth() ||
-                          lastReset.getUTCDate() !== now.getUTCDate();
+    const jstLastReset = new Date(lastReset.getTime() + jstOffset);
+
+    const isDifferentDay = jstLastReset.getUTCFullYear() !== jstNow.getUTCFullYear() ||
+                          jstLastReset.getUTCMonth() !== jstNow.getUTCMonth() ||
+                          jstLastReset.getUTCDate() !== jstNow.getUTCDate();
 
     if (isDifferentDay) {
         // 無料枠の回復（現在は1日3回）

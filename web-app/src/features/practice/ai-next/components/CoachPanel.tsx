@@ -66,6 +66,7 @@ export function CoachPanel({
             </button>
           ) : null}
           */}
+          <p className="text-[9px] text-white/30 font-medium mt-1">※ 残り回数は毎日 0:00 に 3回 へ回復します</p>
           <div className="text-xl font-black opacity-40">Ai Coach Analysis</div>
         </div>
       </div>

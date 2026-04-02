@@ -20,8 +20,8 @@ interface Props {
 
 export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
     const { isThinking, commentary, planType } = useAiCoach();
-    const { runCoachAnalysis, coachResult, coachLoading, openingEvaluation, player1Deck } = useGameStore();
-    const { isUnlocked, handleUnlock } = useTicketUnlock();
+    const { runCoachAnalysis, coachResult, coachLoading, openingEvaluation, player1Deck, player2Deck } = useGameStore();
+    const { isUnlocked, handleUnlock } = useTicketUnlock([player1Deck, player2Deck]);
     const entitlement = useEntitlement();
     const [isShareOpen, setIsShareOpen] = useState(false);
 
@@ -173,7 +173,8 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                                         ) : (
                                             <div className="mt-3 p-3 bg-slate-950/50 rounded-lg border border-slate-800 flex flex-col items-center gap-2 group cursor-pointer hover:border-purple-500/30 transition-colors" onClick={handleUnlock}>
                                                 <div className="text-[10px] text-slate-500 font-medium">理由は Pro プランで公開中</div>
-                                                <div className="text-[9px] text-amber-500 font-bold">1チケット消費して解禁</div>
+                                                <div className="text-[9px] text-amber-500 font-bold mb-1">1チケット消費して解禁</div>
+                                                <div className="text-[8px] text-slate-600">※ 残り回数は毎日0時に回復します</div>
                                             </div>
                                         )}
                                     </div>

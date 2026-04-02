@@ -18,6 +18,7 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType, isUnlocked = 
     const [error, setError] = useState<string | null>(null);
     const [showShareModal, setShowShareModal] = useState(false);
     const player1Deck = useGameStore(state => state.player1Deck);
+    const player2Deck = useGameStore(state => state.player2Deck);
     const gameId = useGameStore(state => state.gameId);
 
     // デッキが変更（ロード）されたら結果をクリア
@@ -256,12 +257,15 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType, isUnlocked = 
                             </button>
 
                             {!isProActual && !isUnlocked && (
-                                <button 
-                                    onClick={onUnlock}
-                                    className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-[10px] font-black py-3 rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.2)] transform transition-all active:scale-95 flex items-center justify-center gap-2"
-                                >
-                                    <span>🚀</span> チケット消費して見る
-                                </button>
+                                <div className="w-full space-y-2">
+                                    <button 
+                                        onClick={onUnlock}
+                                        className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-[10px] font-black py-3 rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.2)] transform transition-all active:scale-95 flex items-center justify-center gap-2"
+                                    >
+                                        <span>🚀</span> チケット消費して見る
+                                    </button>
+                                    <p className="text-[9px] text-slate-500 text-center font-medium">※ 残り回数は毎日 0:00 に 3回 へ回復します</p>
+                                </div>
                             )}
                         </div>
                     </div>

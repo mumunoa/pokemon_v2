@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useEntitlement } from '@/hooks/useEntitlement';
 
@@ -6,19 +6,27 @@ import { useEntitlement } from '@/hooks/useEntitlement';
  * チケット消費やリワード広告によってPro機能を解禁するための共通ロジック
  * - Free: チケット / リワード広告で単発解禁
  * - Basic / Pro: entitlement がある場合は常時解禁
+ * @param dependencies 変更時に解禁状態をリセットする依存配列（例: [deck]）
  */
-export function useTicketUnlock() {
+export function useTicketUnlock(dependencies: any[] = []) {
     const { profile, isSignedIn, isPro, isLoadingProfile, refreshProfile } = useAuth();
     const { snapshot, canUseAdvancedCoach, canUseUnlimitedAnalysis } = useEntitlement();
-    const [isUnlocked, setIsUnlocked] = useState(false);
+    const permanentlyUnlocked = isPro || canUseAdvancedCoach || canUseUnlimitedAnalysis;
+
+    // デッキ変更などの依存関係が変わったら解禁状態をリセット
+    // ※ Proプランなどの恒久的な解禁状態にある場合はリセットしない
+    useEffect(() => {
+        if (!permanentlyUnlocked) {
+            setIsUnlocked(false);
+        }
+    }, dependencies);
+
     const [isLoading, setIsLoading] = useState(false);
 
     const tickets = useMemo(() => {
         const raw = (profile as any)?.ai_tickets ?? (profile as any)?.tickets ?? snapshot.aiTickets ?? 0;
         return typeof raw === 'number' ? raw : 0;
     }, [profile, snapshot.aiTickets]);
-
-    const permanentlyUnlocked = isPro || canUseAdvancedCoach || canUseUnlimitedAnalysis;
 
     const handleUnlock = async () => {
         if (permanentlyUnlocked || isUnlocked) return true;
