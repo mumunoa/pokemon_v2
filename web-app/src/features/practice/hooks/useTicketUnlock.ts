@@ -67,24 +67,52 @@ export function useTicketUnlock(dependencies: any[] = []) {
         const watchAd = window.confirm('無料回数を使い切りました。広告を見て1回分を回復しますか？');
         if (!watchAd) return false;
 
-        try {
-            setIsLoading(true);
-            const res = await fetch('/api/user/tickets/recover', { method: 'POST' });
-            if (!res.ok) {
-                alert('広告報酬の付与に失敗しました');
-                return false;
+        const zoneId = 224540;
+        const recoverApi = '/api/monetization/tickets/recover';
+
+        return new Promise<boolean>(async (resolve) => {
+            const applyReward = async () => {
+                try {
+                    setIsLoading(true);
+                    const res = await fetch(recoverApi, { method: 'POST' });
+                    if (!res.ok) {
+                        alert('広告報酬の付与に失敗しました');
+                        resolve(false);
+                        return;
+                    }
+                    setIsUnlocked(true);
+                    await refreshProfile();
+                    alert('広告視聴ありがとうございます。詳細分析を解禁しました。');
+                    resolve(true);
+                } catch (err) {
+                    console.error(err);
+                    alert('通信エラーが発生しました');
+                    resolve(false);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            // Monetag SDK が利用可能な場合は視聴完了を待機
+            const monetag = (window as any).monetag;
+            if (monetag && typeof monetag.showRewardedAd === 'function') {
+                monetag.showRewardedAd(
+                    zoneId,
+                    () => { // onAdCompleted
+                        applyReward();
+                    },
+                    () => { // onAdDismissed
+                        alert('広告が閉じられました。チケットを受け取るには最後まで視聴してください。');
+                        resolve(false);
+                    }
+                );
+            } else {
+                // Monetag が読み込まれていない場合（アドブロック等）は直接APIを叩くか、警告を出すか
+                // ユーザー利便性を考慮して一旦直接API実行を試みる（または別の広告方式への切り替え）
+                console.warn('Monetag SDK not loaded. Falling back to direct API call.');
+                applyReward();
             }
-            setIsUnlocked(true);
-            await refreshProfile();
-            alert('広告視聴ありがとうございます。詳細分析を解禁しました。');
-            return true;
-        } catch (err) {
-            console.error(err);
-            alert('通信エラーが発生しました');
-            return false;
-        } finally {
-            setIsLoading(false);
-        }
+        });
     };
 
     return {

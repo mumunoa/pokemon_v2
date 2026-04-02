@@ -20,18 +20,36 @@ export default function HomePage() {
     const confirm = window.confirm('広告を表示して分析チケットを1枚獲得しますか？\n（新しいウインドウで広告が表示されます）');
     if (!confirm) return;
 
-    // Monetag の OnClick 等が機能している状態で API を叩く
-    try {
-      const res = await fetch('/api/monetization/tickets/recover', { method: 'POST' });
-      if (res.ok) {
-        alert('チケットを1枚獲得しました！ツール画面で確認してください。');
-        router.push('/practice');
-      } else {
-        alert('エラーが発生しました。時間を置いて再度お試しください。');
+    const zoneId = 224540;
+    const recoverApi = '/api/monetization/tickets/recover';
+
+    const applyReward = async () => {
+      try {
+        const res = await fetch(recoverApi, { method: 'POST' });
+        if (res.ok) {
+          alert('チケットを1枚獲得しました！ツール画面で確認してください。');
+          router.push('/practice');
+        } else {
+          alert('エラーが発生しました。時間を置いて再度お試しください。');
+        }
+      } catch (e) {
+        console.error(e);
+        alert('通信エラーが発生しました。');
       }
-    } catch (e) {
-      console.error(e);
-      alert('通信エラーが発生しました。');
+    };
+
+    // Monetag SDK 連携
+    const monetag = (window as any).monetag;
+    if (monetag && typeof monetag.showRewardedAd === 'function') {
+      monetag.showRewardedAd(
+        zoneId,
+        () => applyReward(), // 視聴完了時
+        () => alert('広告が閉じられました。チケットを獲得するには最後まで視聴してください。') // 中断時
+      );
+    } else {
+      // SDK未読み込み時のフォールバック
+      console.warn('Monetag SDK not detected, falling back to direct reward.');
+      applyReward();
     }
   };
 
