@@ -36,7 +36,7 @@ export default function RootLayout({
                 s.async=true;
                 s.fetchpriority='high';
                 document.head.appendChild(s);
-              })(document.createElement('script'), 224540, 'alwingulla.com');
+              })(document.createElement('script'), 224540, 'vofeel.com');
             `,
           }}
         />

@@ -37,16 +37,25 @@ export async function checkAndResetTickets(supabase: SupabaseClient, userId: str
     // デイリーリセット判定 (JST 0:00ベースで日付が変わっているか)
     const jstOffset = 9 * 60 * 60 * 1000;
     const jstNow = new Date(now.getTime() + jstOffset);
-    const lastReset = userProfile.last_ticket_reset_at ? new Date(userProfile.last_ticket_reset_at) : new Date(0);
+    const lastResetStr = userProfile.last_ticket_reset_at;
+    const lastReset = (lastResetStr && !isNaN(Date.parse(lastResetStr))) ? new Date(lastResetStr) : new Date(0);
     const jstLastReset = new Date(lastReset.getTime() + jstOffset);
 
     const isDifferentDay = jstLastReset.getUTCFullYear() !== jstNow.getUTCFullYear() ||
                           jstLastReset.getUTCMonth() !== jstNow.getUTCMonth() ||
                           jstLastReset.getUTCDate() !== jstNow.getUTCDate();
 
+    console.log(`[TicketReset] Check for user ${userId}:`, {
+        jstNow: jstNow.toISOString(),
+        jstLastReset: jstLastReset.toISOString(),
+        isDifferentDay,
+        currentTickets: userProfile.ai_tickets
+    });
+
     if (isDifferentDay) {
         // 無料枠の回復（現在は1日3回）
         const dailyAllowance = 3;
+        console.log(`[TicketReset] Resetting tickets for user ${userId} to ${dailyAllowance}`);
         const { error: updateError } = await supabase
             .from('users')
             .update({ 
@@ -57,9 +66,8 @@ export async function checkAndResetTickets(supabase: SupabaseClient, userId: str
             .eq('id', userId);
         
         if (updateError) {
-            console.error('Failed to reset daily tickets:', updateError);
-            // エラーでも現在の枚数で続行
-            return { ai_tickets: userProfile.ai_tickets, isPro: false, plan_type };
+            console.error('[TicketReset] Failed to reset daily tickets:', updateError);
+            return { ai_tickets: userProfile.ai_tickets || 0, isPro: false, plan_type };
         }
         return { ai_tickets: dailyAllowance, isPro: false, plan_type };
     }

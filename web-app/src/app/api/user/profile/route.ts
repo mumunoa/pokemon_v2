@@ -23,27 +23,22 @@ export async function GET() {
             return NextResponse.json({ error: 'Supabase client not initialized' }, { status: 500 });
         }
 
-        const { data: adminProfile, error: resetError } = await (async () => {
+        const { error: resetError } = await (async () => {
             // ここでは管理権限(Service Role)でリセット判定を行うため、別クライアントを作成
             const { createAdminClient } = await import('@/lib/supabase');
             const { checkAndResetTickets } = await import('@/lib/ai/ticketHelper');
             const adminSupabase = createAdminClient();
             if (!adminSupabase) throw new Error('Admin client failed');
             
-            const updated = await checkAndResetTickets(adminSupabase, userId);
-            return { data: updated, error: null };
-        })().catch(e => ({ data: null, error: e }));
+            await checkAndResetTickets(adminSupabase, userId);
+            return { error: null };
+        })().catch(e => ({ error: e }));
 
         if (resetError) {
             console.error('Ticket reset failed in profile API:', resetError);
         }
 
-        // 常に最新の状態（リセット後）を返す
-        if (adminProfile) {
-            return NextResponse.json(adminProfile);
-        }
-
-        // 万が一リセット処理が失敗した場合は、通常の取得を試みる
+        // リセット処理（もしあれば）の後に、最新のレコードを全取得して返す
         const { data, error } = await supabase
             .from('users')
             .select('*')

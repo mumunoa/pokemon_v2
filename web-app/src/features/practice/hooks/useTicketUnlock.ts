@@ -80,15 +80,17 @@ export function useTicketUnlock(dependencies: any[] = []) {
             const applyReward = async () => {
                 try {
                     setIsLoading(true);
+                    // 広告視聴完了に応じてDBのチケットを+1（回復）させる
                     const res = await fetch(recoverApi, { method: 'POST' });
                     if (!res.ok) {
                         alert('広告報酬の付与に失敗しました');
                         resolve(false);
                         return;
                     }
+                    // その場の分析を即座に解禁（この状態はデッキ変更まで維持）
                     setIsUnlocked(true);
                     await refreshProfile();
-                    alert('広告視聴ありがとうございます。詳細分析を解禁しました。');
+                    alert('広告視聴ありがとうございます。チケットを1枚獲得しました。');
                     resolve(true);
                 } catch (err) {
                     console.error(err);
