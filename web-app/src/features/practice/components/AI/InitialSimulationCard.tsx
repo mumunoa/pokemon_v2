@@ -247,10 +247,10 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType, isUnlocked = 
                             再シミュレーション
                         </button>
                         
-                        <div className="flex w-full gap-2">
+                        <div className="flex flex-col w-full gap-2">
                             <button 
                                 onClick={() => setShowShareModal(true)}
-                                className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-black py-3 rounded-xl border border-slate-700 transition-all flex items-center justify-center gap-2"
+                                className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-black py-3 rounded-xl border border-slate-700 transition-all flex items-center justify-center gap-2"
                             >
                                 <span>📤</span> SNSで結果をシェア
                             </button>
@@ -258,7 +258,7 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType, isUnlocked = 
                             {!isProActual && !isUnlocked && (
                                 <button 
                                     onClick={onUnlock}
-                                    className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-[10px] font-black py-3 rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.2)] transform transition-all active:scale-95 flex items-center justify-center gap-2"
+                                    className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-[10px] font-black py-3 rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.2)] transform transition-all active:scale-95 flex items-center justify-center gap-2"
                                 >
                                     <span>🚀</span> チケット消費して見る
                                 </button>
@@ -279,7 +279,7 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType, isUnlocked = 
                     ]}
                     bestLine={summary.advancedAdvice?.overallComment || summary.interpretation.headline}
                     interpretation={summary.interpretation.summaryLines[0]}
-                    deckName="My Deck"
+                    deckName={player1Deck?.[0]?.name ? `${player1Deck[0].name}デッキ` : 'デッキ'}
                     onClose={() => setShowShareModal(false)}
                 />
             )}

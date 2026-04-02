@@ -18,7 +18,7 @@ function buildSummary(metrics: Metric[], bestLine: string, interpretation: strin
     const accidentRate = Math.round((metrics.find((m) => /事故|accident/i.test(m.label))?.rate ?? 0.25) * 100);
     const overallScore = Math.max(0, Math.min(100, Math.round(setupRate * 0.8 + (100 - accidentRate) * 0.2)));
     const overallTier = overallScore >= 85 ? 'S' : overallScore >= 72 ? 'A' : overallScore >= 58 ? 'B' : 'C';
-    return { deckName: deckName || 'Master Deck', overallTier, overallScore, setupRate, accidentRate, environmentRankPercent: Math.max(1, 100 - overallScore), bestAction: bestLine, caution: interpretation, source: 'ai_analysis' };
+    return { deckName: deckName || 'デッキ', overallTier, overallScore, setupRate, accidentRate, environmentRankPercent: Math.max(1, 100 - overallScore), bestAction: bestLine, caution: interpretation, source: 'ai_analysis' };
 }
 
 export const AnalysisShareCard: React.FC<Props> = ({ metrics, bestLine, interpretation, deckName, onClose }) => {
@@ -61,7 +61,7 @@ export const AnalysisShareCard: React.FC<Props> = ({ metrics, bestLine, interpre
                         <div className="text-xs uppercase tracking-[0.24em] text-slate-400">Board Insight Report</div>
                         <div className="mt-2 text-2xl font-black">POKEMON AI COACH</div>
                         <div className="mt-6 text-xs text-slate-400">Target Deck</div>
-                        <div className="mt-1 text-xl font-black">{deckName || 'Master Deck'}</div>
+                        <div className="mt-1 text-xl font-black">{deckName || 'デッキ'}</div>
                         <div className="mt-6 grid grid-cols-2 gap-3">
                             {metrics.map((m, i) => (
                                 <div key={i} className="rounded-2xl border border-slate-800 bg-slate-900/80 px-4 py-3">

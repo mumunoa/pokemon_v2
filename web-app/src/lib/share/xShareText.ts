@@ -5,7 +5,7 @@ const APP_URL = 'https://mumunoa.com/practice';
 const TAGS = '#ポケカAI #ポケカ';
 
 export function pickRandomShareText(summary: ShareScoreSummary): string {
-  const setup = Math.round(summary.setupRate * 100) + '%';
+  const setup = Math.round(summary.setupRate) + '%';
   const tier = summary.overallTier;
   const name = summary.deckName;
 
