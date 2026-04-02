@@ -23,7 +23,27 @@ export async function GET() {
             return NextResponse.json({ error: 'Supabase client not initialized' }, { status: 500 });
         }
 
-        // ユーザー情報を取得
+        const { data: adminProfile, error: resetError } = await (async () => {
+            // ここでは管理権限(Service Role)でリセット判定を行うため、別クライアントを作成
+            const { createAdminClient } = await import('@/lib/supabase');
+            const { checkAndResetTickets } = await import('@/lib/ai/ticketHelper');
+            const adminSupabase = createAdminClient();
+            if (!adminSupabase) throw new Error('Admin client failed');
+            
+            const updated = await checkAndResetTickets(adminSupabase, userId);
+            return { data: updated, error: null };
+        })().catch(e => ({ data: null, error: e }));
+
+        if (resetError) {
+            console.error('Ticket reset failed in profile API:', resetError);
+        }
+
+        // 常に最新の状態（リセット後）を返す
+        if (adminProfile) {
+            return NextResponse.json(adminProfile);
+        }
+
+        // 万が一リセット処理が失敗した場合は、通常の取得を試みる
         const { data, error } = await supabase
             .from('users')
             .select('*')
@@ -31,15 +51,10 @@ export async function GET() {
             .single();
 
         if (error) {
-            console.error('Error fetching user profile:', error);
-
-            // Fetch error might be because row doesn't exist yet for some users
-            // Optional: Auto-initialize here if webhook missed them, but for now just return default
             return NextResponse.json({
                 id: userId,
                 ai_tickets: 3,
                 pro_trial_until: null,
-                _note: 'Not found in DB, returning default'
             });
         }
 

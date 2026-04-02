@@ -25,7 +25,7 @@ export function useTicketUnlock(dependencies: any[] = []) {
     const [isLoading, setIsLoading] = useState(false);
 
     const tickets = useMemo(() => {
-        const raw = (profile as any)?.ai_tickets ?? (profile as any)?.tickets ?? snapshot.aiTickets ?? 0;
+        const raw = (profile as any)?.ai_tickets ?? snapshot.aiTickets ?? 0;
         return typeof raw === 'number' ? raw : 0;
     }, [profile, snapshot.aiTickets]);
 

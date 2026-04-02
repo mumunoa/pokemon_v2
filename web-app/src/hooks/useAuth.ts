@@ -18,6 +18,7 @@ export function useAuth() {
     const clerkAuth = useClerkAuth();
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+    const [lastFetched, setLastFetched] = useState(0);
 
     const fetchProfile = useCallback(async () => {
         // Clerkがロードされていない、またはサインインしていない場合はスキップ
@@ -33,46 +34,33 @@ export function useAuth() {
             setIsLoadingProfile(true);
             const supabaseToken = await clerkAuth.getToken({ template: 'supabase' });
             
-            console.log('[AuthDebug] Clerk User ID:', clerkUser.user.id);
-            if (!supabaseToken) {
-                console.warn('[AuthDebug] Supabase token not found (getToken returned null)');
-                return;
-            }
+            if (!supabaseToken) return;
 
             const supabase = createSupabaseClient(supabaseToken);
             if (!supabase) throw new Error('Failed to create Supabase client');
             
-            const { data, error, status } = await supabase
+            const { data, error } = await supabase
                 .from('users')
                 .select('*')
                 .eq('id', clerkUser.user.id)
                 .single();
 
             if (error) {
-                console.error('[AuthDebug] Supabase Error:', {
-                    code: error.code,
-                    message: error.message,
-                    status
-                });
-                
                 if (error.code === 'PGRST116') {
-                    console.log('[AuthDebug] User profile NOT FOUND. Creating initial record...');
+                    // プロフィールが存在しない場合は初期データを作成
                     const { data: newData, error: createError } = await supabase
                         .from('users')
                         .upsert({
                             id: clerkUser.user.id,
                             email: clerkUser.user.primaryEmailAddress?.emailAddress || '',
                             plan_type: 'free',
-                            tickets: 3,
+                            ai_tickets: 3,
                             updated_at: new Date().toISOString()
                         })
                         .select()
                         .single();
 
-                    if (createError) {
-                        console.error('[AuthDebug] Failed to create initial user record:', createError);
-                    } else if (newData) {
-                        console.log('[AuthDebug] Initial profile created:', newData);
+                    if (!createError && newData) {
                         setProfile(newData);
                         return;
                     }
@@ -80,11 +68,10 @@ export function useAuth() {
             }
 
             if (data) {
-                console.log('[AuthDebug] Profile fetched successfully:', data);
                 setProfile(data);
             }
         } catch (error) {
-            console.error('[AuthDebug] Unexpected Error during fetchProfile:', error);
+            console.error('Error during fetchProfile:', error);
         } finally {
             setIsLoadingProfile(false);
         }

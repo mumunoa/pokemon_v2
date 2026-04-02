@@ -26,13 +26,20 @@ export default function RootLayout({
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2970580806456149"
           crossOrigin="anonymous"
         ></script>
-        {/* Monetag Multitag */}
-        <script 
-          src="https://quge5.com/88/tag.min.js" 
-          data-zone="224540" 
-          async 
-          data-cfasync="false"
-        ></script>
+        {/* Monetag Smart Tag / Rewarded Video */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function(s,z,at){
+                s.src='https://'+at+'/88/tag.min.js';
+                s.dataset.zone=z;
+                s.async=true;
+                s.fetchpriority='high';
+                document.head.appendChild(s);
+              })(document.createElement('script'), 224540, 'alwingulla.com');
+            `,
+          }}
+        />
       </head>
       <body className="antialiased font-sans">
         {/*
