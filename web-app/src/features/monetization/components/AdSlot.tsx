@@ -22,12 +22,18 @@ export const AdSlot: React.FC<AdSlotProps> = ({
     const timer = setTimeout(() => {
       try {
         if (typeof window !== 'undefined' && (window as any).adsbygoogle) {
-          ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
+          const insTag = document.getElementById(id)?.querySelector('ins.adsbygoogle');
+          if (insTag && (insTag as HTMLElement).offsetWidth > 0) {
+            ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
+          } else {
+            console.log(`AdSlot ${id} is not visible or has no width, skipping initialization.`);
+          }
         }
       } catch (e) {
-        console.error('Adsbygoogle error:', e);
+        // 静かにエラーを処理するか、デバッグ用に残す
+        console.warn('Adsbygoogle init skipped:', e);
       }
-    }, 100);
+    }, 500); // 待機時間を少し伸ばして確実に描画させる
     return () => clearTimeout(timer);
   }, []);
 

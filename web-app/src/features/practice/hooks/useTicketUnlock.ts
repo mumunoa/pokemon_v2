@@ -64,6 +64,12 @@ export function useTicketUnlock(dependencies: any[] = []) {
             }
         }
 
+        const monetag = (window as any).monetag;
+        console.log('[useTicketUnlock] Monetag SDK status:', {
+            exists: !!monetag,
+            showRewardedAd: typeof monetag?.showRewardedAd
+        });
+
         const watchAd = window.confirm('無料回数を使い切りました。広告を見て1回分を回復しますか？');
         if (!watchAd) return false;
 

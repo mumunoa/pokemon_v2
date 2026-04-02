@@ -17,6 +17,13 @@ export default function HomePage() {
       return;
     }
 
+    // Monetag SDK 連携用のオブジェクト取得とログ
+    const monetag = (window as any).monetag;
+    console.log('[page] Monetag SDK status:', {
+      exists: !!monetag,
+      showRewardedAd: typeof monetag?.showRewardedAd
+    });
+
     const confirm = window.confirm('広告を表示して分析チケットを1枚獲得しますか？\n（新しいウインドウで広告が表示されます）');
     if (!confirm) return;
 
@@ -38,8 +45,7 @@ export default function HomePage() {
       }
     };
 
-    // Monetag SDK 連携
-    const monetag = (window as any).monetag;
+    // 広告再生処理
     if (monetag && typeof monetag.showRewardedAd === 'function') {
       monetag.showRewardedAd(
         zoneId,
