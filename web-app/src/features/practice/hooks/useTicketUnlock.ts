@@ -11,6 +11,7 @@ import { useEntitlement } from '@/hooks/useEntitlement';
 export function useTicketUnlock(dependencies: any[] = []) {
     const { profile, isSignedIn, isPro, isLoadingProfile, refreshProfile } = useAuth();
     const { snapshot, canUseAdvancedCoach, canUseUnlimitedAnalysis } = useEntitlement();
+    const [isUnlocked, setIsUnlocked] = useState(false);
     const permanentlyUnlocked = isPro || canUseAdvancedCoach || canUseUnlimitedAnalysis;
 
     // デッキ変更などの依存関係が変わったら解禁状態をリセット
