@@ -27,19 +27,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         ></script>
         {/* Monetag Smart Tag / Rewarded Video */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function(s,z,at){
-                s.src='https://'+at+'/88/tag.min.js';
-                s.dataset.zone=z;
-                s.async=true;
-                s.fetchpriority='high';
-                document.head.appendChild(s);
-              })(document.createElement('script'), 224540, 'vofeel.com');
-            `,
-          }}
-        />
+        <script src="https://quge5.com/88/tag.min.js" data-zone="224540" async data-cfasync="false"></script>
       </head>
       <body className="antialiased font-sans">
         {/*
