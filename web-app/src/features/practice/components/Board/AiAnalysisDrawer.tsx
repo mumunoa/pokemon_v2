@@ -5,6 +5,7 @@ import { InitialSimulationCard } from '../AI/InitialSimulationCard';
 import { CoachPanel } from '../../ai-next';
 import { useGameStore } from '@/features/practice/store/useGameStore';
 import { useTicketUnlock } from '../../hooks/useTicketUnlock';
+import { useAuth } from '@/hooks/useAuth';
 import { useEntitlement } from '@/hooks/useEntitlement';
 import { buildBoardScore } from '@/features/practice/lib/boardScore';
 import { buildBoardScoreReason } from '@/features/practice/lib/boardScoreReason';
@@ -19,9 +20,12 @@ interface Props {
 }
 
 export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
-    const { isThinking, commentary, planType } = useAiCoach();
-    const { runCoachAnalysis, coachResult, coachLoading, openingEvaluation, player1Deck, player2Deck } = useGameStore();
+    const player1Deck = useGameStore(state => state.player1Deck);
+    const player2Deck = useGameStore(state => state.player2Deck);
     const { isUnlocked, handleUnlock } = useTicketUnlock([player1Deck, player2Deck]);
+    const { isThinking, commentary, planType } = useAiCoach(isUnlocked);
+    const { runCoachAnalysis, coachResult, coachLoading, openingEvaluation } = useGameStore();
+    const { refreshProfile } = useAuth();
     const entitlement = useEntitlement();
     const [isShareOpen, setIsShareOpen] = useState(false);
 
@@ -127,7 +131,18 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                             プロタクティカル分析
                         </h4>
                     </div>
-                    <CoachPanel result={coachResult} isLoading={coachLoading} onRun={() => runCoachAnalysis()} isProUser={isProActual} onUpgradeClick={() => { window.location.href = '/billing'; }} isUnlocked={isUnlocked} onUnlock={handleUnlock} />
+                    <CoachPanel 
+                        result={coachResult} 
+                        isLoading={coachLoading} 
+                        onRun={async () => {
+                            await runCoachAnalysis();
+                            await refreshProfile();
+                        }} 
+                        isProUser={isProActual} 
+                        onUpgradeClick={() => { window.location.href = '/billing'; }} 
+                        isUnlocked={isUnlocked} 
+                        onUnlock={handleUnlock} 
+                    />
                 </div>
 
                  {/* 

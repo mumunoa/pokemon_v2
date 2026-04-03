@@ -10,18 +10,20 @@ import { useAuth } from '@/hooks/useAuth';
 /**
  * AIによるコーチング知能をフロントエンドに統合するカスタムフック。
  * 盤面の変更を検知し、バックグラウンドで思考して最善手と解説を提供します。
+ * @param isUnlocked チケットなどで一時的に解禁されているかどうか
  */
-export function useAiCoach() {
+export function useAiCoach(isUnlocked: boolean = false) {
     const gameState = useGameStore();
     const { profile, isPro } = useAuth();
     const [isThinking, setIsThinking] = useState(false);
     const [latestAnalysis, setLatestAnalysis] = useState<CoachCommentary | null>(null);
 
-    // ユーザーのプラン判定
-    const planType = isPro ? (profile?.plan_type === 'elite' ? 'elite' : 'pro') : 'free';
+    // ユーザーのプラン判定（Proプラン、またはチケット等での一時解禁）
+    const isActuallyPro = isPro || isUnlocked;
+    const planType = isActuallyPro ? (profile?.plan_type === 'elite' ? 'elite' : 'pro') : 'free';
 
     useEffect(() => {
-        // 1. デバウンス処理（頻繁な再計算を避けるため、最後の変更から500ms待つ）
+        // 1. デバウンス処理（頻繁な再計算を避けるため、最後の変更から800ms待つ）
         const timer = setTimeout(() => {
             performInference();
         }, 800);
@@ -47,7 +49,6 @@ export function useAiCoach() {
             const features = extractFeatures(canonicalState);
             
             // Layer 6: 探索エンジン（ハイブリッド検索）実行
-            // ※ここでシミュレータ(Layer 5)や評価関数(Layer 3)も内部的に呼ばれる
             const searchResult = hybridSearch(canonicalState);
             
             // Layer 7: 日本語解説・コーチング生成
@@ -67,7 +68,7 @@ export function useAiCoach() {
      */
     const filteredCommentary = useMemo(() => {
         if (!latestAnalysis) return null;
-        if (planType === 'pro' || planType === 'elite') return latestAnalysis;
+        if (isActuallyPro) return latestAnalysis;
 
         // Free版のフィルタリング
         return {
@@ -80,7 +81,7 @@ export function useAiCoach() {
             })),
             alternatives: [] // 代替案も非表示
         };
-    }, [latestAnalysis, planType]);
+    }, [latestAnalysis, isActuallyPro]);
 
     return {
         isThinking,
