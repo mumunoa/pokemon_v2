@@ -20,6 +20,10 @@ export function useTicketUnlock(dependencies: any[] = []) {
         if (!permanentlyUnlocked) {
             setIsUnlocked(false);
         }
+        // デッキ読込時などに最新のチケット残数を同期する
+        if (isSignedIn) {
+            refreshProfile();
+        }
     }, dependencies);
 
     const [isLoading, setIsLoading] = useState(false);

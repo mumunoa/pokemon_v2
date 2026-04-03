@@ -68,6 +68,7 @@ export function useAuth() {
             }
 
             if (data) {
+                console.log('[useAuth] Profile fetched:', { tickets: data.ai_tickets, plan: data.plan_type });
                 setProfile(data);
             }
         } catch (error) {

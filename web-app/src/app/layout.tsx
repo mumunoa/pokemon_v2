@@ -27,7 +27,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         ></script>
         {/* Monetag Smart Tag / Rewarded Video */}
-        <script src="https://quge5.com/88/tag.min.js" data-zone="224540" async data-cfasync="false"></script>
+        <script src="https://3nbf4.com/88/tag.min.js" data-zone="224540" async data-cfasync="false"></script>
       </head>
       <body className="antialiased font-sans">
         {/*
