@@ -77,54 +77,42 @@ export function useTicketUnlock(dependencies: any[] = []) {
         });
         */
 
-        const watchAd = window.confirm('無料回数を使い切りました。広告を見て1回分を回復しますか？');
+        const watchAd = window.confirm('無料回数を使い切りました。広告を見てこの盤面のみ詳細分析を有効にしますか？');
         if (!watchAd) return false;
 
-        const zoneId = 224540;
-        const recoverApi = '/api/monetization/tickets/recover';
+        // 最新の Zone ID に更新（提供された画像より）
+        const zoneId = 10831871;
 
         return new Promise<boolean>(async (resolve) => {
             const applyReward = async () => {
                 try {
                     setIsLoading(true);
-                    // 広告視聴完了に応じてDBのチケットを+1（回復）させる
-                    const res = await fetch(recoverApi, { method: 'POST' });
-                    if (!res.ok) {
-                        alert('広告報酬の付与に失敗しました');
-                        resolve(false);
-                        return;
-                    }
-                    // その場の分析を即座に解禁（この状態はデッキ変更まで維持）
+                    // チケット枚数は増やさず、このセッションのみ解禁状態にする
                     setIsUnlocked(true);
-                    await refreshProfile();
-                    alert('広告視聴ありがとうございます。チケットを1枚獲得しました。');
+                    // 完了通知
+                    alert('広告視聴ありがとうございます。詳細分析が有効になりました。');
                     resolve(true);
                 } catch (err) {
                     console.error(err);
-                    alert('通信エラーが発生しました');
+                    alert('エラーが発生しました');
                     resolve(false);
                 } finally {
                     setIsLoading(false);
                 }
             };
 
-            // Monetag SDK が利用可能な場合は視聴完了を待機
             const monetag = (window as any).monetag;
             if (monetag && typeof monetag.showRewardedAd === 'function') {
                 monetag.showRewardedAd(
                     zoneId,
-                    () => { // onAdCompleted
-                        applyReward();
-                    },
-                    () => { // onAdDismissed
-                        alert('広告が閉じられました。チケットを受け取るには最後まで視聴してください。');
+                    () => { applyReward(); },
+                    () => {
+                        alert('広告が閉じられました。');
                         resolve(false);
                     }
                 );
             } else {
-                // Monetag が読み込まれていない場合（アドブロック等）は直接APIを叩くか、警告を出すか
-                // ユーザー利便性を考慮して一旦直接API実行を試みる（または別の広告方式への切り替え）
-                // console.warn('Monetag SDK not loaded. Falling back to direct API call.');
+                // SDK未読み込み時も直接解禁（フォールバック）
                 applyReward();
             }
         });

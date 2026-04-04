@@ -41,61 +41,30 @@ export function useAuth() {
             setIsLoadingProfile(true);
             setLastFetched(nowTime);
             
-            // getToken は実行時に最新のものを取得
-            const supabaseToken = await clerkAuth.getToken({ template: 'supabase' });
-            
-            if (!supabaseToken) {
-                setIsLoadingProfile(false);
-                return;
+            const res = await fetch('/api/user/profile');
+            if (!res.ok) {
+                throw new Error('Failed to fetch profile from API');
             }
-
-            const supabase = createSupabaseClient(supabaseToken);
-            if (!supabase) throw new Error('Failed to create Supabase client');
             
-            const { data, error } = await supabase
-                .from('users')
-                .select('*')
-                .eq('id', clerkUser.user.id)
-                .single();
-
-            if (error) {
-                if (error.code === 'PGRST116') {
-                    // プロフィールが存在しない場合は初期データを作成
-                    const { data: newData, error: createError } = await supabase
-                        .from('users')
-                        .upsert({
-                            id: clerkUser.user.id,
-                            email: clerkUser.user.primaryEmailAddress?.emailAddress || '',
-                            plan_type: 'free',
-                            ai_tickets: 3,
-                            updated_at: new Date().toISOString()
-                        })
-                        .select()
-                        .single();
-
-                    if (!createError && newData) {
-                        setProfile(newData);
-                        return;
-                    }
-                }
-            }
-
-            if (data) {
-                // console.log('[useAuth] Profile fetched:', { tickets: data.ai_tickets, plan: data.plan_type });
+            const data = await res.json();
+            if (data && !data.error) {
+                // console.log('[useAuth] Profile fetched via API:', { tickets: data.ai_tickets, plan: data.plan_type });
                 setProfile(data);
+            } else if (data.error) {
+                console.error('API Error:', data.error);
             }
         } catch (error) {
             console.error('Error during fetchProfile:', error);
         } finally {
             setIsLoadingProfile(false);
         }
-    }, [isClerkEnabled, clerkUser.isLoaded, clerkUser.isSignedIn, clerkUser.user?.id, lastFetched, clerkAuth]);
+    }, [isClerkEnabled, clerkUser.isLoaded, clerkUser.isSignedIn, clerkUser.user?.id, lastFetched]);
 
     useEffect(() => {
-        if (isClerkEnabled && clerkUser.isLoaded) {
+        if (isClerkEnabled && clerkUser.isLoaded && clerkUser.isSignedIn) {
             fetchProfile();
         }
-    }, [fetchProfile, isClerkEnabled, clerkUser.isLoaded]);
+    }, [fetchProfile, isClerkEnabled, clerkUser.isLoaded, clerkUser.isSignedIn]);
 
     if (!isClerkEnabled) {
         return {
