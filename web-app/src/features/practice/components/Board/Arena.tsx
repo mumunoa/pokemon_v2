@@ -975,7 +975,7 @@ export const Arena: React.FC = () => {
                                         {zones[`${playerId}-deck` as ZoneType].length}
                                     </div>
                                 )}
-                                <div className={`deck-stack player1-card-back w-[90%] h-[92%] absolute bg-slate-700 rounded-md shadow-md ${(isShuffling === playerId || isShuffling === 'both') ? 'animate-shuffle' : ''}`} style={{ backgroundImage: "url('/assets/images/card_back.png')", backgroundSize: "cover" }} />
+                                <div className={`deck-stack player1-card-back w-[90%] h-[92%] absolute bg-slate-700 rounded-md shadow-md ${(isShuffling === playerId || isShuffling === 'both') ? 'animate-shuffle' : ''}`} style={{ backgroundImage: "url('/assets/images/card_back.png')", backgroundSize: "100% 100%", backgroundRepeat: "no-repeat" }} />
                                 <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black/40 rounded transition-opacity">
                                     <span className="text-white text-[10px] font-bold text-center">タップで<br />アクション<br />を見る</span>
                                 </div>
@@ -986,7 +986,7 @@ export const Arena: React.FC = () => {
                                     top: '0', left: '0', width: '90%', height: '92%',
                                     animation: 'drawAnim 1.0s cubic-bezier(0.4, 0, 0.2, 1) forwards'
                                 }}>
-                                    <div className="w-full h-full rounded-md shadow-xl" style={{ backgroundImage: "url('/assets/images/card_back.png')", backgroundSize: "cover" }} />
+                                    <div className="w-full h-full rounded-md shadow-xl" style={{ backgroundImage: "url('/assets/images/card_back.png')", backgroundSize: "100% 100%", backgroundRepeat: "no-repeat" }} />
                                 </div>
                             )}
 
@@ -995,7 +995,7 @@ export const Arena: React.FC = () => {
                                     top: '0', left: '0', width: '90%', height: '92%',
                                     animation: 'returnToDeckAnim 0.5s ease-in forwards'
                                 }}>
-                                    <div className="w-full h-full rounded-md shadow-xl" style={{ backgroundImage: "url('/assets/images/card_back.png')", backgroundSize: "cover" }} />
+                                    <div className="w-full h-full rounded-md shadow-xl" style={{ backgroundImage: "url('/assets/images/card_back.png')", backgroundSize: "100% 100%", backgroundRepeat: "no-repeat" }} />
                                 </div>
                             )}
                         </div>
@@ -1062,7 +1062,7 @@ export const Arena: React.FC = () => {
                 {isOpponent ? (
                     <Zone id={`${playerId}-hand` as ZoneType} className={`${playerId}-hand-opponent relative w-full flex justify-center space-x-[calc(var(--card-w)*-0.6)] overflow-visible z-[10] opacity-90 flex-shrink-0`} style={{ height: 'calc(var(--card-h) * 0.5)' }}>
                         {zones[`${playerId}-hand` as ZoneType].map((cardId) => (
-                            <div key={cardId} className="w-[var(--card-w)] h-[calc(var(--card-h)*1.4)] bg-slate-700 rounded shadow-md border border-slate-600 scale-[0.6] origin-top" style={{ backgroundImage: "url('/assets/images/card_back.png')", backgroundSize: "cover" }} />
+                            <div key={cardId} className="w-[var(--card-w)] h-[calc(var(--card-h)*1.4)] bg-slate-700 rounded shadow-md border border-slate-600 scale-[0.6] origin-top" style={{ backgroundImage: "url('/assets/images/card_back.png')", backgroundSize: "100% 100%", backgroundRepeat: "no-repeat" }} />
                         ))}
 
                         {/* Opponent Hand Display - Mirroring player's display */}
