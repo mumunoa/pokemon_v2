@@ -89,7 +89,7 @@ export const CardActionModal: React.FC<Props> = ({ card: initialCard, onClose })
                     {/* Front: Image (or Back if reversed) */}
                     <div className="absolute inset-0 w-full h-full backface-hidden rounded-2xl shadow-2xl overflow-hidden border-2 border-slate-700">
                         <img
-                            src={liveCard.isReversed ? '/assets/images/card_back.png' : liveCard.imageUrl}
+                            src={liveCard.isReversed ? '/assets/images/card_back_v4.png' : liveCard.imageUrl}
                             alt={liveCard.name}
                             className="w-full h-full object-cover"
                         />
