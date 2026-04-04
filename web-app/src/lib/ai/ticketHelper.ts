@@ -31,7 +31,7 @@ export async function checkAndResetTickets(supabase: SupabaseClient, userId: str
     const plan_type = userProfile.plan_type || 'free';
 
     if (isPro) {
-        console.log(`[TicketReset] User ${userId} is Pro (${plan_type}). Skipping daily reset.`);
+        // console.log(`[TicketReset] User ${userId} is Pro (${plan_type}). Skipping daily reset.`);
         return { ai_tickets: 999, isPro: true, plan_type };
     }
 
@@ -45,6 +45,7 @@ export async function checkAndResetTickets(supabase: SupabaseClient, userId: str
 
     const isDifferentDay = jstDateStr !== lastResetJstStr;
 
+    /*
     console.log(`[TicketReset] Check for user ${userId}:`, {
         utcNow: now.toISOString(),
         jstNow: jstDateStr,
@@ -53,10 +54,11 @@ export async function checkAndResetTickets(supabase: SupabaseClient, userId: str
         isDifferentDay,
         currentTickets: userProfile.ai_tickets
     });
+    */
 
     if (isDifferentDay) {
         const dailyAllowance = 3;
-        console.log(`[TicketReset] Resetting tickets for user ${userId}: ${userProfile.ai_tickets} -> ${dailyAllowance}`);
+        // console.log(`[TicketReset] Resetting tickets for user ${userId}: ${userProfile.ai_tickets} -> ${dailyAllowance}`);
         const { error: updateError } = await supabase
             .from('users')
             .update({ 
@@ -80,9 +82,9 @@ export async function checkAndResetTickets(supabase: SupabaseClient, userId: str
  * チケットを1枚消費します。
  */
 export async function deductTicket(supabase: SupabaseClient, userId: string, currentTickets: number): Promise<void> {
-    console.log(`[TicketDeduct] User ${userId}: Attempting to deduct from ${currentTickets}`);
+    // console.log(`[TicketDeduct] User ${userId}: Attempting to deduct from ${currentTickets}`);
     if (currentTickets <= 0) {
-        console.warn(`[TicketDeduct] Aborted: tickets already 0 or less (${currentTickets})`);
+        // console.warn(`[TicketDeduct] Aborted: tickets already 0 or less (${currentTickets})`);
         return;
     }
 
@@ -97,7 +99,7 @@ export async function deductTicket(supabase: SupabaseClient, userId: string, cur
     if (error) {
         console.error('[TicketDeduct] Database error:', error);
     } else {
-        console.log(`[TicketDeduct] Successfully deducted. New approximate tickets: ${currentTickets - 1}`);
+        // console.log(`[TicketDeduct] Successfully deducted. New approximate tickets: ${currentTickets - 1}`);
     }
 }
 
@@ -105,7 +107,7 @@ export async function deductTicket(supabase: SupabaseClient, userId: string, cur
  * 動画視聴などでチケットを1枚回復（+1）させます。
  */
 export async function recoverTicket(supabase: SupabaseClient, userId: string): Promise<void> {
-    console.log(`[TicketRecover] User ${userId}: Fetching current tickets...`);
+    // console.log(`[TicketRecover] User ${userId}: Fetching current tickets...`);
     const { data: userProfile, error: fetchError } = await supabase
         .from('users')
         .select('ai_tickets')
@@ -118,7 +120,7 @@ export async function recoverTicket(supabase: SupabaseClient, userId: string): P
     }
 
     const newTickets = (userProfile.ai_tickets || 0) + 1;
-    console.log(`[TicketRecover] Current: ${userProfile.ai_tickets}, Target recovery: ${newTickets}`);
+    // console.log(`[TicketRecover] Current: ${userProfile.ai_tickets}, Target recovery: ${newTickets}`);
 
     const { error: updateError } = await supabase
         .from('users')
@@ -131,6 +133,6 @@ export async function recoverTicket(supabase: SupabaseClient, userId: string): P
     if (updateError) {
         console.error('[TicketRecover] Update error:', updateError);
     } else {
-        console.log(`[TicketRecover] Successfully added 1 ticket for user ${userId}. Total: ${newTickets}`);
+        // console.log(`[TicketRecover] Successfully added 1 ticket for user ${userId}. Total: ${newTickets}`);
     }
 }

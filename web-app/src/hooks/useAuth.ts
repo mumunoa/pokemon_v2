@@ -24,7 +24,7 @@ export function useAuth() {
         // 短時間での連続フェッチを防止 (スロットリング: 2秒)
         const nowTime = Date.now();
         if (nowTime - lastFetched < 2000) {
-            console.log('[useAuth] Skip fetching (throttled)');
+            // console.log('[useAuth] Skip fetching (throttled)');
             return;
         }
 
@@ -81,7 +81,7 @@ export function useAuth() {
             }
 
             if (data) {
-                console.log('[useAuth] Profile fetched:', { tickets: data.ai_tickets, plan: data.plan_type });
+                // console.log('[useAuth] Profile fetched:', { tickets: data.ai_tickets, plan: data.plan_type });
                 setProfile(data);
             }
         } catch (error) {

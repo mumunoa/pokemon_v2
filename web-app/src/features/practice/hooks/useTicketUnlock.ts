@@ -70,10 +70,12 @@ export function useTicketUnlock(dependencies: any[] = []) {
         }
 
         const monetag = (window as any).monetag;
+        /*
         console.log('[useTicketUnlock] Monetag SDK status:', {
             exists: !!monetag,
             showRewardedAd: typeof monetag?.showRewardedAd
         });
+        */
 
         const watchAd = window.confirm('無料回数を使い切りました。広告を見て1回分を回復しますか？');
         if (!watchAd) return false;
@@ -122,7 +124,7 @@ export function useTicketUnlock(dependencies: any[] = []) {
             } else {
                 // Monetag が読み込まれていない場合（アドブロック等）は直接APIを叩くか、警告を出すか
                 // ユーザー利便性を考慮して一旦直接API実行を試みる（または別の広告方式への切り替え）
-                console.warn('Monetag SDK not loaded. Falling back to direct API call.');
+                // console.warn('Monetag SDK not loaded. Falling back to direct API call.');
                 applyReward();
             }
         });
