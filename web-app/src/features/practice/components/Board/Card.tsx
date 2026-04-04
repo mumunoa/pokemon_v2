@@ -138,7 +138,7 @@ export const Card: React.FC<CardProps> = React.memo(({ card, style = {}, classNa
     const getProxiedUrl = (url: string) => url.replace('https://www.pokemon-card.com/', '/image-proxy/');
 
     const bgImageUrl = (card.isReversed)
-        ? '/image-proxy/assets/images/card_images/back.png'
+        ? '/assets/images/card_back.png'
         : (shouldShowImage ? getProxiedUrl(card.imageUrl) : 'none');
 
     let finalTransform = '';

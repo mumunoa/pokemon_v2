@@ -21,6 +21,13 @@ export function useAuth() {
     const [lastFetched, setLastFetched] = useState(0);
 
     const fetchProfile = useCallback(async () => {
+        // 短時間での連続フェッチを防止 (スロットリング: 2秒)
+        const nowTime = Date.now();
+        if (nowTime - lastFetched < 2000) {
+            console.log('[useAuth] Skip fetching (throttled)');
+            return;
+        }
+
         // Clerkがロードされていない、またはサインインしていない場合はスキップ
         if (!isClerkEnabled || !clerkUser.isLoaded || !clerkUser.isSignedIn || !clerkUser.user) {
             if (clerkUser.isLoaded && !clerkUser.isSignedIn) {
@@ -32,9 +39,15 @@ export function useAuth() {
 
         try {
             setIsLoadingProfile(true);
+            setLastFetched(nowTime);
+            
+            // getToken は実行時に最新のものを取得
             const supabaseToken = await clerkAuth.getToken({ template: 'supabase' });
             
-            if (!supabaseToken) return;
+            if (!supabaseToken) {
+                setIsLoadingProfile(false);
+                return;
+            }
 
             const supabase = createSupabaseClient(supabaseToken);
             if (!supabase) throw new Error('Failed to create Supabase client');
@@ -76,7 +89,7 @@ export function useAuth() {
         } finally {
             setIsLoadingProfile(false);
         }
-    }, [isClerkEnabled, clerkUser.isLoaded, clerkUser.isSignedIn, clerkUser.user?.id, clerkAuth.getToken]);
+    }, [isClerkEnabled, clerkUser.isLoaded, clerkUser.isSignedIn, clerkUser.user?.id, lastFetched, clerkAuth]);
 
     useEffect(() => {
         if (isClerkEnabled && clerkUser.isLoaded) {

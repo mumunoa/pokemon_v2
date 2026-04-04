@@ -975,7 +975,7 @@ export const Arena: React.FC = () => {
                                         {zones[`${playerId}-deck` as ZoneType].length}
                                     </div>
                                 )}
-                                <div className={`deck-stack player1-card-back w-[90%] h-[92%] absolute bg-slate-700 rounded-md shadow-md ${(isShuffling === playerId || isShuffling === 'both') ? 'animate-shuffle' : ''}`} style={{ backgroundImage: "url('/image-proxy/assets/images/card_images/back.png')", backgroundSize: "cover" }} />
+                                <div className={`deck-stack player1-card-back w-[90%] h-[92%] absolute bg-slate-700 rounded-md shadow-md ${(isShuffling === playerId || isShuffling === 'both') ? 'animate-shuffle' : ''}`} style={{ backgroundImage: "url('/assets/images/card_back.png')", backgroundSize: "cover" }} />
                                 <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black/40 rounded transition-opacity">
                                     <span className="text-white text-[10px] font-bold text-center">タップで<br />アクション<br />を見る</span>
                                 </div>
