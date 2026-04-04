@@ -35,22 +35,21 @@ export async function checkAndResetTickets(supabase: SupabaseClient, userId: str
         return { ai_tickets: 999, isPro: true, plan_type };
     }
 
-    // デイリーリセット判定 (JST 0:00ベースで日付が変わっているか)
-    const jstOffset = 9 * 60 * 60 * 1000;
-    const jstNow = new Date(now.getTime() + jstOffset);
+    // デイリーリセット判定 (JST日付ベースで日付が切り替わっているか)
+    const formatter = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit' });
+    const jstDateStr = formatter.format(now); // "2024/05/01" の形式
+    
     const lastResetStr = userProfile.last_ticket_reset_at;
-    const lastReset = (lastResetStr && !isNaN(Date.parse(lastResetStr))) ? new Date(lastResetStr) : new Date(0);
-    const jstLastReset = new Date(lastReset.getTime() + jstOffset);
+    const lastResetDate = (lastResetStr && !isNaN(Date.parse(lastResetStr))) ? new Date(lastResetStr) : new Date(0);
+    const lastResetJstStr = formatter.format(lastResetDate);
 
-    const isDifferentDay = jstLastReset.getUTCFullYear() !== jstNow.getUTCFullYear() ||
-                          jstLastReset.getUTCMonth() !== jstNow.getUTCMonth() ||
-                          jstLastReset.getUTCDate() !== jstNow.getUTCDate();
+    const isDifferentDay = jstDateStr !== lastResetJstStr;
 
     console.log(`[TicketReset] Check for user ${userId}:`, {
         utcNow: now.toISOString(),
-        jstNow: jstNow.toISOString(),
+        jstNow: jstDateStr,
         lastResetInDB: lastResetStr,
-        jstLastReset: jstLastReset.toISOString(),
+        jstLastReset: lastResetJstStr,
         isDifferentDay,
         currentTickets: userProfile.ai_tickets
     });

@@ -12,7 +12,8 @@ export function useTicketUnlock(dependencies: any[] = []) {
     const { profile, isSignedIn, isPro, isLoadingProfile, refreshProfile } = useAuth();
     const { snapshot, canUseAdvancedCoach, canUseUnlimitedAnalysis } = useEntitlement();
     const [isUnlocked, setIsUnlocked] = useState(false);
-    const permanentlyUnlocked = isPro || canUseAdvancedCoach || canUseUnlimitedAnalysis;
+    const isEarlyAccessCampaign = process.env.NEXT_PUBLIC_CAMPAIGN_EARLY_ACCESS === 'true';
+    const permanentlyUnlocked = isPro || canUseAdvancedCoach || canUseUnlimitedAnalysis || isEarlyAccessCampaign;
 
     // デッキ変更などの依存関係が変わったら解禁状態をリセット
     // ※ Proプランなどの恒久的な解禁状態にある場合はリセットしない

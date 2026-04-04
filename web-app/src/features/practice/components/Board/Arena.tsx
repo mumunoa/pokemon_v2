@@ -986,7 +986,7 @@ export const Arena: React.FC = () => {
                                     top: '0', left: '0', width: '90%', height: '92%',
                                     animation: 'drawAnim 1.0s cubic-bezier(0.4, 0, 0.2, 1) forwards'
                                 }}>
-                                    <div className="w-full h-full rounded-md shadow-xl" style={{ backgroundImage: "url('/image-proxy/assets/images/card_images/back.png')", backgroundSize: "cover" }} />
+                                    <div className="w-full h-full rounded-md shadow-xl" style={{ backgroundImage: "url('/assets/images/card_back.png')", backgroundSize: "cover" }} />
                                 </div>
                             )}
 
@@ -995,7 +995,7 @@ export const Arena: React.FC = () => {
                                     top: '0', left: '0', width: '90%', height: '92%',
                                     animation: 'returnToDeckAnim 0.5s ease-in forwards'
                                 }}>
-                                    <div className="w-full h-full rounded-md shadow-xl" style={{ backgroundImage: "url('/image-proxy/assets/images/card_images/back.png')", backgroundSize: "cover" }} />
+                                    <div className="w-full h-full rounded-md shadow-xl" style={{ backgroundImage: "url('/assets/images/card_back.png')", backgroundSize: "cover" }} />
                                 </div>
                             )}
                         </div>
@@ -1062,7 +1062,7 @@ export const Arena: React.FC = () => {
                 {isOpponent ? (
                     <Zone id={`${playerId}-hand` as ZoneType} className={`${playerId}-hand-opponent relative w-full flex justify-center space-x-[calc(var(--card-w)*-0.6)] overflow-visible z-[10] opacity-90 flex-shrink-0`} style={{ height: 'calc(var(--card-h) * 0.5)' }}>
                         {zones[`${playerId}-hand` as ZoneType].map((cardId) => (
-                            <div key={cardId} className="w-[var(--card-w)] h-[calc(var(--card-h)*1.4)] bg-slate-700 rounded shadow-md border border-slate-600 scale-[0.6] origin-top" style={{ backgroundImage: "url('/image-proxy/assets/images/card_images/back.png')", backgroundSize: "cover" }} />
+                            <div key={cardId} className="w-[var(--card-w)] h-[calc(var(--card-h)*1.4)] bg-slate-700 rounded shadow-md border border-slate-600 scale-[0.6] origin-top" style={{ backgroundImage: "url('/assets/images/card_back.png')", backgroundSize: "cover" }} />
                         ))}
 
                         {/* Opponent Hand Display - Mirroring player's display */}
