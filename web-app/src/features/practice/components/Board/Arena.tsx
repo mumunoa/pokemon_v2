@@ -958,7 +958,7 @@ export const Arena: React.FC = () => {
                         </Zone>
                     </div>
 
-                    <div className="deck-trash-zone flex space-x-4 relative flex-shrink-0">
+                    <div className={`deck-trash-zone flex space-x-4 relative flex-shrink-0 ${(isDrawing || isReturning || isShuffling) ? 'z-[9000]' : 'z-[20]'}`}>
                         <div className="flex flex-col items-center relative">
                             <div className="absolute -top-3 -right-6 flex flex-col space-y-2 z-[1002] opacity-80 hover:opacity-100 transition-opacity">
                                 <button className="bg-blue-600 p-1 rounded-full shadow-lg border border-blue-500 hover:bg-blue-500 text-white" onClick={(e) => { e.stopPropagation(); handleDraw1(playerId); }} title="1枚ドロー">
@@ -984,7 +984,7 @@ export const Arena: React.FC = () => {
                             </Zone>
 
                             {(isDrawing === playerId || isDrawing === 'both') && (
-                                <div className="absolute z-[9999] pointer-events-none" style={{
+                                <div className="absolute z-[10000] pointer-events-none" style={{
                                     top: '0', left: '0', width: '90%', height: '92%',
                                     animation: 'drawAnim 1.0s cubic-bezier(0.4, 0, 0.2, 1) forwards'
                                 }}>
@@ -993,7 +993,7 @@ export const Arena: React.FC = () => {
                             )}
 
                             {(isReturning === playerId || isReturning === 'both') && (
-                                <div className="absolute z-[9999] pointer-events-none" style={{
+                                <div className="absolute z-[10000] pointer-events-none" style={{
                                     top: '0', left: '0', width: '90%', height: '92%',
                                     animation: 'returnToDeckAnim 0.5s ease-in forwards'
                                 }}>
