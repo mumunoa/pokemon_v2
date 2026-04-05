@@ -29,9 +29,40 @@ export async function POST(request: NextRequest) {
 
   try {
     const origin = request.headers.get('origin') || 'http://localhost:3000';
+    
+    // Supabase から既存の stripe_customer_id を取得（二重課金防止）
+    const { createAdminClient } = await import('@/lib/supabase');
+    const adminSupabase = createAdminClient();
+    let stripeCustomerId: string | undefined;
+    let userEmail: string | undefined;
+
+    if (adminSupabase) {
+      const { data: user } = await adminSupabase
+        .from('users')
+        .select('stripe_customer_id, email, plan_type')
+        .eq('id', userId)
+        .single();
+      
+      if (user?.stripe_customer_id) {
+        stripeCustomerId = user.stripe_customer_id;
+        
+        // すでに有料プランに加入している場合、別の「プラン」への決済は portal 経由を促す
+        if (user.plan_type !== 'free' && planId) {
+          return NextResponse.json({
+            mode: 'open_portal',
+            note: 'Already has a subscription. Redirecting to portal.'
+          });
+        }
+      }
+      if (user?.email) {
+        userEmail = user.email;
+      }
+    }
 
     // Stripe 決済セッション作成
     const session = await stripe.checkout.sessions.create({
+      customer: stripeCustomerId,
+      customer_email: stripeCustomerId ? undefined : userEmail, // 顧客IDがない場合はメールアドレスを引き継ぐ
       payment_method_types: ['card'],
       line_items: [
         {
@@ -47,6 +78,11 @@ export async function POST(request: NextRequest) {
         planId: planId || '',
         addonId: addonId || '',
       },
+      subscription_data: {
+        metadata: {
+          clerkUserId: userId,
+        }
+      }
     });
 
     return NextResponse.json({

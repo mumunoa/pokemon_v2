@@ -42,6 +42,11 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <head>
+        {/* Content Security Policy for external services */}
+        <meta 
+          http-equiv="Content-Security-Policy" 
+          content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://clerk.com https://*.clerk.nextjs.dev https://js.stripe.com https://3nbf4.com https://pagead2.googlesyndication.com https://api.hcaptcha.com https://hcaptcha.com; connect-src 'self' https://clerk.com https://*.clerk.nextjs.dev https://api.stripe.com https://api.hcaptcha.com; frame-src 'self' https://js.stripe.com https://hcaptcha.com https://newassets.hcaptcha.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://js.stripe.com data:; img-src 'self' data: https://*.clerk.com https://*.clerk.nextjs.dev https://q.stripe.com https://*.stripe.com https://www.pokemon-card.com;"
+        />
         {/* Google AdSense */}
         <script
           async

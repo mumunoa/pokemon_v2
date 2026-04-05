@@ -20,8 +20,34 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
         initializeDeck
     } = useGameStore();
 
-    const { isPro } = useAuth();
+    const { isPro, profile, isSignedIn } = useAuth();
     const { history, addDeck, updateDeckName, togglePin, removeDeck } = useDeckHistory();
+
+    const handleOpenBilling = async () => {
+        if (!isSignedIn) {
+            alert('ログインが必要です');
+            return;
+        }
+
+        // 有料プラン加入中かつ Stripe 顧客 ID がある場合はポータルへ誘導
+        if (profile?.plan_type && profile.plan_type !== 'free' && profile.stripe_customer_id) {
+            try {
+                const res = await fetch('/api/billing/portal', { method: 'POST' });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.url) {
+                        window.location.href = data.url;
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.error('Portal error:', err);
+            }
+        }
+        
+        // 無料プランまたはエラー時のフォールバックは Billing ページヘ
+        window.location.href = '/billing';
+    };
 
     const [editingName, setEditingName] = useState<{ id: string, name: string } | null>(null);
 
@@ -295,6 +321,29 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                 </button>
                             ))}
                         </div>
+                    </section>
+
+                    {/* Subscription Management Section */}
+                    <section className="mt-2 pt-2 border-t border-slate-800/30">
+                        <div className="flex items-center gap-2 mb-3">
+                            <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
+                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">サブスクリプション / Subscription</label>
+                        </div>
+                        <button
+                            onClick={handleOpenBilling}
+                            className="w-full flex items-center justify-between p-3.5 bg-slate-800/40 hover:bg-indigo-600/10 border border-slate-700/50 hover:border-indigo-500/40 rounded-xl transition-all group"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="bg-indigo-600/20 px-2 py-1.5 rounded-lg text-indigo-400 group-hover:scale-110 transition-transform">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" /></svg>
+                                </div>
+                                <div className="text-left">
+                                    <div className="text-xs font-bold text-white group-hover:text-indigo-200 transition-colors">サブスクリプション管理</div>
+                                    <div className="text-[9px] text-slate-500 font-medium uppercase tracking-tight">Manage Plan & Billing</div>
+                                </div>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600 group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </button>
                     </section>
                 </div>
 

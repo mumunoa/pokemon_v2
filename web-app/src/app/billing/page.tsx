@@ -18,6 +18,23 @@ export default function BillingPage() {
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [message, setMessage] = useState('');
 
+  const handleOpenPortal = async () => {
+    setIsProcessing('portal');
+    try {
+      const res = await fetch('/api/billing/portal', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error ?? 'portal failed');
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(`管理画面の起動に失敗しました: ${err.message}`);
+    } finally {
+      setIsProcessing(null);
+    }
+  };
+
   const currentPlanId = useMemo<PublicPlanId>(() => {
     return (profile?.plan_type ?? 'free') as PublicPlanId;
   }, [profile?.plan_type]);
@@ -59,6 +76,12 @@ export default function BillingPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error ?? 'checkout failed');
+
+      // 既存サブスクリプションがある場合はポータルへ誘導（二重課金防止のセーフガード）
+      if (data.mode === 'open_portal') {
+        await handleOpenPortal();
+        return;
+      }
       
       if (data.mode === 'redirect' && data.url) {
         window.location.href = data.url;
@@ -107,7 +130,18 @@ export default function BillingPage() {
       <div className="mx-auto max-w-6xl">
         <div className="flex items-center justify-between gap-4">
           <Link href="/" className="text-sm text-slate-400 hover:text-white">← 戻る</Link>
-          <div className="text-sm text-slate-400">現在のプラン: <span className="font-bold text-white">{PUBLIC_PLANS.find((p) => p.id === currentPlanId)?.name ?? 'Free'}</span></div>
+          <div className="flex flex-col items-end gap-1">
+            <div className="text-sm text-slate-400">現在のプラン: <span className="font-bold text-white">{PUBLIC_PLANS.find((p) => p.id === currentPlanId)?.name ?? 'Free'}</span></div>
+            {currentPlanId !== 'free' && (
+              <button 
+                onClick={handleOpenPortal}
+                disabled={isProcessing !== null}
+                className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 underline underline-offset-4 disabled:opacity-50"
+              >
+                ⚙️ サブスクリプションを管理・解約する
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="mt-8">
@@ -133,8 +167,18 @@ export default function BillingPage() {
                 <div className="mt-4 text-3xl font-black">¥{plan.monthlyPriceJpy.toLocaleString()}<span className="ml-1 text-sm font-bold text-slate-400">/月</span></div>
                 <p className="mt-3 text-sm text-slate-300">{plan.description}</p>
                 <ul className="mt-4 space-y-2 text-sm text-slate-200">{plan.features.map((feature) => <li key={feature}>✦ {feature}</li>)}</ul>
-                <button onClick={() => handlePlanCheckout(plan.id, plan.stripePriceId)} disabled={isLoadingProfile || isCurrent || isProcessing !== null} className={`mt-6 w-full rounded-2xl px-4 py-3 text-sm font-black transition ${isCurrent ? 'bg-slate-800 text-slate-500' : 'bg-white text-slate-950 hover:bg-slate-200'} disabled:cursor-not-allowed disabled:opacity-60`}>
-                  {isCurrent ? '現在のプラン' : isProcessing === `plan:${plan.id}` ? '処理中...' : `${plan.name}へ進む`}
+                <button 
+                  onClick={() => {
+                    if (currentPlanId !== 'free' && !isCurrent) {
+                      handleOpenPortal();
+                    } else {
+                      handlePlanCheckout(plan.id, plan.stripePriceId);
+                    }
+                  }} 
+                  disabled={isLoadingProfile || isCurrent || isProcessing !== null} 
+                  className={`mt-6 w-full rounded-2xl px-4 py-3 text-sm font-black transition ${isCurrent ? 'bg-slate-800 text-slate-500' : 'bg-white text-slate-950 hover:bg-slate-200'} disabled:cursor-not-allowed disabled:opacity-60`}
+                >
+                  {isCurrent ? '現在のプラン' : isProcessing === `plan:${plan.id}` ? '処理中...' : (currentPlanId !== 'free' && !isCurrent ? 'プランを変更する' : `${plan.name}へ進む`)}
                 </button>
               </article>
             );
