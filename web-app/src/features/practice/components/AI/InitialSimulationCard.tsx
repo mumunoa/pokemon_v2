@@ -264,6 +264,12 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType, isUnlocked = 
                                     >
                                         <span>🚀</span> チケット消費して見る
                                     </button>
+                                    <button 
+                                        onClick={() => window.location.href = '/billing'}
+                                        className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-[10px] font-black py-3 rounded-xl shadow-[0_0_20px_rgba(124,58,237,0.2)] transform transition-all active:scale-95 flex items-center justify-center gap-2"
+                                    >
+                                        <span>💎</span> プランをアップグレードして見る
+                                    </button>
                                     <p className="text-[9px] text-slate-500 text-center font-medium">※ 残り回数は毎日 0:00 に 3回 へ回復します</p>
                                 </div>
                             )}

@@ -38,15 +38,7 @@ export function CoachPanel({
   if (!result) {
     return (
       <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/10 to-transparent p-6 text-white shadow-xl backdrop-blur-md text-center relative overflow-hidden">
-        {/* 全ユーザーに対して「実装準備中」のスモーク効果を適用 */}
-        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-20">
-          <div className="px-4 py-2 bg-emerald-500/20 rounded-lg border border-emerald-500/30 text-xs font-black text-emerald-300 shadow-xl">
-            実装準備中
-          </div>
-        </div>
-
-        <div className="flex flex-col items-center gap-4 opacity-20 pointer-events-none">
-          {/* 
+        <div className="flex flex-col items-center gap-4">
           <div>
             <div className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-xl font-black text-transparent text-shadow-sm">
               Premium Coach AI
@@ -64,10 +56,10 @@ export function CoachPanel({
               <div className="absolute inset-0 bg-white/20 opacity-0 transition-opacity group-hover:opacity-100"></div>
               プレミアムコーチ分析
             </button>
-          ) : null}
-          */}
+          ) : (
+            <div className="text-xl font-black opacity-40">Ai Coach Analysis</div>
+          )}
           <p className="text-[9px] text-white/30 font-medium mt-1">※ 残り回数は毎日 0:00 に 3回 へ回復します</p>
-          <div className="text-xl font-black opacity-40">Ai Coach Analysis</div>
         </div>
       </div>
     );
@@ -139,10 +131,16 @@ export function CoachPanel({
                 チケットを消費して見る
               </button>
               <button 
+                onClick={() => window.location.href = '/billing'}
+                className="w-full mt-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 py-3 text-sm font-bold text-white shadow-[0_0_15px_rgba(124,58,237,0.3)] transition-all hover:scale-105 flex items-center justify-center gap-2"
+              >
+                <span>💎</span> プランをアップグレードして見る
+              </button>
+              <button 
                 onClick={onUpgradeClick}
                 className="mt-3 text-[10px] text-white/50 hover:text-white underline"
               >
-                プランをアップグレード
+                プランの詳細を確認
               </button>
             </div>
           </div>
