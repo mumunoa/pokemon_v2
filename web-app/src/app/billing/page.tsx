@@ -169,16 +169,26 @@ export default function BillingPage() {
                 <ul className="mt-4 space-y-2 text-sm text-slate-200">{plan.features.map((feature) => <li key={feature}>✦ {feature}</li>)}</ul>
                 <button 
                   onClick={() => {
-                    if (currentPlanId !== 'free' && !isCurrent) {
+                    // 有料プラン間（Pro ↔ Elite）の移動は安全のためポータルヘ誘導
+                    if (currentPlanId !== 'free' && plan.id !== 'free' && !isCurrent) {
                       handleOpenPortal();
-                    } else {
+                    } else if (plan.id !== 'free') {
                       handlePlanCheckout(plan.id, plan.stripePriceId);
                     }
                   }} 
-                  disabled={isLoadingProfile || isCurrent || isProcessing !== null} 
+                  disabled={
+                    isLoadingProfile || 
+                    isCurrent || 
+                    isProcessing !== null || 
+                    (plan.id === 'free' && currentPlanId !== 'free') // 有料プランからFreeへの変更は解約扱いのためボタン無効化
+                  } 
                   className={`mt-6 w-full rounded-2xl px-4 py-3 text-sm font-black transition ${isCurrent ? 'bg-slate-800 text-slate-500' : 'bg-white text-slate-950 hover:bg-slate-200'} disabled:cursor-not-allowed disabled:opacity-60`}
                 >
-                  {isCurrent ? '現在のプラン' : isProcessing === `plan:${plan.id}` ? '処理中...' : (currentPlanId !== 'free' && !isCurrent ? 'プランを変更する' : `${plan.name}へ進む`)}
+                  {isCurrent ? '現在のプラン' : 
+                   isProcessing === `plan:${plan.id}` ? '処理中...' : 
+                   (plan.id === 'free' && currentPlanId !== 'free') ? 'プラン管理から解約可能' : 
+                   (currentPlanId !== 'free' && plan.id !== 'free') ? 'プランを変更する' : 
+                   `${plan.name}へ進む`}
                 </button>
               </article>
             );
