@@ -103,6 +103,7 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-5 space-y-8">
+                {/* 現在の盤面機能は一時非表示
                 <BoardInsightCard 
                     uiState={uiState}
                     boardInsight={boardInsight}
@@ -113,6 +114,7 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                     }}
                     onOpenShare={() => setIsShareOpen(true)}
                 />
+                */}
 
                 <div className="space-y-4">
                     <h4 className="text-white text-xs font-bold flex items-center gap-2">
@@ -129,21 +131,21 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                             プロタクティカル分析
                         </h4>
                     </div>
-                    <CoachPanel 
-                        result={coachResult} 
-                        isLoading={coachLoading} 
+                    <CoachPanel
+                        result={coachResult}
+                        isLoading={coachLoading}
                         onRun={async () => {
                             await runCoachAnalysis();
                             await refreshProfile();
-                        }} 
-                        isProUser={isProActual} 
-                        onUpgradeClick={() => { window.location.href = '/billing'; }} 
-                        isUnlocked={isUnlocked} 
-                        onUnlock={handleUnlock} 
+                        }}
+                        isProUser={isProActual}
+                        onUpgradeClick={() => { window.location.href = '/billing'; }}
+                        isUnlocked={isUnlocked}
+                        onUnlock={handleUnlock}
                     />
                 </div>
 
-                 {/* 
+                {/* 
                 <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
                     ... (Pro AI Personaセクション - 実装まで非表示)
                 </div>
@@ -167,8 +169,14 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                             </h4>
                             {commentary.bestActions.map((action: any, idx: number) => (
                                 <div key={idx} className="bg-gradient-to-br from-indigo-900/40 to-slate-900 border border-indigo-500/40 rounded-xl p-4 shadow-xl overflow-hidden relative">
+                                    {/* 全ユーザーに対して「実装準備中」のスモーク効果を適用 */}
+                                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-20">
+                                        <div className="px-4 py-2 bg-indigo-500/20 rounded-lg border border-indigo-500/30 text-xs font-black text-indigo-300 shadow-xl">
+                                            実装準備中
+                                        </div>
+                                    </div>
 
-                                    <div className="absolute top-0 right-0 p-2 opacity-10"><svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+                                    <div className="absolute top-0 right-0 p-2 opacity-10"><svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg></div>
                                     <div className="text-indigo-200 font-bold text-sm mb-1">{action.title}</div>
                                     <p className="text-slate-400 text-[10px] mb-3">{action.description}</p>
                                     <div className="space-y-2">
@@ -178,18 +186,10 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                                                 {action.cons.map((con: string, cIdx: number) => <div key={cIdx} className="flex gap-2 text-[10px] text-orange-400"><span>⚠️</span><span>{con}</span></div>)}
                                             </>
                                         ) : (
-                                            <div className="mt-3 space-y-2 w-full">
-                                                <div className="p-3 bg-slate-950/50 rounded-lg border border-slate-800 flex flex-col items-center gap-2 group cursor-pointer hover:border-amber-500/30 transition-colors" onClick={handleUnlock}>
-                                                    <div className="text-[10px] text-slate-500 font-medium">理由は Pro プランで公開中</div>
-                                                    <div className="text-[9px] text-amber-500 font-bold">1チケット消費して解禁</div>
-                                                </div>
-                                                <button 
-                                                    onClick={() => window.location.href = '/billing'}
-                                                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 py-3 rounded-lg text-[9px] font-black text-white shadow-lg flex items-center justify-center gap-2"
-                                                >
-                                                    <span>💎</span> プランをアップグレード
-                                                </button>
-                                                <div className="text-[8px] text-slate-600 text-center">※ 残り回数は毎日0時に回復します</div>
+                                            <div className="mt-3 p-3 bg-slate-950/50 rounded-lg border border-slate-800 flex flex-col items-center gap-2 group cursor-pointer hover:border-purple-500/30 transition-colors" onClick={handleUnlock}>
+                                                <div className="text-[10px] text-slate-500 font-medium">理由は Pro プランで公開中</div>
+                                                <div className="text-[9px] text-amber-500 font-bold mb-1">1チケット消費して解禁</div>
+                                                <div className="text-[8px] text-slate-600">※ 残り回数は毎日0時に回復します</div>
                                             </div>
                                         )}
                                     </div>
@@ -214,11 +214,11 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                 )}
             </div>
 
-            <BoardInsightShareSheet 
-                isOpen={isShareOpen} 
-                onClose={() => setIsShareOpen(false)} 
-                summary={shareSummary} 
-                shareUrl={typeof window !== 'undefined' ? window.location.href : undefined} 
+            <BoardInsightShareSheet
+                isOpen={isShareOpen}
+                onClose={() => setIsShareOpen(false)}
+                summary={shareSummary}
+                shareUrl={typeof window !== 'undefined' ? window.location.href : undefined}
             />
         </div>
     );
