@@ -2,13 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createAdminClient } from '@/lib/supabase';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-01-27.acacia' as any,
-});
+export const dynamic = 'force-dynamic';
 
+const stripeSecret = process.env.STRIPE_SECRET_KEY || '';
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
 
+// Stripe の初期化。キーがない場合は内部でエラーを投げないよう、使用時にチェックする。
+const stripe = stripeSecret 
+  ? new Stripe(stripeSecret, { apiVersion: '2025-01-27.acacia' as any })
+  : null;
+
 export async function POST(req: NextRequest) {
+  if (!stripe || !webhookSecret) {
+    console.error('Stripe configuration is missing (Secret Key or Webhook Secret)');
+    return NextResponse.json({ error: 'Configuration missing' }, { status: 500 });
+  }
+
   const payload = await req.text();
   const signature = req.headers.get('stripe-signature') || '';
 
