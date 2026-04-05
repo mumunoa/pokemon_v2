@@ -44,7 +44,7 @@ export default function BillingPage() {
     await refreshProfile();
   };
 
-  const handlePlanCheckout = async (planId: PublicPlanId) => {
+  const handlePlanCheckout = async (planId: PublicPlanId, stripePriceId?: string) => {
     if (!isSignedIn) {
       alert('ログインが必要です');
       return;
@@ -52,18 +52,26 @@ export default function BillingPage() {
     setIsProcessing(`plan:${planId}`);
     setMessage('');
     try {
-      const res = await fetch('/api/billing/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'plan', planId }) });
+      const res = await fetch('/api/billing/checkout', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ kind: 'plan', planId, priceId: stripePriceId || '' }) 
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error ?? 'checkout failed');
+      
       if (data.mode === 'redirect' && data.url) {
         window.location.href = data.url;
         return;
       }
-      await updateProfileForMockPlan(planId);
-      setMessage(`${PUBLIC_PLANS.find((p) => p.id === planId)?.name ?? planId} プランを反映しました。`);
-    } catch (err) {
+      
+      if (data.mode === 'mock_update') {
+        await updateProfileForMockPlan(planId);
+        setMessage(`${PUBLIC_PLANS.find((p) => p.id === planId)?.name ?? planId} プランを反映しました。(Mock)`);
+      }
+    } catch (err: any) {
       console.error(err);
-      alert('プラン更新に失敗しました');
+      setMessage(`失敗: ${err.message}`);
     } finally {
       setIsProcessing(null);
     }
@@ -125,7 +133,7 @@ export default function BillingPage() {
                 <div className="mt-4 text-3xl font-black">¥{plan.monthlyPriceJpy.toLocaleString()}<span className="ml-1 text-sm font-bold text-slate-400">/月</span></div>
                 <p className="mt-3 text-sm text-slate-300">{plan.description}</p>
                 <ul className="mt-4 space-y-2 text-sm text-slate-200">{plan.features.map((feature) => <li key={feature}>✦ {feature}</li>)}</ul>
-                <button onClick={() => handlePlanCheckout(plan.id)} disabled={isLoadingProfile || isCurrent || isProcessing !== null} className={`mt-6 w-full rounded-2xl px-4 py-3 text-sm font-black transition ${isCurrent ? 'bg-slate-800 text-slate-500' : 'bg-white text-slate-950 hover:bg-slate-200'} disabled:cursor-not-allowed disabled:opacity-60`}>
+                <button onClick={() => handlePlanCheckout(plan.id, plan.stripePriceId)} disabled={isLoadingProfile || isCurrent || isProcessing !== null} className={`mt-6 w-full rounded-2xl px-4 py-3 text-sm font-black transition ${isCurrent ? 'bg-slate-800 text-slate-500' : 'bg-white text-slate-950 hover:bg-slate-200'} disabled:cursor-not-allowed disabled:opacity-60`}>
                   {isCurrent ? '現在のプラン' : isProcessing === `plan:${plan.id}` ? '処理中...' : `${plan.name}へ進む`}
                 </button>
               </article>

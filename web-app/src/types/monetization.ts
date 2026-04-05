@@ -24,6 +24,7 @@ export interface PublicPlanDefinition {
   description: string;
   features: string[];
   recommended?: boolean;
+  stripePriceId?: string;
 }
 
 export interface AddOnDefinition {

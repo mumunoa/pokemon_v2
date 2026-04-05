@@ -13,42 +13,10 @@ export const UpgradePrompt: React.FC<Props> = ({ isOpen, onClose }) => {
 
     if (!isOpen) return null;
 
-    const handleMockUpgrade = async () => {
-        if (!isSignedIn) {
-            alert('ログインが必要です');
-            return;
-        }
-
+    const handleUpgradeRedirect = () => {
         setIsProcessing(true);
-
-        try {
-            const token = await getToken({ template: 'supabase' });
-            if (!token) throw new Error('Auth token not found');
-
-            const supabaseClient = createSupabaseClient(token);
-            if (!supabaseClient) throw new Error('Supabase client error');
-
-            // Simulate "Checkout" delay
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
-            const { error } = await supabaseClient
-                .from('users')
-                .update({
-                    plan_type: 'pro',
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', profile?.id);
-
-            if (error) throw error;
-
-            alert('プロプランへアップグレードしました！(Mock)');
-            window.location.reload();
-        } catch (err) {
-            console.error(err);
-            alert('アップグレードに失敗しました');
-        } finally {
-            setIsProcessing(false);
-        }
+        // Redirect to central billing page
+        window.location.href = '/billing';
     };
 
 
@@ -102,14 +70,14 @@ export const UpgradePrompt: React.FC<Props> = ({ isOpen, onClose }) => {
                         <button 
                             disabled={isProcessing}
                             className={`w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black py-4 rounded-2xl shadow-xl shadow-purple-500/20 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2`}
-                            onClick={handleMockUpgrade}
+                            onClick={handleUpgradeRedirect}
                         >
                             {isProcessing ? (
                                 <>
                                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                                     処理中...
                                 </>
-                            ) : '初月無料で Pro を試す'}
+                            ) : 'お得なキャンペーンを確認する'}
                         </button>
                         
                         <button 

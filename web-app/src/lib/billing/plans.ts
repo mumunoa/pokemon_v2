@@ -12,22 +12,24 @@ export const PUBLIC_PLANS: PublicPlanDefinition[] = [
     name: 'Free',
     monthlyPriceJpy: 0,
     description: '無料で一人回しとAI診断を試せる入口プラン',
-    features: ['1日3回までのAI分析', '広告付き', '基本診断のみ'],
+    features: ['1日3回までのAI分析', '広告表示', '基本診断のみ'],
   },
   {
     id: 'pro',
     name: 'Pro',
-    monthlyPriceJpy: 980,
-    description: '本格的に勝ちを目指すプレイヤー向け',
-    features: ['高度なAI分析', '広告なし', '詳細理由の表示'],
+    monthlyPriceJpy: 480, // キャンペーン価格を設定
+    description: '【リリース記念】高度な分析とアドバイスをお手軽価格で',
+    features: ['高度なAI分析（詳細な理由解説）', '広告なし', '相手の手札推測・リスク予測', '全てのカード背面に公式画像を使用'],
     recommended: true,
+    stripePriceId: 'price_1TIl4V3vreTdjwcYYWyotzTF', // 480円のID
   },
   {
     id: 'elite',
     name: 'Elite',
-    monthlyPriceJpy: 1980,
-    description: '競技シーンで頂点を目指すエリート向け',
-    features: ['高度分析', '無制限AI分析', 'ログ巻き戻し', '将来の優先推論枠'],
+    monthlyPriceJpy: 1480,
+    description: '競技シーンで頂点を目指すエリート向け、無制限の分析環境',
+    features: ['高度分析が無制限', '全AI人格が使い放題', '先行アップデートへのアクセス', 'ログ高速巻き戻し'],
+    stripePriceId: 'price_1TIkwq3vreTdjwcYk8DtHmFo',
   },
 ];
 
