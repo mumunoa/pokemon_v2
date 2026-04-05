@@ -925,9 +925,9 @@ export const Arena: React.FC = () => {
         const benchSlots = isAreaZeroActive ? [1, 2, 3, 4, 5, 6, 7, 8] : [1, 2, 3, 4, 5];
 
         return (
-            <div className={`field ${playerId}-field relative flex flex-col px-2 py-1 overflow-visible ${isOpponent ? 'rotate-180' : ''}`} style={{ flex: isOpponent ? undefined : 'var(--field-f-self)', minHeight: 0 }}>
+            <div className={`field ${playerId}-field relative flex flex-col px-2 py-1 overflow-visible ${(isDrawing || isReturning || isShuffling) ? 'z-[9000]' : 'z-10'} ${isOpponent ? 'rotate-180' : ''}`} style={{ flex: isOpponent ? undefined : 'var(--field-f-self)', minHeight: 0 }}>
                 <div style={isOpponent ? { height: 'calc(var(--spacer-f-top) * 1vh)' } : { flex: 'var(--spacer-f-top)' }} />
-                <div className={`active-row flex justify-center items-center w-full max-w-4xl mx-auto gap-[var(--card-gap)] flex-shrink-0 ${isOpponent ? 'scale-[var(--row-s-opp-active)] origin-center' : 'scale-[var(--row-s-self-active)] origin-bottom'}`} style={{ height: `calc(var(--card-h) * ${isOpponent ? 'var(--row-s-opp-active)' : 'var(--row-s-self-active)'})` }}>
+                <div className={`active-row flex justify-center items-center w-full max-w-4xl mx-auto gap-[var(--card-gap)] flex-shrink-0 relative ${(isDrawing || isReturning || isShuffling) ? 'z-[9000]' : 'z-auto'} ${isOpponent ? 'scale-[var(--row-s-opp-active)] origin-center' : 'scale-[var(--row-s-self-active)] origin-bottom'}`} style={{ height: `calc(var(--card-h) * ${isOpponent ? 'var(--row-s-opp-active)' : 'var(--row-s-self-active)'})` }}>
 
                     <div className="relative">
                         <Zone id={`${playerId}-prizes` as ZoneType} className="prizes-zone horizontal-prizes relative w-[var(--card-w)] h-[var(--card-h)] border border-dashed border-slate-600 bg-slate-800/50 hover:bg-slate-700/50 transition-colors cursor-pointer" onClick={() => setPopupState({ zone: `${playerId}-prizes` as ZoneType })}>
