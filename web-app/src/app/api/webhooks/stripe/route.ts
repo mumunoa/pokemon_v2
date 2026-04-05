@@ -38,23 +38,15 @@ export async function POST(req: NextRequest) {
       const planId = session.metadata?.planId as 'pro' | 'elite' | 'free';
 
       if (clerkUserId && planId) {
-        console.log(`Fulfilling purchase for Clerk User: ${clerkUserId}, Plan: ${planId}`);
-        
+        console.log(`[Webhook] Fulfilling purchase: ${clerkUserId}, Plan: ${planId}`);
         const adminSupabase = createAdminClient();
         if (adminSupabase) {
-          const { error } = await adminSupabase
-            .from('users')
-            .update({
-              plan_type: planId,
-              updated_at: new Date().toISOString(),
-              stripe_customer_id: session.customer as string,
-              stripe_subscription_id: session.subscription as string,
-            })
-            .eq('id', clerkUserId); // 'id' column matches Clerk user ID in this table
-
-          if (error) {
-            console.error('Error updating user plan in Supabase:', error);
-          }
+          await adminSupabase.from('users').update({
+            plan_type: planId,
+            updated_at: new Date().toISOString(),
+            stripe_customer_id: session.customer as string,
+            stripe_subscription_id: session.subscription as string,
+          }).eq('id', clerkUserId);
         }
       }
       break;
@@ -63,18 +55,52 @@ export async function POST(req: NextRequest) {
     case 'customer.subscription.deleted':
     case 'customer.subscription.updated': {
       const subscription = event.data.object as Stripe.Subscription;
-      const clerkUserId = subscription.metadata?.clerkUserId;
+      const stripeCustomerId = subscription.customer as string;
+      let clerkUserId = subscription.metadata?.clerkUserId;
       
-      // If subscription canceled (status is 'canceled'), revert to free
-      if (subscription.status === 'canceled' && clerkUserId) {
-        const adminSupabase = createAdminClient();
-        if (adminSupabase) {
-          await adminSupabase
-            .from('users')
-            .update({ plan_type: 'free', updated_at: new Date().toISOString() })
-            .eq('id', clerkUserId);
+      const adminSupabase = createAdminClient();
+      if (!adminSupabase) break;
+
+      // メタデータにない場合、顧客IDからユーザーを特定
+      if (!clerkUserId) {
+        const { data: user } = await adminSupabase
+          .from('users')
+          .select('id')
+          .eq('stripe_customer_id', stripeCustomerId)
+          .single();
+        clerkUserId = user?.id;
+      }
+
+      if (!clerkUserId) {
+        console.warn(`[Webhook] User not found for customer: ${stripeCustomerId}`);
+        break;
+      }
+
+      // プラン判定ロジック
+      let newPlanId: 'free' | 'pro' | 'elite' = 'free';
+      const status = subscription.status;
+      const isActive = status === 'active' || status === 'trialing';
+
+      if (isActive) {
+        const priceId = subscription.items.data[0]?.price.id;
+        const { PUBLIC_PLANS } = await import('@/lib/billing/plans');
+        const plan = PUBLIC_PLANS.find(p => p.stripePriceId === priceId);
+        if (plan) {
+          newPlanId = plan.id as 'pro' | 'elite';
         }
       }
+
+      console.log(`[Webhook] Updating plan for ${clerkUserId}: ${newPlanId} (status: ${status})`);
+
+      await adminSupabase
+        .from('users')
+        .update({ 
+          plan_type: newPlanId, 
+          updated_at: new Date().toISOString(),
+          stripe_subscription_id: subscription.id
+        })
+        .eq('id', clerkUserId);
+      
       break;
     }
 
