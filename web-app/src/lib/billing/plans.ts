@@ -6,6 +6,15 @@ import type {
   UserEntitlementSnapshot,
 } from '@/types/monetization';
 
+export const STRIPE_PRICE_TO_PLAN: Record<string, 'pro' | 'elite'> = {
+  // --- Pro プラン ---
+  'price_1TItAmKijbObeM6VVUSzLCKU': 'pro', // 480円 (リリース記念)
+  'price_1TItAnKijbObeM6VCsvA6aDt': 'pro', // 980円 (通常価格)
+
+  // --- Elite プラン ---
+  'price_1TItAmKijbObeM6V8Sd04fMO': 'elite', // 1480円
+};
+
 export const PUBLIC_PLANS: PublicPlanDefinition[] = [
   {
     id: 'free',
@@ -21,8 +30,7 @@ export const PUBLIC_PLANS: PublicPlanDefinition[] = [
     description: '【リリース記念】高度な分析とアドバイスをお手軽価格で',
     features: ['高度なAI分析（詳細な理由解説）', '広告なし', '相手の手札推測・リスク予測', '全てのカード背面に公式画像を使用'],
     recommended: true,
-    stripePriceId: 'price_1TItAmKijbObeM6VVUSzLCKU', // キャンペーン価格 (480円)
-    // stripePriceId: 'price_1TItAnKijbObeM6VCsvA6aDt', // 通常価格 (980円) に切り替える場合はこちらを使用
+    stripePriceId: 'price_1TItAmKijbObeM6VVUSzLCKU', // 現在の UI に表示する ID
   },
   {
     id: 'elite',
@@ -30,7 +38,7 @@ export const PUBLIC_PLANS: PublicPlanDefinition[] = [
     monthlyPriceJpy: 1480,
     description: '競技シーンで頂点を目指すエリート向け、無制限の分析環境',
     features: ['高度分析が無制限', '全AI人格が使い放題', '先行アップデートへのアクセス', 'ログ高速巻き戻し'],
-    stripePriceId: 'price_1TItAmKijbObeM6V8Sd04fMO', // 本番用 1480円
+    stripePriceId: 'price_1TItAmKijbObeM6V8Sd04fMO',
   },
 ];
 

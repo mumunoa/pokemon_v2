@@ -83,10 +83,10 @@ export async function POST(req: NextRequest) {
 
       if (isActive) {
         const priceId = subscription.items.data[0]?.price.id;
-        const { PUBLIC_PLANS } = await import('@/lib/billing/plans');
-        const plan = PUBLIC_PLANS.find(p => p.stripePriceId === priceId);
-        if (plan) {
-          newPlanId = plan.id as 'pro' | 'elite';
+        const { STRIPE_PRICE_TO_PLAN } = await import('@/lib/billing/plans');
+        
+        if (priceId && STRIPE_PRICE_TO_PLAN[priceId]) {
+          newPlanId = STRIPE_PRICE_TO_PLAN[priceId] as 'pro' | 'elite';
         }
       }
 
