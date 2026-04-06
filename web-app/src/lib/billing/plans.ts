@@ -28,7 +28,7 @@ export const PUBLIC_PLANS: PublicPlanDefinition[] = [
     name: 'Pro',
     monthlyPriceJpy: 480,
     description: '【リリース記念】高度な分析とアドバイスをお手軽価格で',
-    features: ['高度なAI分析（詳細な理由解説）', '広告なし', '相手の手札推測・リスク予測', '全てのカード背面に公式画像を使用'],
+    features: ['高度なAI分析（詳細な理由解説）', '広告なし', '相手の手札推測・リスク予測'],
     recommended: true,
     stripePriceId: 'price_1TItAmKijbObeM6VVUSzLCKU', // 現在の UI に表示する ID
   },
@@ -37,7 +37,7 @@ export const PUBLIC_PLANS: PublicPlanDefinition[] = [
     name: 'Elite',
     monthlyPriceJpy: 1480,
     description: '競技シーンで頂点を目指すエリート向け、無制限の分析環境',
-    features: ['高度分析が無制限', '全AI人格が使い放題', '先行アップデートへのアクセス', 'ログ高速巻き戻し'],
+    features: ['高度分析が無制限', '全AI人格が使い放題', 'ログ高速巻き戻し（ターンジャンプ）', '先行アップデートへのアクセス'],
     stripePriceId: 'price_1TItAmKijbObeM6V8Sd04fMO',
   },
 ];

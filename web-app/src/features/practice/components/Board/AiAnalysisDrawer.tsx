@@ -169,12 +169,13 @@ export const AiAnalysisDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                             </h4>
                             {commentary.bestActions.map((action: any, idx: number) => (
                                 <div key={idx} className="bg-gradient-to-br from-indigo-900/40 to-slate-900 border border-indigo-500/40 rounded-xl p-4 shadow-xl overflow-hidden relative">
-                                    {/* 全ユーザーに対して「実装準備中」のスモーク効果を適用 */}
+                                    {/* 「実装準備中」のオーバーレイを一時的に無効化
                                     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-20">
                                         <div className="px-4 py-2 bg-indigo-500/20 rounded-lg border border-indigo-500/30 text-xs font-black text-indigo-300 shadow-xl">
                                             実装準備中
                                         </div>
                                     </div>
+                                    */}
 
                                     <div className="absolute top-0 right-0 p-2 opacity-10"><svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg></div>
                                     <div className="text-indigo-200 font-bold text-sm mb-1">{action.title}</div>
