@@ -96,7 +96,7 @@ export function toCoachGameStateFromStore(state: GameState) {
 }
 
 
-export function runProfessionalCoachAnalysis(state: GameState) {
+export async function runProfessionalCoachAnalysis(state: GameState) {
   const profiles = buildProfilesFromCurrentState(state);
   const coachState = toCoachGameStateFromStore(state);
 
@@ -108,9 +108,60 @@ export function runProfessionalCoachAnalysis(state: GameState) {
     kinds: card.kinds,
   }));
 
-  return buildProfessionalCoachResult({
+  // 1. ローカルエンジンによる基礎分析 (候補手生成など)
+  const baseResult = buildProfessionalCoachResult({
     state: coachState,
     profiles,
     deckForOpeningSimulation,
   });
+
+  // 2. AI (Claude) による深層分析の実行
+  try {
+    const handNames = coachState.players.player1.hand.map(c => c.name);
+    // types.ts で拡張した CoachBoardFeatures に合わせてデータを抽出
+    const features = {
+        ...baseResult, // 既存の phase や prizes 情報など
+        ownHandNames: handNames,
+        ownBenchNames: coachState.players.player1.bench.map(c => c.name),
+        ownTrashNames: coachState.players.player1.discard.map(c => c.name),
+        oppActiveName: coachState.players.player2.active?.name,
+        oppBenchNames: coachState.players.player2.bench.map(c => c.name),
+        totalEnergiesInPlay: (coachState.players.player1.active?.attachedEnergyIds?.length ?? 0) + 
+                          coachState.players.player1.bench.reduce((acc, p) => acc + (p.attachedEnergyIds?.length ?? 0), 0)
+    };
+
+    const response = await fetch('/api/ai/pro-coach', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        features,
+        candidates: baseResult.alternatives.map(a => ({
+            actionType: a.action.kind,
+            cardName: a.cardName,
+            description: a.line
+        })),
+        plan_type: 'pro' // TODO: ユーザープランに応じて切り替え
+      })
+    });
+
+    if (response.ok) {
+      const aiInsight = await response.json();
+      
+      // AI の構造化データをマージ
+      return {
+        ...baseResult,
+        macroStrategy: aiInsight.macroStrategy || baseResult.macroStrategy,
+        opponentThreat: aiInsight.opponentThreat || baseResult.opponentThreat,
+        keyCards: aiInsight.keyCards || baseResult.keyCards,
+        analysis: aiInsight.analysis || baseResult.analysis,
+        simulationInsight: aiInsight.simulationInsight,
+        aiEnriched: true
+      };
+    }
+  } catch (error) {
+    console.error('AI Strategy Enrichment Failed:', error);
+  }
+
+  // API 失敗時はローカルの基礎分析結果を返す
+  return baseResult;
 }

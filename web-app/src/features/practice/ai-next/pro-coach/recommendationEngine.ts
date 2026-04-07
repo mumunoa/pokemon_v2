@@ -130,6 +130,11 @@ function actionLineText(action: LegalAction): string {
 }
 
 
+import { planTurnGoal } from "./policy/goalPlanner";
+import { planPrizePath } from "./policy/prizePathPlanner";
+import { evaluateRisk } from "./policy/riskEvaluator";
+import { sortActionsByProfessionalPriority } from "./policy/sequencePlanner";
+
 export function buildProfessionalCoachResult(params: {
   state: CoachGameState;
   profiles: CardRoleProfile[];
@@ -139,7 +144,21 @@ export function buildProfessionalCoachResult(params: {
   const handNames = new Set(params.state.players.player1.hand.map((c) => c.name));
   const handProfiles = params.profiles.filter((p) => handNames.has(p.cardName));
   const features = extractBoardFeatures(params.state, handProfiles);
-  const actions = generateLegalActions(params.state, params.profiles);
+  
+  // 1. ゴール設定 (Blueprint Step 2)
+  const goal = planTurnGoal(features, params.state);
+
+  // 2. 勝ち筋（サイドプラン）分解 (Blueprint Step 3/4)
+  const prizePlan = planPrizePath(features, params.state, params.profiles);
+
+  // 3. リスク評価 (Blueprint Step 8)
+  const risk = evaluateRisk(features, params.state);
+
+  // 4. 合法手生成 & 分岐生成
+  const rawActions = generateLegalActions(params.state, params.profiles);
+  
+  // 5. 行動順序最適化 (Blueprint Step 9/10)
+  const actions = sortActionsByProfessionalPriority(rawActions);
 
   // Effect Context の作成
   const ctx: EffectContext = {
@@ -171,7 +190,7 @@ export function buildProfessionalCoachResult(params: {
     let specReasons: string[] = [];
     
     if (spec && (!spec.canPlay || spec.canPlay(ctx))) {
-      priorityBonus = spec.priorityBase - 40; // 基礎値40からの差分をボーナスとする
+      priorityBonus = spec.priorityBase - 40; 
       specReasons = spec.explainWhyNow?.(ctx) ?? [];
     }
     
@@ -220,32 +239,46 @@ export function buildProfessionalCoachResult(params: {
   return {
     phase: features.phase,
     archetype,
-    boardStateSummary: `${features.phase === 'opening' ? '序盤' : features.phase === 'midgame' ? '中盤' : '終盤'} / ${formatArchetype(archetype)}型 / 展開要求=${features.setupNeed} / ドロー要求=${features.drawNeed}`,
-    thoughts: thoughts({
-      phase: features.phase,
-      ownPrizesRemaining: features.ownPrizesRemaining,
-      oppPrizesRemaining: features.oppPrizesRemaining,
-      bestLineText: bestAction ? bestAction.line : "有力手なし",
-    }),
+    boardStateSummary: `${features.phase === 'opening' ? '序盤' : features.phase === 'midgame' ? '中盤' : '終盤'} / ${formatArchetype(archetype)}型 / ゴール=${goal.type}`,
+    thoughts: [
+      `【ゴール】${goal.primaryReason}`,
+      `【サイドプラン】${prizePlan.pattern.join('-')} ルートの完遂を目指します。`,
+      `【リスク評価】総合スコア ${risk.totalRiskScore}/100。負け筋に注意を払います。`,
+      ...thoughts({
+        phase: features.phase,
+        ownPrizesRemaining: features.ownPrizesRemaining,
+        oppPrizesRemaining: features.oppPrizesRemaining,
+        bestLineText: bestAction ? bestAction.line : "有力手なし",
+      }).slice(1) // 既存の思考の1段目（マクロ）をゴール説明で上書き
+    ],
     bestAction,
     alternatives: mappedLines.slice(1, 6),
     keyCards: keyCards(handProfiles),
     openingMetrics,
     handProfiles,
-    analysis: `現在の局面は${features.phase}です。${bestAction ? bestAction.line : '有力な候補が見つかりませんでした'}。`,
+    analysis: `現在の役割は「${goal.type}」です。${goal.primaryReason} ${bestAction ? bestAction.line : '有力な候補が見つかりませんでした'}。`,
     timestamp: new Date().toISOString(),
-    version: "2.2.0",
+    version: "2.3.0",
     opponentThreat: {
       expectedMaxDamage: features.tempoNeed > 50 ? 120 : 30, 
       requiredCards: Math.floor(features.drawNeed / 20) + 1,
-      lethalThreat: features.safetyNeed > 60,
-      disruptValue: features.gustNeed > 50 ? 20 : 5
+      lethalThreat: features.safetyNeed > 70,
+      disruptValue: features.gustNeed > 50 ? 20 : 5,
+      probableHiddenCards: []
     },
     macroStrategy: {
-      activePlan: archetype.includes("control") ? "control_lo" : "2-2-2_route",
-      estimatedTurnsToWin: Math.min(6, features.ownPrizesRemaining),
+      activePlan: prizePlan.id,
+      estimatedTurnsToWin: prizePlan.estimatedTurnsToFinish,
       opponentEstimatedTurnsToWin: Math.min(6, features.oppPrizesRemaining),
-      description: `【${archetype.toUpperCase()}戦略】サイド残り ${features.ownPrizesRemaining}-${features.oppPrizesRemaining} です。現在のリソース（手札 ${params.state.players.player1.hand.length}枚）を考慮し、${features.phase === "opening" ? "盤面展開" : "サイド取得"}を優先してください。`
+      description: `プロのサイドプラン: [${prizePlan.pattern.join(", ")}]。${prizePlan.successProbability}% の確率で完遂可能です。`
+    },
+    goal,
+    prizePlan,
+    risk,
+    probability: {
+        currentTurnSuccessRate: 100 - risk.totalRiskScore,
+        nextTurnContinuityRate: 100 - risk.handCollapseRisk,
+        twoTurnPlanRate: prizePlan.successProbability
     }
   } as any;
 }

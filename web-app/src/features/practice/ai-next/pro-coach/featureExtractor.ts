@@ -95,6 +95,10 @@ export function extractBoardFeatures(state: CoachGameState, handProfiles: CardRo
   const safetyNeed = ownTwoPrizeExposed ? 72 : 28;
   const followupNeed = phase === "opening" ? (ownBenchCount < 3 ? 60 : 30) : 20;
 
+  const totalEnergiesInPlay =
+    (me.active?.attachedEnergyIds?.length ?? 0) +
+    me.bench.reduce((acc, p) => acc + (p.attachedEnergyIds?.length ?? 0), 0);
+
   return {
     phase,
     ownPrizesRemaining: 6 - me.prizesTaken,
@@ -123,5 +127,12 @@ export function extractBoardFeatures(state: CoachGameState, handProfiles: CardRo
     recoveryNeed,
     safetyNeed,
     followupNeed,
+    // 追加: プロフェッショナル・コンテキスト
+    ownHandNames: me.hand.map(c => c.name),
+    ownBenchNames: me.bench.map(c => c.name),
+    ownTrashNames: me.discard.map(c => c.name),
+    oppActiveName: opp.active?.name,
+    oppBenchNames: opp.bench.map(c => c.name),
+    totalEnergiesInPlay,
   };
 }

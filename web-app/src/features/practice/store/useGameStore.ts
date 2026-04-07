@@ -940,7 +940,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         try {
             const { runProfessionalCoachAnalysis } = await import('./useGameStore.proCoach.integration');
             set({ coachLoading: true });
-            const result = runProfessionalCoachAnalysis(get());
+            const result = await runProfessionalCoachAnalysis(get());
             set({ coachResult: result });
         } catch (e) {
             console.error('Coach analysis failed:', e);
