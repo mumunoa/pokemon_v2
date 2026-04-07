@@ -3,6 +3,10 @@ import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://mumunoa.com"),
+  alternates: {
+    canonical: "/",
+  },
   title: "Mumunoa TCG Lab | ポケカAI分析・一人回しコーチングツール",
   description: "Mumunoa TCG Labは、AIがあなたのプレイを分析し、事故率チェックや次の一手をコーチングする最高峰のポケカ練習ツールです。",
   keywords: ["ポケカ", "ポケモンカード", "一人回し", "シミュレーター", "AI分析", "コーチング"],
@@ -13,7 +17,7 @@ export const metadata: Metadata = {
     siteName: "Mumunoa TCG Lab",
     images: [
       {
-        url: "https://mumunoa.com/assets/images/ogp_main.png",
+        url: "/assets/images/ogp_main.png",
         width: 1200,
         height: 630,
         alt: "Mumunoa TCG Lab Logo",
@@ -26,7 +30,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Mumunoa TCG Lab | ポケカAI分析・一人回しコーチングツール",
     description: "AIがあなたのプレイを分析し、事故率チェックや次の一手をコーチングする最高峰のポケカ練習ツールです。",
-    images: ["https://mumunoa.com/assets/images/ogp_main.png"],
+    images: ["/assets/images/ogp_main.png"],
   },
 };
 
