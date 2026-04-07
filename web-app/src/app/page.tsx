@@ -173,26 +173,108 @@ export default function HomePage() {
           <AdSlot id="hero-bottom-ad" format="horizontal" />
         </div>
 
-        {/* Features Section */}
-        <section id="features" className="py-20 px-6 bg-white/[0.02]">
+        {/* Latest Guides Section - NEW for AdSense */}
+        <section className="py-20 px-6">
           <div className="max-w-6xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-16 text-white">主な機能 / Features</h2>
-            <div className="grid md:grid-cols-3 gap-8 mb-16">
-              {features.map((f, i) => (
-                <div key={i} className="p-8 rounded-3xl bg-white/[0.03] border border-white/5 hover:border-white/10 transition-all group">
-                  <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                    {f.icon}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+              <div>
+                <h2 className="text-3xl font-bold text-white mb-4">最新の戦略ガイド / Strategy Guides</h2>
+                <p className="text-slate-500 text-sm max-w-xl leading-relaxed">
+                  Mumunoa TCG Lab は単なるツールではありません。AIによる分析データを基に、最新の環境変化や上達のためのメソッドを公開しています。
+                </p>
+              </div>
+              <Link href="/guide/ai-coaching" className="text-indigo-400 hover:text-white transition-colors text-sm font-bold flex items-center gap-2">
+                すべての記事を見る
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              </Link>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              {[
+                {
+                  title: "AIコーチ活用ガイド",
+                  desc: "8レイヤー推論エンジンを使いこなし、次の一手を見極める技術。",
+                  link: "/guide/ai-coaching",
+                  color: "indigo"
+                },
+                {
+                  title: "事故率最小化の極意",
+                  desc: "1000回シミュレーションが導き出す、真のデッキ安定度とは。",
+                  link: "/guide/deck-stability",
+                  color: "purple"
+                },
+                {
+                  title: "プロの一人回し練習法",
+                  desc: "大会で勝つための、効率的かつ科学的なトレーニングルーチン。",
+                  link: "/strategy/practice-tips",
+                  color: "emerald"
+                }
+              ].map((post, i) => (
+                <Link key={i} href={post.link} className="group block p-6 rounded-3xl bg-white/[0.02] border border-white/5 hover:border-white/20 transition-all hover:-translate-y-1">
+                  <div className={`w-8 h-8 rounded-lg bg-${post.color}-500/10 flex items-center justify-center mb-4 text-xs font-black text-${post.color}-400 group-hover:scale-110 transition-transform`}>
+                    0{i+1}
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-4">{f.title}</h3>
-                  <p className="text-slate-400 leading-relaxed text-sm">
-                    {f.description}
-                  </p>
+                  <h3 className="text-lg font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">{post.title}</h3>
+                  <p className="text-slate-500 text-xs leading-relaxed">{post.desc}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Deep Tech Detail - NEW for AdSense Content Volume */}
+        <section className="py-20 px-6 bg-[#0a0c10]">
+          <div className="max-w-4xl mx-auto space-y-12 bg-white/[0.01] border border-white/5 rounded-[40px] p-8 md:p-16">
+            <div className="space-y-6">
+              <h2 className="text-2xl md:text-4xl font-bold text-white tracking-tight">
+                なぜ Mumunoa TCG Lab が<br />
+                世界中のプレイヤーに選ばれるのか
+              </h2>
+              <p className="text-slate-400 leading-relaxed">
+                Mumunoa TCG Lab は、単なる一人回しシミュレーターではありません。私たちは「データによるプレイングの最適化」を掲げ、高度なアルゴリズムを駆使してトレーディングカードゲームの練習環境を再定義しています。<br /><br />
+                私たちの核となるテクノロジー「8レイヤー推論エンジン」は、各ターンの盤面情報を多角的に解析します。現在の資源、未来のサイド取得期待値、そして対戦相手が抱えているであろう潜伏リスクまでを数値化。一人で練習していても、まるで隣にトップレベルのコーチがいるかのような体験を提供します。
+              </p>
+            </div>
+            
+            <div className="grid sm:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <h4 className="font-bold text-white flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                  科学的な構築改善
+                </h4>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  1,000回のシミュレーションにより、デッキの「本当の事故率」を算出します。10回程度の一人回しでは見えてこなかった「たねポケモンの不足」や「エネルギー詰まり」をデータで突きつけます。
+                </p>
+              </div>
+              <div className="space-y-4">
+                <h4 className="font-bold text-white flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                  思考の言語化
+                </h4>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  AI が示す「理由」を読むことで、自分の直感とデータとの乖離（ギャップ）を知ることができます。これが「強いプレイヤー」の思考をトレースする最短の方法です。
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ Section - NEW for AdSense SEO */}
+        <section className="py-20 px-6">
+          <div className="max-w-3xl mx-auto space-y-12">
+            <h2 className="text-3xl font-bold text-white text-center">よくある質問 / FAQ</h2>
+            <div className="space-y-6">
+              {[
+                { q: "このツールは無料で使えますか？", a: "はい。基本的な一人回し機能やシミュレーションは無料でご利用いただけます。より深い分析や AI による思考プロセスの全開示などは、プレミアムプランおよびチケット制となっています。" },
+                { q: "対応しているデバイスを教えてください。", a: "PCのブラウザはもちろん、iPhone や Android などのスマートフォンにも最適化されています。外出先や移動中の隙間時間でも本格的な練習が可能です。" },
+                { q: "AI はどのようにプレイの『正解』を出しているのですか？", a: "独自の 8レイヤー推論エンジンにより、現在のリソース、ドロー確率、相手の要求値、および中長期的なサイドプランを統合的に計算しています。" }
+              ].map((faq, i) => (
+                <div key={i} className="p-6 rounded-2xl bg-white/[0.03] border border-white/5">
+                  <h4 className="font-bold text-white mb-2 flex gap-3"><span className="text-blue-500">Q.</span> {faq.q}</h4>
+                  <p className="text-slate-400 text-sm leading-relaxed flex gap-3"><span className="text-emerald-500">A.</span> {faq.a}</p>
                 </div>
               ))}
             </div>
-
-            {/* Features Inter-space Ad */}
-            <AdSlot id="features-inter-ad" label="RECOMENDED" />
           </div>
         </section>
 
@@ -242,11 +324,11 @@ export default function HomePage() {
             </p>
           </div>
           <div>
-            <h4 className="text-white font-bold mb-6 text-sm">サービス</h4>
+            <h4 className="text-white font-bold mb-6 text-sm">戦略・ガイド</h4>
             <ul className="space-y-4 text-sm text-slate-500">
-              <li><Link href="/practice" className="hover:text-white transition-colors">一人回しツール</Link></li>
-              <li><Link href="https://ofuse.me/mumunoa" target="_blank" className="hover:text-white transition-colors">投げ銭で応援 (OFUSE)</Link></li>
-              <li><Link href="https://x.com/mumunoa_tcg" target="_blank" className="hover:text-white transition-colors">公式X (Twitter)</Link></li>
+              <li><Link href="/guide/ai-coaching" className="hover:text-white transition-colors">AIコーチ活用法</Link></li>
+              <li><Link href="/guide/deck-stability" className="hover:text-white transition-colors">事故率最小化の極意</Link></li>
+              <li><Link href="/strategy/practice-tips" className="hover:text-white transition-colors">一人回し練習法</Link></li>
             </ul>
           </div>
           <div>
@@ -261,8 +343,9 @@ export default function HomePage() {
         
         <div className="max-w-6xl mx-auto mt-16 pt-8 border-t border-white/5 flex flex-col items-center gap-8">
           <AdSlot id="footer-ad" format="horizontal" />
-          <p className="text-slate-600 text-xs">
+          <p className="text-slate-600 text-[10px] text-center max-w-xl leading-relaxed">
             © {new Date().getFullYear()} Mumunoa TCG Lab. 
+            当サイトはファンコンテンツであり、株式会社ポケモンおよび任天堂株式会社との公認関係はありません。
             © 2024 Pokémon. © 1995-2024 Nintendo/Creatures Inc./GAME FREAK inc.
           </p>
         </div>

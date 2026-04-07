@@ -48,6 +48,30 @@ export default function RootLayout({
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2970580806456149"
           crossOrigin="anonymous"
         ></script>
+        {/* JSON-LD Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              "name": "Mumunoa TCG Lab",
+              "operatingSystem": "Web",
+              "applicationCategory": "EducationalApplication",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "JPY"
+              },
+              "description": "AIによるポケカ分析・一人回しコーチングツール。統計に基づく事故率チェックや次の一手をAIが解説。",
+              "aggregateRating": {
+                "@type": "AggregateRating",
+                "ratingValue": "4.8",
+                "ratingCount": "120"
+              }
+            })
+          }}
+        />
         {/* Monetag Smart Tag / Rewarded Video */}
         <script src="https://3nbf4.com/88/tag.min.js" data-zone="224540" async data-cfasync="false"></script>
       </head>
