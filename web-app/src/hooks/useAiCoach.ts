@@ -1,9 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useGameStore } from '@/features/practice/store/useGameStore';
-import { normalizeGameState } from '@/features/practice/ai/core/normalizeGameState';
-import { extractFeatures } from '@/features/practice/ai/features/extractFeatures';
-import { hybridSearch } from '@/features/practice/ai/search';
-import { buildCoachCommentary } from '@/features/practice/ai/explain/buildCoachCommentary';
+import { buildProfessionalCoachResult } from '@/features/practice/ai-next/pro-coach/recommendationEngine';
+import { toCoachGameStateFromStore, buildProfilesFromCurrentState } from '@/features/practice/store/useGameStore.proCoach.integration';
 import { CoachCommentary } from '@/features/practice/ai/explain/types';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -40,19 +38,38 @@ export function useAiCoach(isUnlocked: boolean = false) {
     const performInference = async () => {
         setIsThinking(true);
         try {
-            // --- AI思考レイヤーの実行 ---
+            // --- 8レイヤー推論エンジンの実行 ---
             
-            // Layer 1: 正規化
-            const canonicalState = normalizeGameState(gameState);
+            // 下記は GameStore インテグレーションから新エンジンの入力を生成
+            const coachState = toCoachGameStateFromStore(gameState);
+            const profiles = buildProfilesFromCurrentState(gameState);
             
-            // Layer 2: 特徴量抽出
-            const features = extractFeatures(canonicalState);
+            const result = buildProfessionalCoachResult({
+                state: coachState,
+                profiles
+            });
             
-            // Layer 6: 探索エンジン（ハイブリッド検索）実行
-            const searchResult = hybridSearch(canonicalState);
-            
-            // Layer 7: 日本語解説・コーチング生成
-            const commentary = buildCoachCommentary(canonicalState, searchResult);
+            // ProfessionalCoachResult -> CoachCommentary へのマッピング
+            const commentary: CoachCommentary = {
+                mainAdvice: result.analysis,
+                bestActions: result.bestAction ? [{
+                    title: result.bestAction.cardName,
+                    description: result.bestAction.line,
+                    pros: result.bestAction.reasons || [],
+                    cons: [], // 動的計算では Cons は別途算出
+                    score: result.bestAction.score,
+                    strategicValue: result.goal?.type.toUpperCase() || 'SETUP'
+                }] : [],
+                alternatives: (result.alternatives || []).map((alt: any) => ({
+                    title: alt.cardName,
+                    description: alt.line,
+                    pros: alt.reasons || [],
+                    cons: [],
+                    score: alt.score,
+                    strategicValue: 'SETUP'
+                })),
+                gameContext: result.boardStateSummary
+            };
 
             setLatestAnalysis(commentary);
         } catch (error) {

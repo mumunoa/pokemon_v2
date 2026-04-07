@@ -134,6 +134,7 @@ import { planTurnGoal } from "./policy/goalPlanner";
 import { planPrizePath } from "./policy/prizePathPlanner";
 import { evaluateRisk } from "./policy/riskEvaluator";
 import { sortActionsByProfessionalPriority } from "./policy/sequencePlanner";
+import { evaluateOpponentThreat } from "./policy/opponentModel";
 
 export function buildProfessionalCoachResult(params: {
   state: CoachGameState;
@@ -145,19 +146,22 @@ export function buildProfessionalCoachResult(params: {
   const handProfiles = params.profiles.filter((p) => handNames.has(p.cardName));
   const features = extractBoardFeatures(params.state, handProfiles);
   
-  // 1. ゴール設定 (Blueprint Step 2)
+  // 1. ゴール判定 (Blueprint Step 2)
   const goal = planTurnGoal(features, params.state);
 
-  // 2. 勝ち筋（サイドプラン）分解 (Blueprint Step 3/4)
+  // 2. サイドプラン算出 (Blueprint Step 3/4)
   const prizePlan = planPrizePath(features, params.state, params.profiles);
 
-  // 3. リスク評価 (Blueprint Step 8)
+  // 3. 相手の脅威分析 (L4: Risk Layer) - ここで動的に計算
+  const opponentThreat = evaluateOpponentThreat(features, params.state);
+
+  // 4. リスク評価 (Blueprint Step 8)
   const risk = evaluateRisk(features, params.state);
 
-  // 4. 合法手生成 & 分岐生成
+  // 5. 合法手生成 & 分岐生成
   const rawActions = generateLegalActions(params.state, params.profiles);
   
-  // 5. 行動順序最適化 (Blueprint Step 9/10)
+  // 6. 行動順序最適化 (Blueprint Step 9/10)
   const actions = sortActionsByProfessionalPriority(rawActions);
 
   // Effect Context の作成
@@ -259,13 +263,7 @@ export function buildProfessionalCoachResult(params: {
     analysis: `現在の役割は「${goal.type}」です。${goal.primaryReason} ${bestAction ? bestAction.line : '有力な候補が見つかりませんでした'}。`,
     timestamp: new Date().toISOString(),
     version: "2.3.0",
-    opponentThreat: {
-      expectedMaxDamage: features.tempoNeed > 50 ? 120 : 30, 
-      requiredCards: Math.floor(features.drawNeed / 20) + 1,
-      lethalThreat: features.safetyNeed > 70,
-      disruptValue: features.gustNeed > 50 ? 20 : 5,
-      probableHiddenCards: []
-    },
+    opponentThreat,
     macroStrategy: {
       activePlan: prizePlan.id,
       estimatedTurnsToWin: prizePlan.estimatedTurnsToFinish,
