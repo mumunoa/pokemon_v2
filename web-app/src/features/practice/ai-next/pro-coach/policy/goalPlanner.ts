@@ -1,74 +1,71 @@
-import type { CoachBoardFeatures, CoachGameState, TurnGoal, TurnGoalType } from "../types";
+import type { CoachBoardFeatures, CoachGameState, TurnGoal } from "../types";
 
-/**
- * blueprint.md 第3章に基づき、このターンの役割（ゴール）を決定する
- */
-export function planTurnGoal(features: CoachBoardFeatures, state: CoachGameState): TurnGoal {
-  const {
-    ownPrizesRemaining,
-    oppPrizesRemaining,
-    activeCanAttack,
-    activeEnergyReady,
-    setupNeed,
-    safetyNeed,
-    tempoNeed,
-    drawNeed,
-  } = features;
+function ownPrizesRemaining(state: CoachGameState): number {
+  return Math.max(0, 6 - state.players.player1.prizesTaken);
+}
 
-  // 1. 詰めターン (Checkmate)
-  // 自分がサイドを1〜2枚取れば勝ちで、攻撃可能な場合
-  if (ownPrizesRemaining <= 2 && activeCanAttack && activeEnergyReady) {
+function oppPrizesRemaining(state: CoachGameState): number {
+  return Math.max(0, 6 - state.players.player2.prizesTaken);
+}
+
+export function planTurnGoal(
+  features: CoachBoardFeatures,
+  state: CoachGameState,
+): TurnGoal {
+  const ownRemain = ownPrizesRemaining(state);
+  const oppRemain = oppPrizesRemaining(state);
+
+  if (ownRemain <= 2 && features.activeCanAttack) {
     return {
       type: "checkmate",
-      primaryReason: "勝ち筋が確定しています。サイドの取り切りを最優先します。",
-      requiredOutcome: ["バトル場のきぜつ", "またはベンチの呼び出し"],
+      primaryReason: "今ターンの攻撃成立がそのまま詰め筋に直結しやすい局面です。",
+      requiredOutcome: ["attack_now", "preserve_followup", "avoid_throwing"],
     };
   }
 
-  // 2. 耐久・妨害要求 (Stall / Disrupt)
-  // 相手のサイドが少なく、リーサル脅威が高い場合
-  if (oppPrizesRemaining <= 2 && safetyNeed > 70) {
+  if (features.safetyNeed >= 75 || (oppRemain <= 2 && !features.activeEnergyReady)) {
     return {
       type: "stall",
-      primaryReason: "相手のリーサルが目前です。負け筋を消し、相手の要求値を上げる動きが必要です。",
-      requiredOutcome: ["HPの高い壁出し", "手札干渉サポート", "エネ破壊等"],
+      primaryReason: "相手の返しが重く、まず負け筋を減らす必要があります。",
+      requiredOutcome: ["reduce_reply", "protect_two_prize", "stabilize_board"],
     };
   }
 
-  // 3. 攻撃成立ターン (Attack)
-  // 盤面が整っており、サイドを先行 or 追いつける状況
-  if (activeCanAttack && activeEnergyReady && tempoNeed > 50) {
-    return {
-      type: "attack",
-      primaryReason: "攻撃体制が整っています。テンポを維持しつつサイドレースを進めます。",
-      requiredOutcome: ["メインアタッカーでの攻撃", "打点補助の適用"],
-    };
-  }
-
-  // 4. 盤面形成ターン (Setup)
-  // たねポケモンが不足している、または進化が必要な序盤中盤
-  if (setupNeed > 60 || drawNeed > 70) {
+  if (features.setupNeed >= 65 || (!features.activeCanAttack && features.ownBenchCount <= 1)) {
     return {
       type: "setup",
-      primaryReason: "盤面の完成度が低いため、このターンは無理な攻撃より展開を優先します。",
-      requiredOutcome: ["たねポケモンの展開", "進化ラインの確保", "ドローソースの起動"],
+      primaryReason: "今ターンは無理に押し込むより、次ターン以降の勝ち筋形成が優先です。",
+      requiredOutcome: ["build_attacker", "secure_bench", "improve_draw_access"],
     };
   }
 
-  // 5. リソース回復ターン (Recover / Stabilize)
-  // 手札が細い、またはエネが枯渇している場合
-  if (drawNeed > 50 || features.recoveryNeed > 60) {
+  if (features.gustNeed >= 70 && features.hasGustInHand) {
+    return {
+      type: "disrupt",
+      primaryReason: "相手の盤面の要所を崩す価値が高いターンです。",
+      requiredOutcome: ["deny_system", "force_bad_active", "distort_prize_trade"],
+    };
+  }
+
+  if (features.recoveryNeed >= 65 && features.hasRecoveryInHand) {
     return {
       type: "recover",
-      primaryReason: "リソースが不足しています。次ターンの継続性を重視した動きを取ります。",
-      requiredOutcome: ["手札更新", "トラッシュからの回収"],
+      primaryReason: "今は盤面の継続性とリソース寿命を戻すべきターンです。",
+      requiredOutcome: ["recover_core_piece", "improve_followup", "avoid_hand_collapse"],
     };
   }
 
-  // 6. デフォルト: 再現性最大化
+  if (features.activeCanAttack && features.activeEnergyReady) {
+    return {
+      type: "attack",
+      primaryReason: "攻撃を通しながら主導権を取れるターンです。",
+      requiredOutcome: ["take_prize_or_force_reply", "maintain_followup"],
+    };
+  }
+
   return {
     type: "stabilize",
-    primaryReason: "明確な危機やチャンスはありません。勝ち筋を維持するための盤面固定を行います。",
-    requiredOutcome: ["エネルギーの先貼り", "盤面圧縮", "山札の確認"],
+    primaryReason: "最大値よりも再現性を取り、次ターンの成功率を上げるターンです。",
+    requiredOutcome: ["increase_consistency", "avoid_overextend", "retain_resources"],
   };
 }

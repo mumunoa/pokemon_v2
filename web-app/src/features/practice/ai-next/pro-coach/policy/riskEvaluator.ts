@@ -1,47 +1,60 @@
 import type { CoachBoardFeatures, CoachGameState, RiskReport } from "../types";
 
-/**
- * blueprint.md 第8章に基づき、現在の負け筋（リスク）を定量化する
- */
-export function evaluateRisk(features: CoachBoardFeatures, state: CoachGameState): RiskReport {
-  const {
-    drawNeed,
-    setupNeed,
-    safetyNeed,
-    tempoNeed,
-    recoveryNeed,
-    ownPrizesRemaining,
-    oppPrizesRemaining
-  } = features;
+function clamp(num: number, min = 0, max = 100): number {
+  return Math.max(min, Math.min(max, num));
+}
 
-  // 1. 手札枯渇リスク
-  // 手札が少なく、ドローソースもない場合に高まる
-  const handCollapseRisk = Math.min(100, (drawNeed * 0.8) + (state.players.player1.hand.length < 3 ? 30 : 0));
+export function evaluateRisk(
+  features: CoachBoardFeatures,
+  state: CoachGameState,
+): RiskReport {
+  const me = state.players.player1;
+  const handCollapseRisk = clamp(
+    (me.hand.length <= 1 ? 48 : me.hand.length <= 3 ? 26 : 10) +
+      (features.hasDrawInHand ? -12 : 8) +
+      (features.hasSearchInHand ? -6 : 4),
+  );
 
-  // 2. 盤面崩壊リスク
-  // 後続がいない、またはバトル場の耐久が不安な場合に高まる
-  const boardCollapseRisk = Math.min(100, (setupNeed * 0.7) + (safetyNeed > 60 ? 40 : 10));
+  const boardCollapseRisk = clamp(
+    (features.ownBenchCount === 0 ? 55 : features.ownBenchCount === 1 ? 34 : 18) +
+      (features.ownTwoPrizeExposed ? 18 : 0) +
+      (features.activeCanAttack ? -8 : 6),
+  );
 
-  // 3. エネ供給停止リスク
-  const energyStallRisk = Math.min(100, (features.activeEnergyNeeded > 0 ? 40 : 0) + (recoveryNeed * 0.5));
+  const energyStallRisk = clamp(
+    (features.activeEnergyReady ? 12 : 36) +
+      Math.max(0, features.activeEnergyNeeded - 1) * 12 +
+      (state.players.player1.energyAttachedThisTurn ? 8 : 0),
+  );
 
-  // 4. サイドレース敗北リスク
-  // 相手の方が勝ちに近い場合
-  const prizeRaceLossRisk = Math.min(100, (oppPrizesRemaining < ownPrizesRemaining ? 50 : 0) + (safetyNeed * 0.5));
+  const prizeRaceLossRisk = clamp(
+    (features.ownPrizesRemaining > features.oppPrizesRemaining ? 34 : 16) +
+      (features.activeCanAttack ? -6 : 10) +
+      (features.gustNeed > 60 ? 8 : 0),
+  );
 
-  // 5. 総合リスクスコア (加重平均)
-  const totalRiskScore = Math.floor(
-    (handCollapseRisk * 0.3) + 
-    (boardCollapseRisk * 0.3) + 
-    (prizeRaceLossRisk * 0.4)
+  const comebackFailureRisk = clamp(
+    (features.drawNeed > 60 ? 24 : 8) +
+      (features.recoveryNeed > 60 ? 18 : 6) +
+      (features.followupNeed > 60 ? 18 : 8),
+  );
+
+  const totalRiskScore = clamp(
+    Math.round(
+      handCollapseRisk * 0.18 +
+        boardCollapseRisk * 0.24 +
+        energyStallRisk * 0.18 +
+        prizeRaceLossRisk * 0.22 +
+        comebackFailureRisk * 0.18,
+    ),
   );
 
   return {
-    handCollapseRisk: Math.floor(handCollapseRisk),
-    boardCollapseRisk: Math.floor(boardCollapseRisk),
-    energyStallRisk: Math.floor(energyStallRisk),
-    prizeRaceLossRisk: Math.floor(prizeRaceLossRisk),
-    comebackFailureRisk: Math.floor(recoveryNeed),
-    totalRiskScore
+    handCollapseRisk,
+    boardCollapseRisk,
+    energyStallRisk,
+    prizeRaceLossRisk,
+    comebackFailureRisk,
+    totalRiskScore,
   };
 }
