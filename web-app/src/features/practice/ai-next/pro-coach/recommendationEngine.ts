@@ -1,6 +1,8 @@
 import type { CardRoleProfile, DynamicRole } from "../domain/types";
 import type {
   CoachGameState,
+  EvaluatedActionLine,
+  GeneratedActionLine,
   LegalAction,
   ProfessionalCoachResult,
   ProfessionalLine,
@@ -24,10 +26,11 @@ import {
   decorateMappedLine,
   summarizeBoardState,
 } from "./policy/explanationPolicy";
+import { generateActionLines } from "./generateActionLines";
 
 function inferArchetype(state: CoachGameState, profiles: CardRoleProfile[]): string {
   if (state.selectedArchetype) return state.selectedArchetype;
-  const names = new Set<string>([
+  const names = new Set([
     ...state.players.player1.hand.map((c) => c.name),
     ...state.players.player1.bench.map((c) => c.name),
     state.players.player1.active?.name ?? "",
@@ -70,6 +73,10 @@ function actionLineText(action: LegalAction): string {
       return `${action.sourceName} の特性で精度を上げる`;
     case "attach_energy":
       return `${action.targetName} にエネルギーを貼って後続を作る`;
+    case "bench_pokemon":
+      return `${action.cardName} をベンチに出して次ターンの線を増やす`;
+    case "evolve":
+      return `${action.targetName} を ${action.cardName} に進化させて盤面を強化する`;
     case "retreat":
       return `${action.toName} に引いて返しを弱くする`;
     case "attack":
@@ -85,6 +92,8 @@ function inferDynamicRoles(action: LegalAction, primitiveBonus: number): Dynamic
   if (action.kind === "play_item" && (action.category === "search_basic" || action.category === "search_any")) roles.add("setup_priority");
   if (action.kind === "play_item" && action.category === "recovery") roles.add("recover_board");
   if (action.kind === "use_ability" && action.category === "draw") roles.add("stability_engine");
+  if (action.kind === "bench_pokemon") roles.add("setup_priority");
+  if (action.kind === "evolve") roles.add("force_response");
   if (action.kind === "attack") roles.add("swing_turn");
   if (primitiveBonus >= 18) roles.add("force_response");
   return Array.from(roles) as DynamicRole[];
@@ -97,6 +106,7 @@ function keyCards(handProfiles: CardRoleProfile[]) {
       if (p.staticRoles.includes("gust")) score += 12;
       if (p.staticRoles.includes("draw") || p.staticRoles.includes("hand_refresh")) score += 10;
       if (p.staticRoles.includes("basic_search") || p.staticRoles.includes("bench_setup")) score += 11;
+      if (p.staticRoles.includes("evolution_search" as any) || p.staticRoles.includes("main_attacker" as any)) score += 9;
       return {
         cardName: p.cardName,
         score,
@@ -105,6 +115,72 @@ function keyCards(handProfiles: CardRoleProfile[]) {
     })
     .sort((a, b) => b.score - a.score)
     .slice(0, 5);
+}
+
+function lineText(actions: LegalAction[]): string {
+  return actions.map(actionLineText).join(" → ");
+}
+
+function lineRoles(actions: LegalAction[]): DynamicRole[] {
+  const roles = new Set<DynamicRole>();
+  actions.forEach((action) => {
+    inferDynamicRoles(action, 0).forEach((role) => roles.add(role));
+  });
+  return Array.from(roles);
+}
+
+function evaluateActionLine(args: {
+  line: GeneratedActionLine;
+  archetype: string;
+  handProfiles: CardRoleProfile[];
+  replyPenaltyBase: number;
+  goalType: string;
+}): EvaluatedActionLine {
+  const nextEval = evaluateNextState(args.line.finalState, args.handProfiles, args.archetype);
+
+  const benchBonus = args.line.scoreHints.benchCount * 10;
+  const evolveBonus = args.line.scoreHints.evolvedCount * 14;
+  const attackBonus = args.line.scoreHints.attackIncluded ? 18 : 0;
+  const consistencyBonus =
+    (args.line.scoreHints.supporterUsed ? 4 : 0) +
+    (args.line.scoreHints.manualEnergyUsed ? 6 : 0);
+
+  const goalFit =
+    args.goalType === "setup"
+      ? benchBonus + evolveBonus
+      : args.goalType === "attack"
+        ? attackBonus + consistencyBonus
+        : args.goalType === "checkmate"
+          ? attackBonus + 10
+          : consistencyBonus + evolveBonus * 0.5;
+
+  const replyPenalty = Math.max(0, args.replyPenaltyBase - evolveBonus * 0.12 - benchBonus * 0.08);
+  const lineScore =
+    nextEval.total +
+    benchBonus +
+    evolveBonus +
+    attackBonus +
+    consistencyBonus +
+    goalFit -
+    replyPenalty;
+
+  const reasoning = [
+    ...args.line.transitionSummaries.slice(0, 4),
+    ...nextEval.reasons.slice(0, 3),
+  ];
+
+  return {
+    id: args.line.id,
+    actions: args.line.actions,
+    finalState: args.line.finalState,
+    transitionSummaries: args.line.transitionSummaries,
+    lineScore,
+    lineText: lineText(args.line.actions),
+    reasoning,
+    nextEval,
+    replyPenalty,
+    dynamicRoles: lineRoles(args.line.actions),
+  };
 }
 
 export function buildProfessionalCoachResult(params: {
@@ -141,53 +217,56 @@ export function buildProfessionalCoachResult(params: {
     opponentHasHeavyRetreat: features.oppHeavyRetreatCount > 0,
   };
 
-  const lines: ProfessionalLine[] = actions.map((action) => {
-    const cardName =
-      "cardName" in action ? action.cardName : "sourceName" in action ? action.sourceName : "";
-    const profile = params.profiles.find((p) => p.cardName === cardName);
-    const spec = buildEffectSpecForCard(cardName, profile);
-    const transition = applyStateTransition(params.state, action, params.profiles);
-    const nextEval = evaluateNextState(transition.nextState, handProfiles, archetype);
+  const lines: ProfessionalLine[] = actions
+    .map((action) => {
+      const cardName =
+        "cardName" in action ? action.cardName : "sourceName" in action ? action.sourceName : "";
+      const profile = params.profiles.find((p) => p.cardName === cardName);
+      const spec = buildEffectSpecForCard(cardName, profile);
+      const transition = applyStateTransition(params.state, action, params.profiles);
+      const nextEval = evaluateNextState(transition.nextState, handProfiles, archetype);
 
-    let priorityBonus = 0;
-    let specReasons: string[] = [];
-    if (spec && (!spec.canPlay || spec.canPlay(ctx))) {
-      priorityBonus = spec.priorityBase - 40;
-      specReasons = spec.explainWhyNow?.(ctx) ?? [];
-    }
+      let priorityBonus = 0;
+      let specReasons: string[] = [];
+      if (spec && (!spec.canPlay || spec.canPlay(ctx))) {
+        priorityBonus = spec.priorityBase - 40;
+        specReasons = spec.explainWhyNow?.(ctx) ?? [];
+      }
 
-    const baseLine = buildProfessionalLine({
-      action,
-      transition,
-      nextEval,
-      goal,
-      prizePlan,
-      opponentThreat,
-      risk,
-    });
+      const baseLine = buildProfessionalLine({
+        action,
+        transition,
+        nextEval,
+        goal,
+        prizePlan,
+        opponentThreat,
+        risk,
+      });
 
-    return {
-      ...baseLine,
-      lineScore: baseLine.lineScore + priorityBonus,
-      dynamicRoles: Array.from(
-        new Set<DynamicRole>([
-          ...baseLine.dynamicRoles,
-          ...inferDynamicRoles(action, priorityBonus),
-        ]),
-      ),
-      primitiveReasons:
-        specReasons.length > 0
-          ? specReasons
-          : baseLine.primitiveReasons.length > 0
-            ? baseLine.primitiveReasons
-            : (profile?.reasons?.slice(0, 2) ?? []),
-    };
-  }).sort((a, b) => b.lineScore - a.lineScore);
+      return {
+        ...baseLine,
+        lineScore: baseLine.lineScore + priorityBonus,
+        dynamicRoles: Array.from(
+          new Set<DynamicRole>([
+            ...baseLine.dynamicRoles,
+            ...inferDynamicRoles(action, priorityBonus),
+          ]),
+        ),
+        primitiveReasons:
+          specReasons.length > 0
+            ? specReasons
+            : baseLine.primitiveReasons.length > 0
+              ? baseLine.primitiveReasons
+              : (profile?.reasons?.slice(0, 2) ?? []),
+      };
+    })
+    .sort((a, b) => b.lineScore - a.lineScore);
 
   const mappedLines: any[] = lines.map((line) => {
     const total = Number.isFinite(line.nextEval.total) ? line.nextEval.total : 0;
     const penalty = Number.isFinite(line.replyPenalty) ? line.replyPenalty : 0;
     const score = Number.isFinite(line.lineScore) ? line.lineScore : total - penalty;
+
     return {
       ...line,
       id:
@@ -220,6 +299,45 @@ export function buildProfessionalCoachResult(params: {
 
   const bestAction = mappedLines[0] ?? null;
 
+  const generatedLines = generateActionLines({
+    state: params.state,
+    profiles: params.profiles,
+    maxDepth: 3,
+    maxBranchesPerDepth: 6,
+  });
+
+  const evaluatedSequences = generatedLines
+    .map((line) =>
+      evaluateActionLine({
+        line,
+        archetype,
+        handProfiles,
+        replyPenaltyBase: opponentThreat.disruptValue * 0.25,
+        goalType: goal.type,
+      }),
+    )
+    .sort((a, b) => b.lineScore - a.lineScore);
+
+  const recommendedSequence = evaluatedSequences[0]
+    ? {
+        id: evaluatedSequences[0].id,
+        score: evaluatedSequences[0].lineScore,
+        line: evaluatedSequences[0].lineText,
+        actions: evaluatedSequences[0].actions,
+        reasoning: evaluatedSequences[0].reasoning,
+        transitionSummaries: evaluatedSequences[0].transitionSummaries,
+      }
+    : undefined;
+
+  const sequenceAlternatives = evaluatedSequences.slice(1, 4).map((line) => ({
+    id: line.id,
+    score: line.lineScore,
+    line: line.lineText,
+    actions: line.actions,
+    reasoning: line.reasoning,
+    transitionSummaries: line.transitionSummaries,
+  }));
+
   const openingMetrics =
     params.deckForOpeningSimulation && params.deckForOpeningSimulation.length > 0
       ? simulateOpeningMetrics({
@@ -240,10 +358,12 @@ export function buildProfessionalCoachResult(params: {
       prizePlan,
       risk,
       opponentThreat,
-      bestLineText: bestAction ? bestAction.line : "有力手なし",
+      bestLineText: recommendedSequence ? recommendedSequence.line : bestAction ? bestAction.line : "有力手なし",
     }),
     bestAction,
     alternatives: mappedLines.slice(1, 6),
+    recommendedSequence,
+    sequenceAlternatives,
     keyCards: keyCards(handProfiles),
     openingMetrics,
     handProfiles,
@@ -251,10 +371,10 @@ export function buildProfessionalCoachResult(params: {
       goal,
       prizePlan,
       opponentThreat,
-      bestLineText: bestAction ? bestAction.line : "有力手なし",
+      bestLineText: recommendedSequence ? recommendedSequence.line : bestAction ? bestAction.line : "有力手なし",
     }),
     timestamp: new Date().toISOString(),
-    version: "2.4.0",
+    version: "2.5.0",
     opponentThreat,
     macroStrategy: {
       activePlan: prizePlan.id,

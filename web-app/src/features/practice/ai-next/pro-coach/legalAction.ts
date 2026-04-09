@@ -1,8 +1,81 @@
 import type { CardRoleProfile } from "../domain/types";
+import { buildEffectSpecForCard } from "../effects/effectSpecCatalog";
+import type { EffectContext } from "../effects/effectSpecTypes";
+import { extractBoardFeatures } from "./featureExtractor";
+import { interpretCoachCard } from "./cardInterpreter";
+import {
+  selectAttackTargets,
+  selectBenchTargets,
+  selectEnergyTargets,
+  selectEvolutionTargets,
+  selectGustTargets,
+  selectRecoveryTargets,
+} from "./targetSelector";
 import type { CoachCard, CoachGameState, LegalAction } from "./types";
+
+type LooseCardRecord = Record<string, unknown>;
+type ScopedCardMap = Record<string, LooseCardRecord>;
 
 function idOf(card: CoachCard): string {
   return String(card.id ?? card.baseCardId ?? card.name);
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
+}
+
+function scopedCards(state: CoachGameState): ScopedCardMap {
+  return asRecord(state.cards) as ScopedCardMap;
+}
+
+function resolveScopedCardRecord(state: CoachGameState, card: CoachCard): LooseCardRecord | undefined {
+  const map = scopedCards(state);
+  return map[idOf(card)] ?? map[String(card.baseCardId ?? "")] ?? map[card.name];
+}
+
+function enrichWithScopedRecord(state: CoachGameState, card: CoachCard): CoachCard {
+  const record = resolveScopedCardRecord(state, card);
+  if (!record) return card;
+
+  return {
+    ...card,
+    type: typeof record.type === "string" ? record.type : card.type,
+    kinds: typeof record.kinds === "string" ? record.kinds : card.kinds,
+    hp: typeof record.hp === "number" ? record.hp : card.hp,
+    retreat: typeof record.retreat === "number" ? record.retreat : card.retreat,
+    attacks: Array.isArray(record.attacks) ? (record.attacks as CoachCard["attacks"]) : card.attacks,
+    ability: Array.isArray(record.ability) ? (record.ability as CoachCard["ability"]) : card.ability,
+    rules: Array.isArray(record.rules) ? (record.rules as CoachCard["rules"]) : card.rules,
+    support: Array.isArray(record.support) ? (record.support as CoachCard["support"]) : card.support,
+    weakness: typeof record.weakness === "string" ? record.weakness : card.weakness,
+    resistance: typeof record.resistance === "string" ? record.resistance : card.resistance,
+    evolves: Array.isArray(record.evolves) ? (record.evolves as string[]) : card.evolves,
+    tags: Array.isArray(record.tags) ? (record.tags as string[]) : card.tags,
+    baseCardId: typeof record.id === "string" ? record.id : card.baseCardId,
+  };
+}
+
+function profileForCard(card: CoachCard, profiles: CardRoleProfile[]): CardRoleProfile | undefined {
+  return profiles.find(
+    (profile) =>
+      profile.cardId === String(card.baseCardId ?? card.id) || profile.cardName === card.name,
+  );
+}
+
+function inferPlayableCategory(card: CoachCard): "supporter" | "item" | "stadium" | "tool" | "energy" | "pokemon" | "unknown" {
+  const type = (card.type ?? "").toLowerCase();
+  const kinds = (card.kinds ?? "").toLowerCase();
+
+  if (type === "energy") return "energy";
+  if (type === "pokemon") return "pokemon";
+  if (type === "trainer" || type === "trainers") {
+    if (kinds === "support" || kinds === "supporter") return "supporter";
+    if (kinds === "item") return "item";
+    if (kinds === "tool") return "tool";
+    if (kinds === "stadium" || kinds === "studium") return "stadium";
+  }
+
+  return "unknown";
 }
 
 function effectCategoryFromProfile(profile?: CardRoleProfile):
@@ -34,215 +107,325 @@ function effectCategoryFromProfile(profile?: CardRoleProfile):
   return "generic";
 }
 
-import { buildEffectSpecForCard } from "../effects/effectSpecCatalog";
-import type { EffectContext } from "../effects/effectSpecTypes";
-import { extractBoardFeatures } from "./featureExtractor";
-
-function inferPlayableCategory(card: CoachCard, profile?: CardRoleProfile):
-  | "supporter"
-  | "item"
-  | "stadium"
-  | "tool"
-  | "energy"
-  | "unknown" {
-  // 1. 物理的な種別が確定している場合 (信頼度高)
-  const kinds = card.kinds?.toLowerCase();
-  if (card.type === "trainer" && kinds === "supporter") return "supporter";
-  if (card.type === "trainer" && kinds === "item") return "item";
-  if (card.type === "trainer" && kinds === "stadium") return "stadium";
-  if (card.type === "trainer" && kinds === "tool") return "tool";
-  if (card.type === "energy") return "energy";
-
-  // 名前によるヒューリスティック (物理種別が欠落している場合の救済)
-  const name = card.name || "";
-  if (name.includes("ボール") || name.includes("ポフィン") || name.includes("いれかえ") || name.includes("回収")) return "item";
-  if (name.includes("博士") || name.includes("研究") || name.includes("指令") || name.includes("ジャッジマン")) return "supporter";
-
-  // 2. Profile (役割) による推論
-  if (!profile) return "unknown";
-  const roles = new Set(profile.staticRoles);
-  const primitives = new Set(profile.primitives ?? []);
-
-  if (roles.has("draw" as any) || roles.has("hand_refresh" as any) || roles.has("gust" as any) || roles.has("disrupt" as any)) return "supporter";
-  if (roles.has("basic_search" as any) || roles.has("pokemon_search" as any) || roles.has("bench_setup" as any) || primitives.has("search_deck_to_bench")) return "item";
-  if (roles.has("stadium_control" as any) || roles.has("board_expansion" as any)) return "stadium";
-  if (roles.has("pivot" as any) || roles.has("damage_boost" as any)) return "tool";
-  if (roles.has("energy_accel" as any) || roles.has("energy_recovery" as any) || card.type === "energy") return "energy";
-
-  return "unknown";
-}
-
-export function generateLegalActions(
-  state: CoachGameState,
-  profiles: CardRoleProfile[],
-): LegalAction[] {
-  const me = state.players.player1;
-  const opp = state.players.player2;
-  const allOwnPokemon = [me.active, ...me.bench].filter(Boolean) as CoachCard[];
-  const actions: LegalAction[] = [];
-
-  const handProfiles = profiles.filter((p) => me.hand.some(c => c.name === p.cardName));
+function buildEffectContext(state: CoachGameState, profiles: CardRoleProfile[]): EffectContext {
+  const handNames = new Set(state.players.player1.hand.map((card) => card.name));
+  const handProfiles = profiles.filter((profile) => handNames.has(profile.cardName));
   const features = extractBoardFeatures(state, handProfiles);
 
-  const ctx: EffectContext = {
+  return {
     phase: features.phase,
     setupNeed: features.setupNeed,
     drawNeed: features.drawNeed,
     gustNeed: features.gustNeed,
     safetyNeed: features.safetyNeed,
-    handSize: me.hand.length,
+    handSize: state.players.player1.hand.length,
     ownBenchCount: features.ownBenchCount,
     oppBenchCount: features.oppBenchCount,
-    supporterUsed: me.supporterUsed,
-    energyAttachedThisTurn: me.energyAttachedThisTurn,
-    hasFreeBenchSlot: features.ownBenchCount < 5,
+    supporterUsed: state.players.player1.supporterUsed,
+    energyAttachedThisTurn: state.players.player1.energyAttachedThisTurn,
+    hasFreeBenchSlot: state.players.player1.bench.length < 5,
     opponentHasSystem: features.oppSystemCount > 0,
     opponentHasHeavyRetreat: features.oppHeavyRetreatCount > 0,
   };
+}
 
-  for (const card of me.hand) {
-    const profile = profiles.find((p) => p.cardName === card.name);
+function canUseAbilityThisTurn(card: CoachCard): boolean {
+  const interpreted = interpretCoachCard(card);
+  if (!interpreted) return false;
+  return interpreted.abilities.length > 0 && !card.turnFlags?.abilityUsed;
+}
+
+function canBenchBasic(state: CoachGameState, card: CoachCard): boolean {
+  const interpreted = interpretCoachCard(card);
+  if (!interpreted) return false;
+  return interpreted.type === "pokemon" && interpreted.pokemonStage === "basic" && state.players.player1.bench.length < 5;
+}
+
+function canEvolveFromBoard(state: CoachGameState, handCard: CoachCard): boolean {
+  const interpreted = interpretCoachCard(handCard);
+  if (!interpreted || interpreted.type !== "pokemon") return false;
+  if (interpreted.pokemonStage !== "stage1" && interpreted.pokemonStage !== "stage2") return false;
+
+  const boardCards = [
+    ...(state.players.player1.active ? [state.players.player1.active] : []),
+    ...state.players.player1.bench,
+  ];
+
+  return boardCards.some((boardCard) => {
+    const enteredTurn = boardCard.enteredTurn ?? 0;
+    if (enteredTurn >= state.turn) return false;
+    const alreadyEvolvedThisTurn = (boardCard.evolvedTurn ?? -1) === state.turn;
+    if (alreadyEvolvedThisTurn) return false;
+
+    const baseName = boardCard.name;
+    return interpreted.evolves.includes(baseName) || (boardCard.evolves ?? []).includes(interpreted.name);
+  });
+}
+
+export function generateLegalActions(state: CoachGameState, profiles: CardRoleProfile[]): LegalAction[] {
+  const actions: LegalAction[] = [];
+  const ctx = buildEffectContext(state, profiles);
+
+  const ownActive = state.players.player1.active ? enrichWithScopedRecord(state, state.players.player1.active) : null;
+  const ownBench = state.players.player1.bench.map((card) => enrichWithScopedRecord(state, card));
+  const ownHand = state.players.player1.hand.map((card) => enrichWithScopedRecord(state, card));
+  const ownDiscard = state.players.player1.discard.map((card) => enrichWithScopedRecord(state, card));
+  const scopedState: CoachGameState = {
+    ...state,
+    players: {
+      ...state.players,
+      player1: {
+        ...state.players.player1,
+        active: ownActive,
+        bench: ownBench,
+        hand: ownHand,
+        discard: ownDiscard,
+      },
+    },
+  };
+
+  const boardCards = [...(ownActive ? [ownActive] : []), ...ownBench];
+
+  for (const boardCard of boardCards) {
+    const profile = profileForCard(boardCard, profiles);
     const category = effectCategoryFromProfile(profile);
-    const spec = buildEffectSpecForCard(card.name, profile);
+    if (!canUseAbilityThisTurn(boardCard)) continue;
 
-    if (spec && spec.canPlay && !spec.canPlay(ctx)) continue;
+    const spec = buildEffectSpecForCard(boardCard.name, profile);
+    if (spec?.canPlay && !spec.canPlay(ctx)) continue;
 
-    const playableCat = inferPlayableCategory(card, profile);
+    actions.push({
+      kind: "use_ability",
+      sourceId: idOf(boardCard),
+      sourceName: boardCard.name,
+      category: category === "draw" || category === "search" || category === "energy" ? category : "generic",
+    });
+  }
 
-    if (playableCat === "supporter" && !me.supporterUsed) {
+  for (const handCard of ownHand) {
+    const profile = profileForCard(handCard, profiles);
+    const category = effectCategoryFromProfile(profile);
+    const playable = inferPlayableCategory(handCard);
+    const spec = buildEffectSpecForCard(handCard.name, profile);
+
+    if (spec?.canPlay && !spec.canPlay(ctx)) continue;
+
+    if (playable === "pokemon") {
+      if (canBenchBasic(scopedState, handCard)) {
+        const benchScore = selectBenchTargets({ state: scopedState, profiles }, handCard)[0];
+        if (!benchScore || benchScore.score >= -8) {
+          actions.push({
+            kind: "bench_pokemon",
+            cardId: idOf(handCard),
+            cardName: handCard.name,
+            category: "basic",
+          });
+        }
+      }
+
+      if (canEvolveFromBoard(scopedState, handCard)) {
+        const evoTargets = selectEvolutionTargets({ state: scopedState, profiles }, handCard).slice(0, 3);
+        const interpreted = interpretCoachCard(handCard, profile);
+        if (interpreted) {
+          const evolveCategory = interpreted.pokemonStage === "stage2" ? "stage2" : "stage1";
+          for (const target of evoTargets) {
+            actions.push({
+              kind: "evolve",
+              cardId: idOf(handCard),
+              cardName: handCard.name,
+              targetId: target.targetId,
+              targetName: target.targetName,
+              category: evolveCategory,
+            });
+          }
+        }
+      }
+
+      continue;
+    }
+
+    if (playable === "energy") {
+      if (state.players.player1.energyAttachedThisTurn) continue;
+      const interpreted = interpretCoachCard(handCard, profile);
+      if (!interpreted || !interpreted.types) continue;
+      const energyType = interpreted.types[0] ?? "special";
+      const targets = selectEnergyTargets({ state: scopedState, profiles }, energyType).slice(0, 3);
+      for (const target of targets) {
+        actions.push({
+          kind: "attach_energy",
+          cardId: idOf(handCard),
+          cardName: handCard.name,
+          targetId: target.targetId,
+          targetName: target.targetName,
+        });
+      }
+      continue;
+    }
+
+    if (playable === "supporter") {
+      if (state.players.player1.supporterUsed) continue;
+
       if (category === "gust") {
-        for (const target of opp.bench) {
+        const targets = selectGustTargets({ state: scopedState, profiles }, ownActive ?? undefined).slice(0, 3);
+        if (targets.length === 0) {
           actions.push({
             kind: "play_supporter",
-            cardId: idOf(card),
-            cardName: card.name,
+            cardId: idOf(handCard),
+            cardName: handCard.name,
             category: "gust",
-            targetId: idOf(target),
-            targetName: target.name,
           });
+        } else {
+          for (const target of targets) {
+            actions.push({
+              kind: "play_supporter",
+              cardId: idOf(handCard),
+              cardName: handCard.name,
+              category: "gust",
+              targetId: target.targetId,
+              targetName: target.targetName,
+            });
+          }
+        }
+      } else if (category === "recovery") {
+        const targets = selectRecoveryTargets({ state: scopedState, profiles }).slice(0, 3);
+        if (targets.length === 0) {
+          actions.push({
+            kind: "play_supporter",
+            cardId: idOf(handCard),
+            cardName: handCard.name,
+            category: "recovery",
+          });
+        } else {
+          for (const target of targets) {
+            actions.push({
+              kind: "play_supporter",
+              cardId: idOf(handCard),
+              cardName: handCard.name,
+              category: "recovery",
+              targetId: target.targetId,
+              targetName: target.targetName,
+            });
+          }
         }
       } else {
         actions.push({
           kind: "play_supporter",
-          cardId: idOf(card),
-          cardName: card.name,
-          category: ["draw", "search", "disrupt", "recovery"].includes(category) ? (category as any) : "generic",
+          cardId: idOf(handCard),
+          cardName: handCard.name,
+          category: category === "draw" || category === "search" || category === "disrupt" ? category : "generic",
         });
       }
+      continue;
     }
 
-    if (playableCat === "item") {
-      actions.push({
-        kind: "play_item",
-        cardId: idOf(card),
-        cardName: card.name,
-        category:
-          category === "search_basic" || category === "search_any" || category === "switch" || category === "recovery"
-            ? (category as any)
-            : "generic",
-      });
+    if (playable === "item") {
+      const itemCategory =
+        category === "search_basic" || category === "search_any" || category === "switch" || category === "recovery"
+          ? category
+          : "generic";
+
+      if (itemCategory === "recovery") {
+        const targets = selectRecoveryTargets({ state: scopedState, profiles }).slice(0, 3);
+        if (targets.length === 0) {
+          actions.push({
+            kind: "play_item",
+            cardId: idOf(handCard),
+            cardName: handCard.name,
+            category: "recovery",
+          });
+        } else {
+          for (const target of targets) {
+            actions.push({
+              kind: "play_item",
+              cardId: idOf(handCard),
+              cardName: handCard.name,
+              category: "recovery",
+              targetId: target.targetId,
+              targetName: target.targetName,
+            });
+          }
+        }
+      } else {
+        actions.push({
+          kind: "play_item",
+          cardId: idOf(handCard),
+          cardName: handCard.name,
+          category: itemCategory,
+        });
+      }
+      continue;
     }
 
-    if (playableCat === "stadium") {
+    if (playable === "stadium") {
       actions.push({
         kind: "play_stadium",
-        cardId: idOf(card),
-        cardName: card.name,
-        category: category === "board_expansion" || category === "stadium_control" ? (category as any) : "generic",
+        cardId: idOf(handCard),
+        cardName: handCard.name,
+        category: category === "stadium_control" ? "stadium_control" : category === "board_expansion" ? "board_expansion" : "generic",
       });
+      continue;
     }
 
-    if (playableCat === "tool") {
-      for (const target of allOwnPokemon) {
+    if (playable === "tool") {
+      for (const targetCard of boardCards) {
         actions.push({
           kind: "play_tool",
-          cardId: idOf(card),
-          cardName: card.name,
-          targetId: idOf(target),
-          targetName: target.name,
-        });
-      }
-    }
-
-    if (playableCat === "energy" && !me.energyAttachedThisTurn) {
-      for (const target of allOwnPokemon) {
-        actions.push({
-          kind: "attach_energy",
-          cardId: idOf(card),
-          cardName: card.name,
-          targetId: idOf(target),
-          targetName: target.name,
+          cardId: idOf(handCard),
+          cardName: handCard.name,
+          targetId: idOf(targetCard),
+          targetName: targetCard.name,
         });
       }
     }
   }
 
-  for (const pokemon of allOwnPokemon) {
-    const profile = profiles.find((p) => p.cardName === pokemon.name);
-    if (!profile) continue;
-    const category = effectCategoryFromProfile(profile);
-    if (["draw", "search", "energy"].includes(category)) {
-      actions.push({
-        kind: "use_ability",
-        sourceId: idOf(pokemon),
-        sourceName: pokemon.name,
-        category: category as any,
-      });
-    }
-  }
-
-  if (me.active && me.bench.length > 0 && (features.canRetreat || features.hasFreePivot)) {
-    for (const target of me.bench) {
+  if (ownActive && (ownActive.retreat ?? 0) <= (ownActive.attachedEnergyIds?.length ?? 0) && ownBench.length > 0) {
+    for (const benchCard of ownBench) {
       actions.push({
         kind: "retreat",
-        fromId: idOf(me.active),
-        fromName: me.active.name,
-        toId: idOf(target),
-        toName: target.name,
+        fromId: idOf(ownActive),
+        fromName: ownActive.name,
+        toId: idOf(benchCard),
+        toName: benchCard.name,
       });
     }
   }
 
-  if (features.activeEnergyReady) {
-    const attacks = me.active?.attacks?.length ? me.active.attacks : [{ name: "ワザ" }];
-    for (const attack of attacks) {
-      actions.push({
-        kind: "attack",
-        sourceId: idOf(me.active!),
-        sourceName: me.active!.name,
-        attackName: String(attack.name ?? "ワザ"),
-        targetName: opp.active?.name,
-      });
-    }
-  }
-
-  // Fallback: もしアクションが0件なら、手札から可能な基本アクションを絞り出す
-  if (actions.length === 0) {
-    for (const card of me.hand) {
-      const profile = profiles.find((p) => p.cardName === card.name);
-      const cat = inferPlayableCategory(card, profile);
-      if (cat === "supporter" && !me.supporterUsed) {
-        actions.push({ kind: "play_supporter", cardId: idOf(card), cardName: card.name, category: "generic" });
-        break; 
-      }
-      if (cat === "item") {
-        actions.push({ kind: "play_item", cardId: idOf(card), cardName: card.name, category: "generic" });
-        break;
+  if (ownActive) {
+    const interpretedActive = interpretCoachCard(ownActive, profileForCard(ownActive, profiles));
+    if (interpretedActive && interpretedActive.attacks.length > 0) {
+      const targets = selectAttackTargets({ state: scopedState, profiles }, ownActive);
+      const top = targets[0];
+      for (const attack of interpretedActive.attacks) {
+        actions.push({
+          kind: "attack",
+          sourceId: idOf(ownActive),
+          sourceName: ownActive.name,
+          attackName: attack.name,
+          targetId: top?.targetId,
+          targetName: top?.targetName,
+        });
       }
     }
   }
 
-  return dedupe(actions);
-}
-
-function dedupe(actions: LegalAction[]): LegalAction[] {
   const seen = new Set<string>();
-  const out: LegalAction[] = [];
-  for (const action of actions) {
-    const key = JSON.stringify(action);
-    if (seen.has(key)) continue;
+  return actions.filter((action) => {
+    const key =
+      action.kind === "attack"
+        ? `${action.kind}:${action.sourceId}:${action.attackName}:${action.targetId ?? ""}`
+        : action.kind === "retreat"
+          ? `${action.kind}:${action.fromId}:${action.toId}`
+          : action.kind === "bench_pokemon"
+            ? `${action.kind}:${action.cardId}`
+            : action.kind === "evolve"
+              ? `${action.kind}:${action.cardId}:${action.targetId}`
+              : "cardId" in action
+                ? `${action.kind}:${action.cardId}:${"targetId" in action && action.targetId ? action.targetId : ""}:${"category" in action ? action.category : ""}`
+                : `${action.kind}:${"sourceId" in action ? action.sourceId : ""}`;
+
+    if (seen.has(key)) return false;
     seen.add(key);
-    out.push(action);
-  }
-  return out;
+    return true;
+  });
 }

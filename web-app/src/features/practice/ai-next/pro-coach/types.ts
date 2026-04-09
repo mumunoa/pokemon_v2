@@ -2,7 +2,41 @@ import type { CardRoleProfile, DynamicRole, PrimitiveEvidence } from "../domain/
 
 export type CoachPhase = "opening" | "midgame" | "endgame";
 
-export type EnergyType = "grass" | "fire" | "water" | "lightning" | "psychic" | "fighting" | "darkness" | "metal" | "fairy" | "dragon" | "colorless" | "special";
+export type EnergyType =
+  | "grass"
+  | "fire"
+  | "water"
+  | "lightning"
+  | "psychic"
+  | "fighting"
+  | "darkness"
+  | "metal"
+  | "fairy"
+  | "dragon"
+  | "colorless"
+  | "special";
+
+export type CoachAttack = {
+  name?: string;
+  damage?: string | number;
+  text?: string;
+  cost?: EnergyType[];
+  convertedEnergyCost?: number;
+};
+
+export type CoachAbility = {
+  name?: string;
+  text?: string;
+};
+
+export type CoachRule = {
+  text?: string;
+  prize?: number;
+};
+
+export type CoachSupportText = {
+  text?: string;
+};
 
 export type CoachCard = {
   id: string;
@@ -16,9 +50,19 @@ export type CoachCard = {
   attachedEnergyIds?: string[];
   attachedEnergyTypes?: EnergyType[];
   canAttack?: boolean;
-  attacks?: Array<{ name?: string; damage?: string | number; text?: string; cost?: EnergyType[] }>;
-  ability?: Array<{ name?: string; text?: string }>;
+  attacks?: CoachAttack[];
+  ability?: CoachAbility[];
+  rules?: CoachRule[];
+  support?: CoachSupportText[];
+  weakness?: string;
+  resistance?: string;
+  evolves?: string[];
   tags?: string[];
+  enteredTurn?: number;
+  evolvedTurn?: number;
+  turnFlags?: {
+    abilityUsed?: boolean;
+  };
 };
 
 export type CoachPlayerState = {
@@ -71,7 +115,6 @@ export type CoachBoardFeatures = {
   recoveryNeed: number;
   safetyNeed: number;
   followupNeed: number;
-  // 追加: より詳細なコンテキスト
   ownHandNames: string[];
   ownBenchNames: string[];
   ownTrashNames: string[];
@@ -124,6 +167,20 @@ export type LegalAction =
       targetName: string;
     }
   | {
+      kind: "bench_pokemon";
+      cardId: string;
+      cardName: string;
+      category: "basic";
+    }
+  | {
+      kind: "evolve";
+      cardId: string;
+      cardName: string;
+      targetId: string;
+      targetName: string;
+      category: "stage1" | "stage2";
+    }
+  | {
       kind: "retreat";
       fromId: string;
       fromName: string;
@@ -135,6 +192,7 @@ export type LegalAction =
       sourceId: string;
       sourceName: string;
       attackName: string;
+      targetId?: string;
       targetName?: string;
     };
 
@@ -178,7 +236,7 @@ export type OpponentThreatInfo = {
   requiredCards: number;
   lethalThreat: boolean;
   disruptValue: number;
-  probableHiddenCards: string[]; // 相手の手札にありそうなカードの推測
+  probableHiddenCards: string[];
 };
 
 export type MacroStrategyInfo = {
@@ -194,51 +252,15 @@ export type SimulationInsight = {
   suggestions: Array<{ action: string; candidateCardNames: string[] }>;
 };
 
-export type ProfessionalCoachResult = {
-  phase: CoachPhase;
-  archetype: string;
-  boardStateSummary: string;
-  thoughts: string[];
-  bestAction: any; // CoachPanelに合わせる
-  alternatives: any[];
-  keyCards: Array<{
-    cardName: string;
-    score: number;
-    reason: string;
-  }>;
-  openingMetrics?: {
-    basicRate: number;
-    supporterRate: number;
-    setupSuccessRate: number;
-  };
-  handProfiles: CardRoleProfile[];
-  analysis: string;
-  timestamp: string;
-  version: string;
-  // 8レイヤー推論用の追加フィールド
-  opponentThreat?: OpponentThreatInfo;
-  macroStrategy?: MacroStrategyInfo;
-  simulationCoaching?: SimulationInsight;
-  // プロ思考エンジン用の新規フィールド
-  goal?: TurnGoal;
-  prizePlan?: PrizePlan;
-  risk?: RiskReport;
-  probability?: ProbabilityReport;
-};
-
-/**
- * --- プロ思考エンジン専用の高度な戦術型 (blueprint.md 準拠) ---
- */
-
 export type TurnGoalType =
-  | 'attack'    // 攻撃成立ターン
-  | 'setup'     // 盤面形成ターン
-  | 'stall'     // 耐久ターン
-  | 'disrupt'   // 妨害ターン
-  | 'recover'   // リソース回復ターン
-  | 'checkmate' // 詰めターン
-  | 'comeback'  // 逆転準備ターン
-  | 'stabilize'; // 再現性最大化
+  | "attack"
+  | "setup"
+  | "stall"
+  | "disrupt"
+  | "recover"
+  | "checkmate"
+  | "comeback"
+  | "stabilize";
 
 export type TurnGoal = {
   type: TurnGoalType;
@@ -254,11 +276,11 @@ export type PrizeTargetStep = {
 
 export type PrizePlan = {
   id: string;
-  pattern: number[]; // 例: [2, 2, 2]
+  pattern: number[];
   targetSequence: PrizeTargetStep[];
   estimatedTurnsToFinish: number;
   successProbability: number;
-  fragilityScore: number; // 崩れやすさ (0-100)
+  fragilityScore: number;
 };
 
 export type ProbabilityReport = {
@@ -268,11 +290,11 @@ export type ProbabilityReport = {
 };
 
 export type RiskReport = {
-  handCollapseRisk: number;    // 手札枯渇
-  boardCollapseRisk: number;   // 盤面崩壊
-  energyStallRisk: number;     // エネ供給停止
-  prizeRaceLossRisk: number;   // サイドレース敗北
-  comebackFailureRisk: number; // 逆転不能
+  handCollapseRisk: number;
+  boardCollapseRisk: number;
+  energyStallRisk: number;
+  prizeRaceLossRisk: number;
+  comebackFailureRisk: number;
   totalRiskScore: number;
 };
 
@@ -285,4 +307,73 @@ export type TurnDecisionReport = {
   opponentPressure: OpponentThreatInfo;
   finalActions: LegalAction[];
   reasoningSummary: string[];
+};
+
+export type GeneratedActionLine = {
+  id: string;
+  actions: LegalAction[];
+  finalState: CoachGameState;
+  transitionSummaries: string[];
+  scoreHints: {
+    supporterUsed: boolean;
+    manualEnergyUsed: boolean;
+    attackIncluded: boolean;
+    benchCount: number;
+    evolvedCount: number;
+  };
+};
+
+export type EvaluatedActionLine = {
+  id: string;
+  actions: LegalAction[];
+  finalState: CoachGameState;
+  transitionSummaries: string[];
+  lineScore: number;
+  lineText: string;
+  reasoning: string[];
+  nextEval: NextStateEvaluation;
+  replyPenalty: number;
+  dynamicRoles: DynamicRole[];
+};
+
+export type ProfessionalCoachResult = {
+  phase: CoachPhase;
+  archetype: string;
+  boardStateSummary: string;
+  thoughts: string[];
+  bestAction: any;
+  alternatives: any[];
+  recommendedSequence?: {
+    id: string;
+    score: number;
+    line: string;
+    actions: LegalAction[];
+    reasoning: string[];
+    transitionSummaries: string[];
+  };
+  sequenceAlternatives?: Array<{
+    id: string;
+    score: number;
+    line: string;
+    actions: LegalAction[];
+    reasoning: string[];
+    transitionSummaries: string[];
+  }>;
+  keyCards: Array<{ cardName: string; score: number; reason: string }>;
+  openingMetrics?: {
+    basicRate: number;
+    supporterRate: number;
+    setupSuccessRate: number;
+  };
+  handProfiles: CardRoleProfile[];
+  analysis: string;
+  timestamp: string;
+  version: string;
+  opponentThreat?: OpponentThreatInfo;
+  macroStrategy?: MacroStrategyInfo;
+  simulationCoaching?: SimulationInsight;
+  goal?: TurnGoal;
+  prizePlan?: PrizePlan;
+  risk?: RiskReport;
+  probability?: ProbabilityReport;
 };
