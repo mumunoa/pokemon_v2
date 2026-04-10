@@ -121,6 +121,7 @@ export type CoachBoardFeatures = {
   oppActiveName?: string;
   oppBenchNames: string[];
   totalEnergiesInPlay: number;
+  canKOActiveThisTurn: boolean;
 };
 
 export type LegalAction =

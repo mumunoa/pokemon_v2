@@ -2,16 +2,28 @@
 
 import React from 'react';
 import type { RecommendationResult, ScoredAction, KeyCard, OpponentThreat, MacroStrategy } from '../domain/types';
-import type { RecommendationWithSimulation, CoachingImprovementSuggestion, SimulationMetric } from '../engine/simulationCoachingTypes';
+import type { RecommendationWithSimulation, SimulationMetric } from '../engine/simulationCoachingTypes';
+import type { ProfessionalCoachResult } from '../pro-coach/types';
+
+// 統合される UI コンポーネントのインポート
+import { CoachPhaseCard } from '../../components/Board/coach-ui/CoachPhaseCard';
+import { PreparationStrategyCard } from '../../components/Board/coach-ui/PreparationStrategyCard';
+import { WinPathSummaryCard } from '../../components/Board/coach-ui/WinPathSummaryCard';
+import { TurnStrategyCard } from '../../components/Board/coach-ui/TurnStrategyCard';
+import { RecommendedSequenceCard } from '../../components/Board/coach-ui/RecommendedSequenceCard';
+import { KeyActionCard } from '../../components/Board/coach-ui/KeyActionCard';
+import { AlternativeLinesCard } from '../../components/Board/coach-ui/AlternativeLinesCard';
+import { TurnTabs } from '../../components/Board/coach-ui/TurnTabs';
 
 interface CoachPanelProps {
-  result: RecommendationResult | RecommendationWithSimulation | null;
+  result: RecommendationResult | RecommendationWithSimulation | ProfessionalCoachResult | null;
   isLoading: boolean;
   onRun?: () => void;
   isProUser?: boolean;
   onUpgradeClick?: () => void;
   isUnlocked?: boolean;
   onUnlock?: () => void;
+  openingEvaluation?: any;
 }
 
 export function CoachPanel({
@@ -21,9 +33,11 @@ export function CoachPanel({
   isProUser = false,
   onUpgradeClick,
   isUnlocked = false,
-  onUnlock
+  onUnlock,
+  openingEvaluation
 }: CoachPanelProps) {
   const isUnlockedPro = isProUser || isUnlocked;
+
   if (isLoading) {
     return (
       <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-white shadow-xl backdrop-blur-md">
@@ -38,14 +52,6 @@ export function CoachPanel({
   if (!result) {
     return (
       <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/10 to-transparent p-6 text-white shadow-xl backdrop-blur-md text-center relative overflow-hidden">
-        {/* 全ユーザーに対して「実装準備中」のスモーク効果を適用 1
-        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-20">
-          <div className="px-4 py-2 bg-emerald-500/20 rounded-lg border border-emerald-500/30 text-xs font-black text-emerald-300 shadow-xl">
-            実装準備中
-          </div>
-        </div>
-        */}
-
         <div className="flex flex-col items-center gap-4">
           <div>
             <div className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-xl font-black text-transparent text-shadow-sm">
@@ -72,29 +78,31 @@ export function CoachPanel({
   }
 
   const baseResult = 'baseRecommendation' in result ? result.baseRecommendation : result;
-  const simCoaching = 'simulationCoaching' in result ? result.simulationCoaching : null;
+  const simCoaching = 'simulationCoaching' in result ? result.simulationCoaching : (result as any).simulationCoaching || null;
 
-  const { bestAction, alternatives, keyCards, boardStateSummary, opponentThreat, macroStrategy } = baseResult;
+  const { bestAction, alternatives, keyCards, boardStateSummary, opponentThreat, macroStrategy } = baseResult as any;
+  
+  const proResult = result as any; 
+  const isActuallyPro = isUnlockedPro && !!proResult.recommendedSequence;
 
   return (
     <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-[#0a0f16] to-[#040608] p-6 text-white shadow-2xl">
       <div className="mb-6 flex items-start justify-between gap-4 border-b border-white/10 pb-4">
         <div>
           <h2 className="flex items-center gap-2 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-2xl font-black tracking-tight text-transparent">
-            AIプロコーチ分析
+            プロタクティカル分析
             {isUnlockedPro && (
               <span className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.2)]">
                 {isProUser ? 'PRO' : 'UNLOCKED'}
               </span>
             )}
           </h2>
-          <p className="mt-1 text-xs font-medium uppercase tracking-wider text-white/50">{boardStateSummary}</p>
+          <p className="mt-1 text-xs font-medium uppercase tracking-wider text-white/50">{boardStateSummary || '思考完了'}</p>
         </div>
       </div>
 
       <div className="space-y-6 relative">
-        {/* === FREE 版は「結論のみ」が見える（それ以下はロック） === */}
-        {/* Phase 3 (Free/Pro共通): Micro Optimization & Probability */}
+        {/* 最適解セクション (常に表示) */}
         <ThoughtPhase
           number="★"
           title="今ターンの最適解 (推奨アクション)"
@@ -103,11 +111,11 @@ export function CoachPanel({
           <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
             <div className="text-lg font-bold text-white">{bestAction?.line ?? '候補がありません'}</div>
 
-            {bestAction && bestAction.reasons.length > 0 && (
+            {bestAction && bestAction.reasons && bestAction.reasons.length > 0 && (
               <div className="mt-4 space-y-2">
                 <div className="text-xs text-emerald-200/50">{isUnlockedPro ? 'プロの思考プロセス:' : '主な理由:'}</div>
                 <ul className="space-y-1.5 list-none">
-                  {bestAction.reasons.slice(0, isUnlockedPro ? undefined : 1).map((reason, idx) => (
+                  {(bestAction.reasons as string[]).slice(0, isUnlockedPro ? undefined : 1).map((reason: any, idx: number) => (
                     <li key={idx} className="flex flex-col">
                       <span className="flex items-start text-sm text-emerald-100">
                         <span className="mr-2 mt-1 block h-1 w-1 shrink-0 rounded-full bg-emerald-400"></span>
@@ -121,7 +129,7 @@ export function CoachPanel({
           </div>
         </ThoughtPhase>
 
-        {/* FREE 版プロンプトオーバーレイ (ここから下はProのみクリア表示) */}
+        {/* ロックオーバーレイ */}
         {!isUnlockedPro && (
           <div className="absolute left-0 right-0 top-32 z-20 flex h-full flex-col items-center justify-start rounded-b-2xl bg-gradient-to-b from-transparent via-[#080d12]/95 to-[#040608] pt-16 backdrop-blur-[2px]">
             <div className="flex w-full max-w-sm flex-col items-center rounded-2xl border border-amber-500/20 bg-black/60 p-6 text-center shadow-2xl backdrop-blur-md">
@@ -152,103 +160,155 @@ export function CoachPanel({
           </div>
         )}
 
-        {/* ========================================================= */}
+        {/* プロフェッショナル統合ダッシュボード (Pro Resultがある場合) */}
+        {isActuallyPro && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <CoachPhaseCard 
+                coachResult={proResult} 
+                isPreparationPhase={false} 
+                currentTurn={proResult.currentTurn ?? 0}
+                openingEvaluation={openingEvaluation}
+              />
+              <WinPathSummaryCard 
+                coachResult={proResult} 
+                isPro={true} 
+              />
+            </div>
 
-        {/* Phase 1: Macro Strategy (Pro) */}
-        <div className={!isUnlockedPro ? 'opacity-20 pointer-events-none select-none blur-sm' : ''}>
-          {macroStrategy && (
-            <ThoughtPhase
-              number="1"
-              title="環境認識と大局観 (Macro Strategy)"
-              color="indigo"
-            >
-              <div className="text-sm leading-relaxed text-indigo-100">
-                <span className="mb-2 block font-semibold text-indigo-300">
-                  目標ルート: {formatPlanName(macroStrategy.activePlan)}
-                </span>
-                {macroStrategy.description}
-              </div>
-            </ThoughtPhase>
-          )}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <TurnStrategyCard 
+                coachResult={proResult} 
+                isPro={true} 
+              />
+              <PreparationStrategyCard 
+                isPreparationPhase={false} 
+                coachResult={proResult} 
+                isPro={true} 
+                openingEvaluation={openingEvaluation}
+              />
+            </div>
 
-          {/* Phase 2: Opponent Threat & Risk Management */}
-          {opponentThreat && (
-            <ThoughtPhase
-              number="2"
-              title="リスク管理と相手の要求値 (Threat Assessment)"
-              color={opponentThreat.lethalThreat ? 'rose' : 'amber'}
-            >
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="flex-1 rounded-lg bg-black/40 p-3">
-                  <div className="text-xs text-white/50">相手の次ターン最大打点予測</div>
-                  <div className={`text-xl font-bold ${opponentThreat.lethalThreat ? 'text-rose-400' : 'text-amber-400'}`}>
-                    {opponentThreat.expectedMaxDamage} <span className="text-sm font-normal text-white/50">ダメージ</span>
+            <RecommendedSequenceCard 
+              sequence={proResult.recommendedSequence} 
+              alternatives={proResult.sequenceAlternatives ?? []} 
+              isPro={true} 
+              isLoading={false} 
+            />
+
+            <KeyActionCard 
+              bestAction={proResult.bestAction} 
+              isPro={true} 
+            />
+
+            <TurnTabs 
+              isPreparationPhase={false} 
+              coachResult={proResult} 
+              commentary={null} 
+              isPro={true} 
+              openingEvaluation={openingEvaluation}
+            />
+
+            <AlternativeLinesCard 
+              title="その他の有力ライン" 
+              alternatives={proResult.sequenceAlternatives ?? proResult.alternatives ?? []} 
+              isPro={true} 
+            />
+          </div>
+        )}
+
+        {/* 旧 Macro/Threat セクション (下位互換性のため、Pro Dashboardがない場合のみ表示) */}
+        {!isActuallyPro && isUnlockedPro && (
+          <div className="space-y-6">
+            {macroStrategy && (
+              <ThoughtPhase
+                number="1"
+                title="環境認識と大局観 (Macro Strategy)"
+                color="indigo"
+              >
+                <div className="text-sm leading-relaxed text-indigo-100">
+                  <span className="mb-2 block font-semibold text-indigo-300">
+                    目標ルート: {formatPlanName(macroStrategy.activePlan)}
+                  </span>
+                  {macroStrategy.description}
+                </div>
+              </ThoughtPhase>
+            )}
+
+            {opponentThreat && (
+              <ThoughtPhase
+                number="2"
+                title="リスク管理と相手の要求値 (Threat Assessment)"
+                color={opponentThreat.lethalThreat ? 'rose' : 'amber'}
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <div className="flex-1 rounded-lg bg-black/40 p-3">
+                    <div className="text-xs text-white/50">相手の次ターン最大打点予測</div>
+                    <div className={`text-xl font-bold ${opponentThreat?.lethalThreat ? 'text-rose-400' : 'text-amber-400'}`}>
+                      {opponentThreat?.expectedMaxDamage} <span className="text-sm font-normal text-white/50">ダメージ</span>
+                    </div>
+                  </div>
+                  <div className="flex-1 rounded-lg bg-black/40 p-3">
+                    <div className="text-xs text-white/50">要求手札のハードル</div>
+                    <div className="text-xl font-bold text-emerald-400">
+                      約 {opponentThreat?.requiredCards} <span className="text-sm font-normal text-white/50">枚要求</span>
+                    </div>
                   </div>
                 </div>
-                <div className="flex-1 rounded-lg bg-black/40 p-3">
-                  <div className="text-xs text-white/50">要求手札のハードル</div>
-                  <div className="text-xl font-bold text-emerald-400">
-                    約 {opponentThreat.requiredCards} <span className="text-sm font-normal text-white/50">枚要求</span>
-                  </div>
-                </div>
-              </div>
-              {opponentThreat.lethalThreat && (
-                <div className="mt-3 flex items-center gap-2 text-sm font-medium text-rose-300">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-500/20 text-rose-500">!</span>
-                  次ターンに敗北の可能性があります。手札干渉や壁役の展開（ケア）を最優先してください。
-                </div>
-              )}
-            </ThoughtPhase>
-          )}
-
-        </div>
-
-        {/* 新セクション: 1000回シミュ構築改善 (Pro) */}
-        <div className={!isUnlockedPro ? 'opacity-10 pointer-events-none select-none blur-md mt-6' : 'mt-6'}>
-          {simCoaching && (
-            <ThoughtPhase
-              number="⚙️"
-              title="構築連動インサイト (1000-Sim Analysis)"
-              color="emerald"
-            >
-              <div className="space-y-4">
-                <div className="text-sm font-medium text-white/90">
-                  {simCoaching.headline}
-                </div>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  {simCoaching.metrics.map((m: SimulationMetric) => (
-                    <div key={m.key} className="rounded border border-white/10 bg-black/40 p-2 text-center">
-                      <div className="text-[10px] text-white/50">{m.label}</div>
-                      <div className={`text-lg font-bold ${m.bucket === 'green' ? 'text-emerald-400' : m.bucket === 'yellow' ? 'text-amber-400' : 'text-rose-400'}`}>
-                        {m.value}%
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {simCoaching.suggestions.length > 0 && (
-                  <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4">
-                    <div className="mb-2 text-xs font-bold text-emerald-400">プロ推薦カード（最適化案）</div>
-                    <div className="text-sm text-white/80">
-                      {simCoaching.suggestions[0].action}
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {simCoaching.suggestions[0].candidateCardNames.map(c => (
-                          <span key={c} className="rounded bg-emerald-500/20 px-2 py-0.5 text-xs text-emerald-200">{c}</span>
-                        ))}
-                      </div>
-                    </div>
+                {opponentThreat?.lethalThreat && (
+                  <div className="mt-3 flex items-center gap-2 text-sm font-medium text-rose-300">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-500/20 text-rose-500">!</span>
+                    次ターンに敗北の可能性があります。手札干渉や壁役の展開（ケア）を最優先してください。
                   </div>
                 )}
-              </div>
-            </ThoughtPhase>
-          )}
-        </div>
+              </ThoughtPhase>
+            )}
+
+            {simCoaching && (
+              <ThoughtPhase
+                number="⚙️"
+                title="構築連動インサイト (1000-Sim Analysis)"
+                color="emerald"
+              >
+                <div className="space-y-4">
+                  <div className="text-sm font-medium text-white/90">
+                    {simCoaching.headline}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {simCoaching.metrics.map((m: any) => (
+                      <div key={m.key} className="rounded border border-white/10 bg-black/40 p-2 text-center">
+                        <div className="text-[10px] text-white/50">{m.label}</div>
+                        <div className={`text-lg font-bold ${m.bucket === 'green' ? 'text-emerald-400' : m.bucket === 'yellow' ? 'text-amber-400' : 'text-rose-400'}`}>
+                          {m.value}%
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {simCoaching.suggestions && simCoaching.suggestions.length > 0 && (
+                    <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4">
+                      <div className="mb-2 text-xs font-bold text-emerald-400">プロ推薦カード（最適化案）</div>
+                      <div className="text-sm text-white/80">
+                        {simCoaching.suggestions[0].action}
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {simCoaching.suggestions[0].candidateCardNames.map((c: string) => (
+                            <span key={c} className="rounded bg-emerald-500/20 px-2 py-0.5 text-xs text-emerald-200">{c}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </ThoughtPhase>
+            )}
+          </div>
+        )}
       </div>
 
       <div className={`mt-8 grid gap-4 lg:grid-cols-2 ${!isUnlockedPro ? 'opacity-10 pointer-events-none select-none blur-md' : ''}`}>
         <div className="rounded-xl bg-white/5 p-4">
           <div className="mb-3 text-sm font-bold text-white/70">代替のプレイング（リスク許容ルート）</div>
           <div className="space-y-3">
-            {alternatives.slice(0, 3).map((action) => (
+            {(alternatives || []).slice(0, 3).map((action: any) => (
               <ActionRow key={action.id} action={action} />
             ))}
           </div>
@@ -257,14 +317,14 @@ export function CoachPanel({
         <div className="rounded-xl bg-white/5 p-4">
           <div className="mb-3 text-sm font-bold text-white/70">プレイングを支えるキーカード</div>
           <div className="space-y-3">
-            {keyCards
-              .filter((card, index, self) =>
-                index === self.findIndex((t) => (
+            {(keyCards || [])
+              .filter((card: any, index: number, self: any[]) =>
+                index === self.findIndex((t: any) => (
                   t.cardName === card.cardName || (t.cardId && t.cardId === card.cardId)
                 ))
               )
               .slice(0, 3)
-              .map((card) => (
+              .map((card: any) => (
                 <KeyCardRow key={card.cardId || card.cardName} card={card} />
               ))}
           </div>
@@ -313,19 +373,19 @@ function formatPlanName(plan: string): string {
   }
 }
 
-function ActionRow({ action }: { action: ScoredAction }) {
+function ActionRow({ action }: { action: any }) {
   return (
     <div className="rounded-lg border border-white/5 bg-black/40 p-3 transition-colors hover:border-white/10">
       <div className="mb-1 flex items-center justify-between gap-3">
         <div className="text-sm font-semibold text-white">{action.cardName}</div>
-        <div className="text-[10px] font-black tracking-wider text-white/30">{Math.round(action.score)} SCORE</div>
+        <div className="text-[10px] font-black tracking-wider text-white/30">{Math.round(action.score || 0)} SCORE</div>
       </div>
       <div className="text-xs text-white/70">{action.line}</div>
     </div>
   );
 }
 
-function KeyCardRow({ card }: { card: KeyCard }) {
+function KeyCardRow({ card }: { card: any }) {
   return (
     <div className="rounded-lg border border-white/5 bg-black/40 p-3 transition-colors hover:border-white/10">
       <div className="mb-1 flex items-center justify-between gap-3">

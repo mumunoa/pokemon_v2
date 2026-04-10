@@ -1,5 +1,6 @@
 import type { CardRoleProfile } from "../domain/types";
 import type { CoachCard, CoachBoardFeatures, CoachGameState, CoachPhase, EnergyType } from "./types";
+import { calculateExpectedAttackResult } from "./damageCalculator";
 
 function inferPhase(state: CoachGameState): CoachPhase {
   const totalTaken = (state.players.player1.prizesTaken ?? 0) + (state.players.player2.prizesTaken ?? 0);
@@ -9,7 +10,7 @@ function inferPhase(state: CoachGameState): CoachPhase {
 }
 
 function hasRoleInHand(handProfiles: CardRoleProfile[], roles: string[]): boolean {
-  return handProfiles.some((p) => p.staticRoles.some((r) => roles.includes(String(r))));
+  return handProfiles.some((p) => p.staticRoles.some((r: any) => roles.includes(String(r))));
 }
 
 function calculateAttackReadiness(card: CoachCard | null): { ready: boolean; needed: number } {
@@ -99,6 +100,22 @@ export function extractBoardFeatures(state: CoachGameState, handProfiles: CardRo
     (me.active?.attachedEnergyIds?.length ?? 0) +
     me.bench.reduce((acc, p) => acc + (p.attachedEnergyIds?.length ?? 0), 0);
 
+  // リーサル判定：今ターンの攻撃できぜつさせられるか
+  let canKOActiveThisTurn = false;
+  if (activeCanAttack && me.active && opp.active) {
+    for (const attack of me.active.attacks || []) {
+      const result = calculateExpectedAttackResult({
+        attacker: me.active,
+        defender: opp.active,
+        attackName: attack.name || ""
+      });
+      if (result.knockout) {
+        canKOActiveThisTurn = true;
+        break;
+      }
+    }
+  }
+
   return {
     phase,
     ownPrizesRemaining: 6 - me.prizesTaken,
@@ -134,5 +151,6 @@ export function extractBoardFeatures(state: CoachGameState, handProfiles: CardRo
     oppActiveName: opp.active?.name,
     oppBenchNames: opp.bench.map(c => c.name),
     totalEnergiesInPlay,
+    canKOActiveThisTurn,
   };
 }

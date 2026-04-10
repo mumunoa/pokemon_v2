@@ -121,10 +121,10 @@ export const AiAnalysisDrawerNew: React.FC<Props> = ({ isOpen, onClose }) => {
   return (
     <>
       <div
-        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 z-[10000] bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
-      <aside className="fixed right-0 top-0 z-50 h-full w-full max-w-2xl overflow-y-auto border-l border-white/10 bg-slate-950/95 shadow-2xl">
+      <aside className="fixed right-0 top-0 z-[10001] h-full w-full max-w-2xl overflow-y-auto border-l border-white/10 bg-slate-950/95 shadow-2xl">
         <div className="sticky top-0 z-10 border-b border-white/10 bg-slate-950/90 px-5 py-4 backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -158,6 +158,8 @@ export const AiAnalysisDrawerNew: React.FC<Props> = ({ isOpen, onClose }) => {
         </div>
 
         <div className="space-y-5 px-5 py-5">
+          {/* 個別カードは CoachPanel 内に統合されたため非表示 */}
+          {/*
           <CoachPhaseCard
             coachResult={coachResult}
             isPreparationPhase={preparationPhase}
@@ -207,6 +209,7 @@ export const AiAnalysisDrawerNew: React.FC<Props> = ({ isOpen, onClose }) => {
             commentary={commentary}
             isPro={isPro}
           />
+          */}
 
           <section className="rounded-2xl border border-white/10 bg-slate-900/70 p-4">
             <h3 className="text-sm font-semibold text-white">1 デッキ安定度（初動AI分析）</h3>
@@ -231,6 +234,7 @@ export const AiAnalysisDrawerNew: React.FC<Props> = ({ isOpen, onClose }) => {
                 }}
                 isUnlocked={isUnlocked}
                 onUnlock={handleUnlock}
+                openingEvaluation={openingEvaluation}
               />
             </div>
           </section>
@@ -277,6 +281,7 @@ export const AiAnalysisDrawerNew: React.FC<Props> = ({ isOpen, onClose }) => {
             )}
           </section>
 
+          {/* 
           {boardInsight && (
             <BoardInsightCard
               boardInsight={boardInsight}
@@ -291,21 +296,12 @@ export const AiAnalysisDrawerNew: React.FC<Props> = ({ isOpen, onClose }) => {
               onOpenShare={() => setIsShareOpen(true)}
             />
           )}
+          */}
 
-          <div className="rounded-2xl border border-indigo-400/20 bg-indigo-400/5 p-4 text-sm text-slate-200">
-            <div className="font-semibold text-white">組み込みについて</div>
-            <p className="mt-2 text-slate-300">
-              この UI 差し替えは、前々回の zip（legalAction / stateTransition / helper 群）、
-              前回の zip（types / generateActionLines / recommendationEngine line評価版）と
-              セットで使う前提です。
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2 text-xs">
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-slate-300">下位ロジック差し替え</span>
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-slate-300">line評価エンジン</span>
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-slate-300">今回のUI強化</span>
-            </div>
-          </div>
 
+
+          {/* プロ解禁ボタンは CoachPanel 側のオーバーレイに統合されたため非表示 */}
+          {/*
           {!isPro && (
             <div className="rounded-2xl border border-purple-400/20 bg-purple-400/10 p-4">
               <div className="text-sm font-semibold text-white">さらに深いプロ分析を使う</div>
@@ -328,6 +324,7 @@ export const AiAnalysisDrawerNew: React.FC<Props> = ({ isOpen, onClose }) => {
               </div>
             </div>
           )}
+          */}
         </div>
       </aside>
 

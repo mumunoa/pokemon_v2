@@ -154,6 +154,16 @@ function evaluateActionLine(args: {
           ? attackBonus + 10
           : consistencyBonus + evolveBonus * 0.5;
 
+  // 戦略ゴールとの整合性ボーナス (Blueprint 5章)
+  let goalAlignmentBonus = 0;
+  if (args.goalType === "setup") {
+    goalAlignmentBonus = benchBonus * 1.5 + evolveBonus * 1.2;
+  } else if (args.goalType === "attack" || args.goalType === "checkmate") {
+    goalAlignmentBonus = (args.line.scoreHints.attackIncluded ? 40 : 0) + (args.line.scoreHints.manualEnergyUsed ? 15 : 0);
+  } else if (args.goalType === "disrupt") {
+    goalAlignmentBonus = (args.line.scoreHints.supporterUsed ? 20 : 0);
+  }
+
   const replyPenalty = Math.max(0, args.replyPenaltyBase - evolveBonus * 0.12 - benchBonus * 0.08);
   const lineScore =
     nextEval.total +
@@ -161,7 +171,8 @@ function evaluateActionLine(args: {
     evolveBonus +
     attackBonus +
     consistencyBonus +
-    goalFit -
+    goalFit +
+    goalAlignmentBonus -
     replyPenalty;
 
   const reasoning = [
