@@ -141,7 +141,7 @@ export function CoachPanel({
           </div>
         </ThoughtPhase>
 
-        {/* プロの戦術インサイト (thoughts) */}
+        {/* プロの戦術インサイト (thoughts) - 内部ロジックのため非表示化
         {isUnlockedPro && thoughts && thoughts.length > 0 && (
           <ThoughtPhase
             number="💡"
@@ -178,6 +178,7 @@ export function CoachPanel({
             </div>
           </ThoughtPhase>
         )}
+        */}
 
         {/* ロックオーバーレイ */}
         {!isUnlockedPro && (

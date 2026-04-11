@@ -54,6 +54,14 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType, isUnlocked = 
         }
     };
 
+    useEffect(() => {
+        // チケットを消費して解禁（isUnlocked が true）された際、
+        // すでに結果がある場合はプロ版のデータ（ヒント等）を取得するために再実行する
+        if (isUnlocked && summary && !isLoading) {
+            runSimulation();
+        }
+    }, [isUnlocked]);
+
     if (isLoading) {
         return (
             <div className="bg-slate-900/40 border border-indigo-500/20 rounded-2xl p-6 flex flex-col items-center gap-4 animate-pulse">
