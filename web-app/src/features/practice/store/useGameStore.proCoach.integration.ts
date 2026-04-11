@@ -80,6 +80,7 @@ export function toCoachGameStateFromStore(state: GameState) {
         prizesTaken: 6 - state.zones['player2-prizes'].length,
         supporterUsed: !!state.turnFlags?.player1?.supporterUsed,
         energyAttachedThisTurn: !!state.turnFlags?.player1?.energyAttachedThisTurn,
+        deckRemaining: state.zones['player1-deck']?.length ?? 0,
       },
       player2: {
         active: normalizeCard(p2Active),
@@ -89,6 +90,7 @@ export function toCoachGameStateFromStore(state: GameState) {
         prizesTaken: 6 - state.zones['player1-prizes'].length,
         supporterUsed: !!state.turnFlags?.player2?.supporterUsed,
         energyAttachedThisTurn: !!state.turnFlags?.player2?.energyAttachedThisTurn,
+        deckRemaining: state.zones['player2-deck']?.length ?? 0,
       },
     },
     cards: state.cards ?? {},

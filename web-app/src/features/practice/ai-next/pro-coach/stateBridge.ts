@@ -31,7 +31,8 @@ export function toCoachGameState(board: BoardState): CoachGameState {
     discard: board.discard.map(name => ({ id: name, name })),
     prizesTaken: board.prizesTakenByPlayer,
     supporterUsed: !board.availableSupporter,
-    energyAttachedThisTurn: !board.availableEnergyAttachment
+    energyAttachedThisTurn: !board.availableEnergyAttachment,
+    deckRemaining: board.deckRemaining ?? 0
   };
 
   const player2: CoachPlayerState = {
@@ -41,7 +42,8 @@ export function toCoachGameState(board: BoardState): CoachGameState {
     discard: board.opponentDiscard.map(name => ({ id: name, name })),
     prizesTaken: board.prizesTakenByOpponent,
     supporterUsed: false,
-    energyAttachedThisTurn: false
+    energyAttachedThisTurn: false,
+    deckRemaining: 30 // 相手の山札数は不明なためデフォルト値
   };
 
   return {
