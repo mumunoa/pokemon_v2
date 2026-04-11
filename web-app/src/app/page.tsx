@@ -11,53 +11,7 @@ export default function HomePage() {
   const { isSignedIn } = useUser();
   const router = useRouter();
 
-  const handleRecoverTicket = async () => {
-    if (!isSignedIn) {
-      alert('チケットを受け取るにはログインが必要です。');
-      return;
-    }
 
-    // Monetag SDK 連携用のオブジェクト取得とログ
-    const monetag = (window as any).monetag;
-    console.log('[page] Monetag SDK status:', {
-      exists: !!monetag,
-      showRewardedAd: typeof monetag?.showRewardedAd
-    });
-
-    const confirm = window.confirm('広告を表示して分析チケットを1枚獲得しますか？\n（新しいウインドウで広告が表示されます）');
-    if (!confirm) return;
-
-    const zoneId = 224540;
-    const recoverApi = '/api/monetization/tickets/recover';
-
-    const applyReward = async () => {
-      try {
-        const res = await fetch(recoverApi, { method: 'POST' });
-        if (res.ok) {
-          alert('チケットを1枚獲得しました！ツール画面で確認してください。');
-          router.push('/practice');
-        } else {
-          alert('エラーが発生しました。時間を置いて再度お試しください。');
-        }
-      } catch (e) {
-        console.error(e);
-        alert('通信エラーが発生しました。');
-      }
-    };
-
-    // 広告再生処理
-    if (monetag && typeof monetag.showRewardedAd === 'function') {
-      monetag.showRewardedAd(
-        zoneId,
-        () => applyReward(), // 視聴完了時
-        () => alert('広告が閉じられました。チケットを獲得するには最後まで視聴してください。') // 中断時
-      );
-    } else {
-      // SDK未読み込み時のフォールバック
-      console.warn('Monetag SDK not detected, falling back to direct reward.');
-      applyReward();
-    }
-  };
 
   const features = [
     {
@@ -295,13 +249,7 @@ export default function HomePage() {
               >
                 一人回しを始める (無料)
               </Link>
-              <button 
-                onClick={handleRecoverTicket}
-                className="w-full md:w-auto px-8 py-4 rounded-2xl bg-orange-600/20 border border-orange-500/20 text-orange-400 font-bold hover:bg-orange-600/30 transition-all flex items-center justify-center gap-2 group"
-              >
-                <span className="group-hover:animate-bounce">🎁</span>
-                動画を見てチケット獲得
-              </button>
+
             </div>
             
             <div className="mt-12 opacity-40">

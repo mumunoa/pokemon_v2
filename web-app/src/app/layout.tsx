@@ -76,8 +76,21 @@ export default function RootLayout({
             })
           }}
         />
-        {/* Monetag Smart Tag / Rewarded Video */}
-        <script src="https://3nbf4.com/88/tag.min.js" data-zone="224540" async data-cfasync="false"></script>
+        {/* Clean up any legacy Service Workers (like Monetag's sw.js) that may cause connection issues */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                  for(let registration of registrations) {
+                    registration.unregister();
+                    console.log('Unregistered legacy Service Worker');
+                  }
+                });
+              }
+            `,
+          }}
+        />
       </head>
       <body className="antialiased font-sans">
         {/*
