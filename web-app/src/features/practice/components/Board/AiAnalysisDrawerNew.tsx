@@ -281,6 +281,28 @@ export const AiAnalysisDrawerNew: React.FC<Props> = ({ isOpen, onClose }) => {
             )}
           </section>
 
+          {/* 有料プランへの誘導ボタン */}
+          <div className="px-1">
+            <Link
+              href="/billing"
+              className="flex items-center justify-between w-full p-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 transition-all shadow-lg group relative overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="flex items-center gap-3 relative z-10">
+                <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
+                  <span className="text-xl">💎</span>
+                </div>
+                <div className="text-left">
+                  <div className="text-sm font-bold text-white">Pro プランにアップグレード</div>
+                  <div className="text-[10px] text-white/70 font-medium">1000回シミュ・全戦術を無制限に。</div>
+                </div>
+              </div>
+              <div className="relative z-10 bg-white/20 p-2 rounded-full backdrop-blur-sm group-hover:translate-x-1 transition-transform">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </div>
+            </Link>
+          </div>
+
           {/* 
           {boardInsight && (
             <BoardInsightCard

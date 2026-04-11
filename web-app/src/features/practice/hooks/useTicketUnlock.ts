@@ -69,14 +69,9 @@ export function useTicketUnlock(dependencies: any[] = []) {
             }
         }
 
-        const monetag = (window as any).monetag;
+        // 広告視聴ロジックは一旦コメントアウトし、有料プランへの誘導へ切り替え
         /*
-        console.log('[useTicketUnlock] Monetag SDK status:', {
-            exists: !!monetag,
-            showRewardedAd: typeof monetag?.showRewardedAd
-        });
-        */
-
+        const monetag = (window as any).monetag;
         const watchAd = window.confirm('無料回数を使い切りました。広告を見てこの盤面のみ詳細分析を有効にしますか？');
         if (!watchAd) return false;
 
@@ -116,6 +111,13 @@ export function useTicketUnlock(dependencies: any[] = []) {
                 applyReward();
             }
         });
+        */
+
+        const upgrade = window.confirm('無料回数を使い切りました。Pro プランにアップグレードして、高精度の詳細分析を無制限に利用しませんか？');
+        if (upgrade) {
+            window.location.href = '/billing';
+        }
+        return false;
     };
 
     return {

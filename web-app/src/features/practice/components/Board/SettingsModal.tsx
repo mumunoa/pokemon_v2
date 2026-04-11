@@ -49,7 +49,23 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
         window.location.href = '/billing';
     };
 
-    const [editingName, setEditingName] = useState<{ id: string, name: string } | null>(null);
+    const p1Count = player1Deck.reduce((s, c) => s + c.count, 0);
+    const p2Count = player2Deck.reduce((s, c) => s + c.count, 0);
+
+    const modes: { id: 'text' | 'compact' | 'local-image', label: string, labelEn: string, description: string }[] = [
+        {
+            id: 'compact',
+            label: 'コンパクトモード',
+            labelEn: 'Compact Mode',
+            description: '基本は自作UIで、詳細確認時のみ画像を考慮する標準設定です。'
+        },
+        {
+            id: 'local-image',
+            label: '画像表示モード',
+            labelEn: 'Image Mode',
+            description: 'すべてのカード画像を通常通り表示します。'
+        },
+    ];
 
     const [deckCodes, setDeckCodes] = useState<Record<PlayerId, string>>({
         player1: '',
@@ -69,7 +85,6 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
         const code = deckCodes[playerId].trim();
         if (!code) return;
 
-        // 入力されたコードがサンプルデッキの一覧に含まれるかチェック
         const isActuallySample = isSample || SAMPLE_DECKS.some((sd: any) => sd.code === code);
 
         setLoading(prev => ({ ...prev, [playerId]: true }));
@@ -92,32 +107,6 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
         initializeDeck(player1Deck, player2Deck);
         onClose();
     };
-
-    const p1Count = player1Deck.reduce((s, c) => s + c.count, 0);
-    const p2Count = player2Deck.reduce((s, c) => s + c.count, 0);
-
-    const modes: { id: 'text' | 'compact' | 'local-image', label: string, labelEn: string, description: string }[] = [
-        /*
-                {
-                    id: 'text',
-                    label: 'テキストモード',
-                    labelEn: 'Text Mode',
-                    description: 'カード名とHPのみの超軽量表示です。'
-                },
-        */
-        {
-            id: 'compact',
-            label: 'コンパクトモード',
-            labelEn: 'Compact Mode',
-            description: '基本は自作UIで、詳細確認時のみ画像を考慮する標準設定です。'
-        },
-        {
-            id: 'local-image',
-            label: '画像表示モード',
-            labelEn: 'Image Mode',
-            description: 'すべてのカード画像を通常通り表示します。'
-        },
-    ];
 
     return (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto" onClick={onClose}>
@@ -164,7 +153,6 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                             placeholder="デッキコード"
                                             value={deckCodes[pid]}
                                             onChange={(e) => setDeckCodes(prev => ({ ...prev, [pid]: e.target.value }))}
-                                            autoFocus={pid === 'player1'}
                                             className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-base focus:outline-none focus:ring-1 focus:ring-green-500/50 transition-all placeholder:text-slate-700"
                                         />
                                         <button
@@ -189,12 +177,8 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                                 key={sd.code}
                                                 onClick={() => {
                                                     setDeckCodes(prev => ({ ...prev, [pid]: sd.code }));
-                                                    // Use a temporary function to call handleLoadDeck with the current pid
                                                     setTimeout(() => {
-                                                        const currentInput = document.getElementById(`input-${pid}`) as HTMLInputElement;
-                                                        if (currentInput) {
-                                                            handleLoadDeck(pid, true);
-                                                        }
+                                                        handleLoadDeck(pid, true);
                                                     }, 0);
                                                 }}
                                                 className="bg-slate-700/50 hover:bg-slate-700 text-slate-300 text-[10px] px-2 py-0.5 rounded border border-slate-700 transition-colors"
@@ -224,9 +208,7 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                                         className={`flex items-center gap-1.5 p-1.5 rounded-lg border transition-colors group cursor-pointer ${deckCodes[pid] === deckCodeInfo.code ? 'bg-blue-900/40 border-blue-500/50' : 'bg-slate-800/80 border-slate-700 hover:border-slate-500 hover:bg-slate-700'
                                                             }`}
                                                         onClick={() => {
-                                                            if (editingName?.id !== deckCodeInfo.code) {
-                                                                setDeckCodes(prev => ({ ...prev, [pid]: deckCodeInfo.code }));
-                                                            }
+                                                            setDeckCodes(prev => ({ ...prev, [pid]: deckCodeInfo.code }));
                                                         }}
                                                     >
                                                         {isPro && (
@@ -238,7 +220,7 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                                                             </button>
                                                         )}
                                                         <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                                            <span className="text-[11px] font-bold text-slate-200 truncate pr-4">
+                                                            <span className="text-[11px] font-bold text-slate-200 pr-4 truncate">
                                                                 {deckCodeInfo.name || "名称未設定デッキ"}
                                                             </span>
                                                             <span className="text-[9px] text-slate-500 font-mono tracking-widest leading-none mt-0.5">{deckCodeInfo.code}</span>
@@ -284,7 +266,8 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                         </button>
                     </section>
 
-                    {/* Display Mode Section */}
+                    {/* Display Mode Section - 今後の画像表示モード固定化に伴い非表示化 */}
+                    {/*
                     <section>
                         <div className="flex items-center gap-2 mb-4">
                             <span className="w-1 h-4 bg-blue-500 rounded-full"></span>
@@ -322,6 +305,7 @@ export const SettingsModal: React.FC<Props> = ({ onClose }) => {
                             ))}
                         </div>
                     </section>
+                    */}
 
                     {/* Subscription Management Section */}
                     <section className="mt-2 pt-2 border-t border-slate-800/30">
