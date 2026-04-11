@@ -89,7 +89,7 @@ export function CoachPanel({
   const isActuallyPro = isUnlockedPro && !!proResult.recommendedSequence;
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-[#0a0f16] to-[#040608] p-6 text-white shadow-2xl">
+    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-[#0a0f16] to-[#040608] p-6 text-white shadow-2xl">
       <div className="mb-6 flex items-start justify-between gap-4 border-b border-white/10 pb-4">
         <div>
           <h2 className="flex items-center gap-2 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-2xl font-black tracking-tight text-transparent">
@@ -182,7 +182,7 @@ export function CoachPanel({
 
         {/* ロックオーバーレイ */}
         {!isUnlockedPro && (
-          <div className="absolute left-0 right-0 top-32 z-20 flex h-full flex-col items-center justify-start rounded-b-2xl bg-gradient-to-b from-transparent via-[#080d12]/95 to-[#040608] pt-16 backdrop-blur-[2px]">
+          <div className="absolute left-0 right-0 top-32 bottom-0 z-20 flex flex-col items-center justify-start rounded-b-2xl bg-gradient-to-b from-transparent via-[#080d12]/95 to-[#040608] pt-16 backdrop-blur-[2px]">
             <div className="flex w-full max-w-sm flex-col items-center rounded-2xl border border-amber-500/20 bg-black/60 p-6 text-center shadow-2xl backdrop-blur-md">
               <div className="mb-2 text-3xl">🔒</div>
               <div className="mb-2 text-lg font-bold text-white">プロ思考プロセスを解禁する</div>
