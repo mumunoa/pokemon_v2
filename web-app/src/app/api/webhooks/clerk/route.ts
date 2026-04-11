@@ -66,7 +66,7 @@ export async function POST(req: Request) {
                 .from('users')
                 .insert([{ 
                     id: id, 
-                    ai_tickets: 3,
+                    ai_tickets: 5,
                     plan_type: 'free',
                 }]);
 
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
                 return new Response('Database error', { status: 500 });
             }
 
-            console.log(`Successfully initialized user ${id} with 3 AI tickets and free plan.`);
+            console.log(`Successfully initialized user ${id} with 5 AI tickets and free plan.`);
         } catch (dbErr) {
             console.error('Failed to sync user to Supabase:', dbErr);
             return new Response('Database error', { status: 500 });

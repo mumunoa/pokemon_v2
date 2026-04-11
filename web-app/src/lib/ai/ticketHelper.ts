@@ -57,7 +57,7 @@ export async function checkAndResetTickets(supabase: SupabaseClient, userId: str
     */
 
     if (isDifferentDay) {
-        const dailyAllowance = 3;
+        const dailyAllowance = 5;
         // console.log(`[TicketReset] Resetting tickets for user ${userId}: ${userProfile.ai_tickets} -> ${dailyAllowance}`);
         const { error: updateError } = await supabase
             .from('users')

@@ -5,14 +5,26 @@ import { Arena } from '@/features/practice/components/Board/Arena';
 import { useGameStore } from '@/features/practice/store/useGameStore';
 import { SettingsModal } from '@/features/practice/components/Board/SettingsModal';
 import { LogSidePanel } from '@/features/practice/components/Board/LogSidePanel';
-import '../styles/app.css'; // Future implementation of customized non-tailwind CSS if needed
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import '../styles/app.css';
 
 export default function Home() {
+  const { isLoaded, isSignedIn } = useUser();
+  const router = useRouter();
   const { turnCount, currentTurnPlayer, logs, isGameStarted } = useGameStore();
   const player1Deck = useGameStore(s => s.player1Deck);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLogOpen, setIsLogOpen] = useState(false);
   const [showSettingsTutorial, setShowSettingsTutorial] = useState(false);
+
+  // URL Cleanup: Removed '#' or auth query params left over from redirect
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window.location.hash || window.location.search.includes('__clerk_'))) {
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({ ...window.history.state }, '', cleanUrl);
+    }
+  }, []);
 
   useEffect(() => {
     // デッキが空の場合のみ、常にチュートリアル（吹き出し）を表示
@@ -32,6 +44,24 @@ export default function Home() {
     document.body.classList.add('practice-mode');
     return () => document.body.classList.remove('practice-mode');
   }, []);
+
+  // Loading or Auth check
+  if (!isLoaded) {
+    return (
+      <div className="w-full h-screen bg-slate-950 flex flex-col items-center justify-center space-y-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500"></div>
+        <p className="text-slate-400 text-sm animate-pulse">読み込み中...</p>
+      </div>
+    );
+  }
+
+  // Redirect if not signed in (Safe guard)
+  if (isLoaded && !isSignedIn) {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/sign-in';
+    }
+    return null;
+  }
 
   return (
     <main className="w-full h-screen h-[100dvh] bg-slate-950 flex flex-col overflow-hidden relative" onClick={() => setIsLogOpen(false)}>

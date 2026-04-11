@@ -44,15 +44,20 @@ function isPreparationPhase(input: {
 export const AiAnalysisDrawerNew: React.FC<Props> = ({ isOpen, onClose }) => {
   const player1Deck = useGameStore((state) => state.player1Deck);
   const player2Deck = useGameStore((state) => state.player2Deck);
-  const { isUnlocked, handleUnlock } = useTicketUnlock([player1Deck, player2Deck]);
-  const { isThinking, commentary, planType } = useAiCoach(isUnlocked);
+  const logs = useGameStore((state) => state.logs);
+  
+  // 局面が変わる（ログが増える）たびに解禁をリセットするため、logs.length を含める
+  const stabilityUnlock = useTicketUnlock([player1Deck]);
+  const proCoachUnlock = useTicketUnlock([player1Deck, player2Deck, logs.length]);
+  
+  const { isThinking, commentary, planType } = useAiCoach(proCoachUnlock.isUnlocked);
   const { runCoachAnalysis, coachResult, coachLoading, openingEvaluation } = useGameStore();
   const { refreshProfile } = useAuth();
   const entitlement = useEntitlement();
   const [isShareOpen, setIsShareOpen] = useState(false);
 
   const isProActual = planType === 'pro' || planType === 'elite';
-  const isPro = isProActual || isUnlocked;
+  const isPro = isProActual || proCoachUnlock.isUnlocked;
 
   const currentTurn = coachResult?.currentTurn ?? 0;
   const preparationPhase = isPreparationPhase({
@@ -94,7 +99,7 @@ export const AiAnalysisDrawerNew: React.FC<Props> = ({ isOpen, onClose }) => {
     if (boardInsight) {
       if (isProActual) {
         accessLevel = planType === 'elite' ? 'elite' : 'pro';
-      } else if (isUnlocked) {
+      } else if (proCoachUnlock.isUnlocked) {
         accessLevel = 'ticket_unlocked';
       } else {
         accessLevel = 'free_summary';
@@ -105,7 +110,7 @@ export const AiAnalysisDrawerNew: React.FC<Props> = ({ isOpen, onClose }) => {
       status: (coachLoading ? 'running' : boardInsight ? 'ready' : 'idle') as 'running' | 'ready' | 'idle',
       accessLevel,
     };
-  }, [boardInsight, coachLoading, isProActual, planType, isUnlocked]);
+  }, [boardInsight, coachLoading, isProActual, planType, proCoachUnlock.isUnlocked]);
 
   const shareSummary = useMemo(() => {
     if (!boardInsight) return null;
@@ -133,12 +138,12 @@ export const AiAnalysisDrawerNew: React.FC<Props> = ({ isOpen, onClose }) => {
               </div>
               <h2 className="mt-1 text-xl font-bold text-white">
                 AIプロコーチ
-                {!isProActual && !isUnlocked && (
+                {!isProActual && !proCoachUnlock.isUnlocked && (
                   <span className="ml-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-xs text-amber-300">
                     FREE
                   </span>
                 )}
-                {isUnlocked && !isProActual && (
+                {proCoachUnlock.isUnlocked && !isProActual && (
                   <span className="ml-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-xs text-emerald-300">
                     UNLOCKED
                   </span>
@@ -214,7 +219,11 @@ export const AiAnalysisDrawerNew: React.FC<Props> = ({ isOpen, onClose }) => {
           <section className="rounded-2xl border border-white/10 bg-slate-900/70 p-4">
             <h3 className="text-sm font-semibold text-white">1 デッキ安定度（初動AI分析）</h3>
             <div className="mt-3">
-              <InitialSimulationCard planType={planType} isUnlocked={isUnlocked} onUnlock={handleUnlock} />
+              <InitialSimulationCard 
+                planType={planType} 
+                isUnlocked={stabilityUnlock.isUnlocked} 
+                onUnlock={stabilityUnlock.handleUnlock} 
+              />
             </div>
           </section>
 
@@ -232,8 +241,8 @@ export const AiAnalysisDrawerNew: React.FC<Props> = ({ isOpen, onClose }) => {
                 onUpgradeClick={() => {
                   window.location.href = '/billing';
                 }}
-                isUnlocked={isUnlocked}
-                onUnlock={handleUnlock}
+                isUnlocked={proCoachUnlock.isUnlocked}
+                onUnlock={proCoachUnlock.handleUnlock}
                 openingEvaluation={openingEvaluation}
               />
             </div>

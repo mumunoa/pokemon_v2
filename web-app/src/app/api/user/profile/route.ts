@@ -59,7 +59,7 @@ export async function GET() {
                         id: userId,
                         email: user?.primaryEmailAddress?.emailAddress || '',
                         plan_type: 'free',
-                        ai_tickets: 3,
+                        ai_tickets: 5,
                         updated_at: new Date().toISOString()
                     })
                     .select()
@@ -95,7 +95,7 @@ export async function GET() {
         if (!profileData) {
             return NextResponse.json({
                 id: userId,
-                ai_tickets: 3,
+                ai_tickets: 5,
                 pro_trial_until: null,
             });
         }
