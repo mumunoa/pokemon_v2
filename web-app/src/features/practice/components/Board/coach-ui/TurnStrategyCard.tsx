@@ -17,7 +17,7 @@ export function TurnStrategyCard({ coachResult, isPro }: Props) {
   return (
     <section className="rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4">
       <div className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">
-        Turn Strategy
+        ターン戦略
       </div>
       <h3 className="mt-1 text-lg font-bold text-white">このターンの戦略</h3>
 

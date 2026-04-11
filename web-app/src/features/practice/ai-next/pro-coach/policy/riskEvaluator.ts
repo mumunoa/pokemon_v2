@@ -9,6 +9,8 @@ export function evaluateRisk(
   state: CoachGameState,
 ): RiskReport {
   const me = state.players.player1;
+  const deckRemaining = state.cards ? Object.keys(state.cards).length : 60; // Fallback or direct access if available
+
   const handCollapseRisk = clamp(
     (me.hand.length <= 1 ? 48 : me.hand.length <= 3 ? 26 : 10) +
       (features.hasDrawInHand ? -12 : 8) +
@@ -39,13 +41,29 @@ export function evaluateRisk(
       (features.followupNeed > 60 ? 18 : 8),
   );
 
+  // --- New Strategic Risks (Phase 11.8) ---
+  // 山札切れリスク: 残り枚数が少なくなると指数関数的に上昇
+  const actualDeckRemaining = (state as any).deckRemaining ?? 15; // Assume from state expansion
+  const deckOutRisk = clamp(
+    actualDeckRemaining <= 3 ? 90 :
+    actualDeckRemaining <= 7 ? 65 :
+    actualDeckRemaining <= 12 ? 35 : 5
+  );
+
+  // 重要札損失リスク: 手札の質が高い状況での手札破棄リスク（拡張性確保）
+  const resourceLossRisk = clamp(
+    (me.hand.length >= 7 ? 20 : 5) + 
+    (features.drawNeed < 30 ? 15 : 0) // 手札が十分な時にさらに回すリスク
+  );
+
   const totalRiskScore = clamp(
     Math.round(
-      handCollapseRisk * 0.18 +
-        boardCollapseRisk * 0.24 +
-        energyStallRisk * 0.18 +
-        prizeRaceLossRisk * 0.22 +
-        comebackFailureRisk * 0.18,
+      handCollapseRisk * 0.15 +
+        boardCollapseRisk * 0.20 +
+        energyStallRisk * 0.15 +
+        prizeRaceLossRisk * 0.20 +
+        comebackFailureRisk * 0.15 +
+        deckOutRisk * 0.15
     ),
   );
 
@@ -55,6 +73,8 @@ export function evaluateRisk(
     energyStallRisk,
     prizeRaceLossRisk,
     comebackFailureRisk,
+    deckOutRisk,
+    resourceLossRisk,
     totalRiskScore,
   };
 }

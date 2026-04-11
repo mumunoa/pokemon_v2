@@ -73,6 +73,7 @@ export type CoachPlayerState = {
   prizesTaken: number;
   supporterUsed: boolean;
   energyAttachedThisTurn: boolean;
+  deckRemaining: number; // Added for self-mill risk calculation
 };
 
 export type CoachGameState = {
@@ -296,6 +297,8 @@ export type RiskReport = {
   energyStallRisk: number;
   prizeRaceLossRisk: number;
   comebackFailureRisk: number;
+  deckOutRisk: number; // Added for self-mill evaluation
+  resourceLossRisk: number; // Added for key card management
   totalRiskScore: number;
 };
 

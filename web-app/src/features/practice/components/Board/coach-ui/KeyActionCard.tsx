@@ -13,7 +13,7 @@ export function KeyActionCard({ bestAction, isPro }: Props) {
   return (
     <section className="rounded-2xl border border-rose-400/20 bg-rose-400/5 p-4">
       <div className="text-xs font-semibold uppercase tracking-[0.2em] text-rose-300">
-        Key Action
+        主要なアクション
       </div>
       <h3 className="mt-1 text-lg font-bold text-white">このターンの要所</h3>
 

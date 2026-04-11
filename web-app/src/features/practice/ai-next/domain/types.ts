@@ -139,7 +139,12 @@ export type EffectPrimitive =
   | 'prize_swing'
   | 'resource_loop'
   | 'energy_denial'
-  | 'coin_flip_conditional';
+  | 'coin_flip_conditional'
+  // Strategic Risks
+  | 'risk_self_deck_discard'
+  | 'risk_self_hand_discard'
+  | 'risk_self_damage'
+  | 'risk_opponent_hand_gain';
 
 export type RoleEvidence = {
   role: string;
@@ -164,6 +169,17 @@ export type SectionInferenceInput = {
   source: 'ability' | 'support' | 'rule' | 'attack' | 'energy';
 };
 
+/**
+ * Structured capabilities for advanced tactical interpretation.
+ */
+export type CardCapability = {
+  trigger: 'on_play' | 'on_active' | 'on_switch' | 'on_attack' | 'per_turn' | 'static_active' | 'passive' | 'none';
+  zone: 'bench' | 'active' | 'hand' | 'both' | 'none';
+  effect: EffectPrimitive;
+  intensity: number; // 0-100
+  limitations?: string[];
+};
+
 export type CardRoleProfile = {
   cardId: string;
   cardName: string;
@@ -177,6 +193,7 @@ export type CardRoleProfile = {
   evidence: RoleEvidence[];
   primitives?: EffectPrimitive[];
   primitiveEvidence?: PrimitiveEvidence[];
+  capabilities?: CardCapability[]; // Structured NLP-analyzed capabilities
   inferredAt: string;
   version: string;
 };

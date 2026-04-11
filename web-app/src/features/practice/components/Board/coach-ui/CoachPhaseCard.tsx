@@ -29,7 +29,7 @@ export function CoachPhaseCard({ coachResult, openingEvaluation, currentTurn, is
       <div className="flex items-center justify-between gap-3">
         <div>
           <div className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">
-            Current Phase
+            現在のフェーズ
           </div>
           <h3 className="mt-1 text-lg font-bold text-white">{label}</h3>
         </div>

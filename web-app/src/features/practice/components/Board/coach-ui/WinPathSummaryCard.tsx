@@ -16,7 +16,7 @@ export function WinPathSummaryCard({ coachResult, isPro }: Props) {
   return (
     <section className="rounded-2xl border border-fuchsia-400/20 bg-fuchsia-400/5 p-4">
       <div className="text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-300">
-        Win Path
+        勝利への道
       </div>
       <h3 className="mt-1 text-lg font-bold text-white">この対戦の主勝ち筋</h3>
 

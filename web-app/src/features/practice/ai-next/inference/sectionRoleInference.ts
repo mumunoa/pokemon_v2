@@ -7,6 +7,7 @@ import {
   EffectPrimitive,
   PrimitiveEvidence,
   RegressionSeed,
+  CardCapability,
 } from "../domain/types";
 import {
   normalizeText,
@@ -343,6 +344,36 @@ function inferPrimitivesFromText(
 
   if (includesAny(normalized, ["コイン", "オモテ", "ウラ"])) {
     addPrimitive(primitives, primitiveEvidence, "coin_flip_conditional", source, text, "コイントス条件付き。", 0.8);
+  }
+
+  // --- Strategic Risks Detection (Blueprint 11.5) ---
+  if (
+    includesAny(normalized, ["自分の山札を"]) &&
+    includesAny(normalized, ["トラッシュする", "上から", "すべてトラッシュ"])
+  ) {
+    addPrimitive(primitives, primitiveEvidence, "risk_self_deck_discard", source, text, "自分の山札を削る副作用。", 0.95);
+  }
+
+  if (
+    includesAny(normalized, ["自分の手札を"]) &&
+    includesAny(normalized, ["トラッシュする", "すべてトラッシュ", "1枚トラッシュ", "2枚トラッシュ"])
+  ) {
+    addPrimitive(primitives, primitiveEvidence, "risk_self_hand_discard", source, text, "手札破棄の代償。", 0.95);
+  }
+
+  if (
+    includesAny(normalized, ["このポケモンにも", "自分にも"]) &&
+    includesAny(normalized, ["ダメージ", "ダメカン"])
+  ) {
+    addPrimitive(primitives, primitiveEvidence, "risk_self_damage", source, text, "自傷ダメージの副作用。", 0.9);
+  }
+
+  if (
+    includesAny(normalized, ["相手は"]) &&
+    includesAny(normalized, ["手札が", "枚になるように引く", "山札から引く"]) &&
+    !includesAny(normalized, ["自分の手札"])
+  ) {
+    addPrimitive(primitives, primitiveEvidence, "risk_opponent_hand_gain", source, text, "相手に手札アドバンテージを与えるリスク。", 0.85);
   }
 
   return {
@@ -708,6 +739,34 @@ export function createRoleProfile(card: CardLike, sections: SectionInferenceInpu
       ? allEvidence.reduce((sum, item) => sum + item.confidence, 0) / allEvidence.length
       : 0.5;
 
+  // --- Intelligence Layer: Build Capabilities (Phase 11.2) ---
+  const capabilities: CardCapability[] = allPrimitiveEvidence.map((ev) => {
+    let trigger: CardCapability["trigger"] = "none";
+    let zone: CardCapability["zone"] = "none";
+
+    const text = normalizeText(ev.matchedText);
+    
+    // Trigger Inference
+    if (includesAny(text, ["手札からベンチに出したとき", "出したとき"])) trigger = "on_play";
+    else if (includesAny(text, ["バトル場にいるかぎり", "場にいるかぎり"])) trigger = "static_active";
+    else if (includesAny(text, ["ベンチからバトル場に出たとき"])) trigger = "on_switch";
+    else if (includesAny(text, ["自分の番に1回", "番ごとに1回", "1回使える"])) trigger = "per_turn";
+    else if (ev.source === "attack") trigger = "on_attack";
+
+    // Zone Inference
+    if (includesAny(text, ["バトル場"])) zone = "active";
+    else if (includesAny(text, ["ベンチ"])) zone = "bench";
+    else if (includesAny(text, ["手札"])) zone = "hand";
+    
+    return {
+      trigger,
+      zone,
+      effect: ev.primitive,
+      intensity: Math.round(ev.confidence * 100),
+      limitations: ev.matchedText.includes("のぞむなら") ? ["optional"] : [],
+    };
+  });
+
   return {
     cardId: card.id || card.cardId || "unknown",
     cardName: card.name || "unknown",
@@ -721,6 +780,7 @@ export function createRoleProfile(card: CardLike, sections: SectionInferenceInpu
     evidence: allEvidence,
     primitives: uniqueItems(allPrimitives),
     primitiveEvidence: allPrimitiveEvidence,
+    capabilities,
     inferredAt: new Date().toISOString(),
     version: ROLE_VERSION,
   };

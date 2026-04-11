@@ -207,7 +207,13 @@ export function buildProfessionalCoachResult(params: {
   const goal = planTurnGoal(features, params.state);
   const prizePlan = planPrizePath(features, params.state, params.profiles);
   const opponentThreat = evaluateOpponentThreat(features, params.state);
-  const risk = evaluateRisk(features, params.state);
+  
+  // 山札枚数を明示的にリスク評価に渡す
+  const enrichedState = { 
+    ...params.state, 
+    deckRemaining: params.state.players.player1.deckRemaining 
+  };
+  const risk = evaluateRisk(features, enrichedState);
 
   const rawActions = generateLegalActions(params.state, params.profiles);
   const actions = sortActionsByProfessionalPriority(rawActions);
@@ -243,6 +249,18 @@ export function buildProfessionalCoachResult(params: {
         priorityBonus = spec.priorityBase - 40;
         specReasons = spec.explainWhyNow?.(ctx) ?? [];
       }
+
+      // --- Strategic Risk Penalty Calculation (Phase 11.8) ---
+      let riskPenalty = 0;
+      if (profile?.primitives?.includes("risk_self_deck_discard")) {
+        // 山札削り自体のリスク × 現在の山札切れリスク
+        riskPenalty += Math.round(risk.deckOutRisk * 0.8);
+      }
+      if (profile?.primitives?.includes("risk_self_hand_discard")) {
+        // 重要札損失リスク (将来的な拡張ポイント)
+        riskPenalty += Math.round(risk.resourceLossRisk * 0.4);
+      }
+      priorityBonus -= riskPenalty;
 
       const baseLine = buildProfessionalLine({
         action,

@@ -27,7 +27,7 @@ export function TurnTabs({ isPreparationPhase, openingEvaluation, coachResult, c
 
   return (
     <section className="rounded-2xl border border-white/10 bg-slate-900/70 p-4">
-      <h3 className="text-sm font-semibold text-white">ターン別タブ</h3>
+      <h3 className="text-sm font-semibold text-white">ターン別詳細分析</h3>
 
       <div className="mt-3 flex flex-wrap gap-2">
         {tabs.map((item) => (

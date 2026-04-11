@@ -29,6 +29,7 @@ export class RoleProfileRepo {
       evidence: profile.evidence,
       primitives: profile.primitives || [],
       primitive_evidence: profile.primitiveEvidence || [],
+      capabilities: profile.capabilities || [],
       inferred_at: profile.inferredAt,
       version: profile.version,
     };
@@ -37,7 +38,7 @@ export class RoleProfileRepo {
   async upsert(profile: CardRoleProfile) {
     const { error } = await this.supabase
       .from('card_role_profiles')
-      .upsert(this.toRow(profile), { onConflict: 'card_id' });
+      .upsert(this.toRow(profile), { onConflict: 'card_id, version' }); // Updated to match unique constraint in migration
 
     if (error) throw error;
   }
@@ -48,7 +49,7 @@ export class RoleProfileRepo {
     const rows = profiles.map((profile) => this.toRow(profile));
     const { error } = await this.supabase
       .from('card_role_profiles')
-      .upsert(rows, { onConflict: 'card_id' });
+      .upsert(rows, { onConflict: 'card_id, version' });
 
     if (error) throw error;
   }
@@ -83,6 +84,9 @@ export class RoleProfileRepo {
       reasons: item.reasons,
       confidence: item.confidence,
       evidence: item.evidence,
+      primitives: item.primitives,
+      primitiveEvidence: item.primitive_evidence,
+      capabilities: item.capabilities,
       inferredAt: item.inferred_at,
       version: item.version,
     }));
@@ -114,6 +118,9 @@ export class RoleProfileRepo {
       reasons: data.reasons,
       confidence: data.confidence,
       evidence: data.evidence,
+      primitives: data.primitives,
+      primitiveEvidence: data.primitive_evidence,
+      capabilities: data.capabilities,
       inferredAt: data.inferred_at,
       version: data.version,
     };

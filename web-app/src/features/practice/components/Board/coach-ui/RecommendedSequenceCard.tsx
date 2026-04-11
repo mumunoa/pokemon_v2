@@ -47,7 +47,7 @@ export function RecommendedSequenceCard({ sequence, alternatives = [], isPro, is
   return (
     <section className="rounded-2xl border border-indigo-400/20 bg-indigo-400/5 p-4">
       <div className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-300">
-        Recommended Sequence
+        推奨される手順
       </div>
       <h3 className="mt-1 text-lg font-bold text-white">このターンの推奨行動順</h3>
 

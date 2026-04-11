@@ -101,6 +101,7 @@ export type EffectContext = {
   opponentHasSystem: boolean;
   opponentHasHeavyRetreat: boolean;
   profile?: CardRoleProfile;
+  potentialKeyCardLoss?: number; // Added for resource management expansion
 };
 
 export type EffectSpec = {

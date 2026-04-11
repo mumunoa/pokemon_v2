@@ -16,12 +16,23 @@ export function buildThoughts(args: {
 }): string[] {
   const { phase, goal, prizePlan, risk, opponentThreat, bestLineText } = args;
 
+  const riskMessages = [
+    `〖リスク〗総合リスク ${risk.totalRiskScore}/100。`,
+    `手札崩壊:${risk.handCollapseRisk} / 盤面崩壊:${risk.boardCollapseRisk}`,
+    `山札切れ:${risk.deckOutRisk} / リソース損失:${risk.resourceLossRisk}`
+  ];
+
+  const warnings = [];
+  if (risk.deckOutRisk > 60) warnings.push("【警告】山札が枯渇寸前です。不用意なドロー/トラッシュを避けるべき局面です。");
+  if (risk.resourceLossRisk > 50) warnings.push("【注意】手札に重要札が固まっています。コストとしての破棄には慎重な判断が必要です。");
+
   return [
     `〖局面〗${phase === "opening" ? "序盤" : phase === "midgame" ? "中盤" : "終盤"}。今ターンは「${goal.type}」として扱います。`,
     `〖ゴール〗${goal.primaryReason}`,
     `〖勝ち筋〗サイドプランは [${prizePlan.pattern.join(" → ")}] を主軸に見ます。`,
     `〖返し警戒〗相手の最大打点目安は ${opponentThreat.expectedMaxDamage}。${opponentThreat.lethalThreat ? "返しで倒される可能性が高いです。" : "即死圏までは届きにくいです。"}`,
-    `〖リスク〗総合リスク ${risk.totalRiskScore}/100。手札崩壊 ${risk.handCollapseRisk} / 盤面崩壊 ${risk.boardCollapseRisk} を意識します。`,
+    ...riskMessages,
+    ...warnings,
     `〖採用ライン〗${bestLineText}`,
   ];
 }
