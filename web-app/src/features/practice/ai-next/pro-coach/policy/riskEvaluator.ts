@@ -50,10 +50,12 @@ export function evaluateRisk(
     actualDeckRemaining <= 12 ? 35 : 5
   );
 
-  // 重要札損失リスク: 手札の質が高い状況での手札破棄リスク（拡張性確保）
+  // 重要札損失リスク: 手札の質が高い状況での手札破棄リスク
+  const kcl = state.potentialKeyCardLoss ?? 0;
   const resourceLossRisk = clamp(
-    (me.hand.length >= 7 ? 20 : 5) + 
-    (features.drawNeed < 30 ? 15 : 0) // 手札が十分な時にさらに回すリスク
+    (me.hand.length >= 7 ? 15 : 5) + 
+    (features.drawNeed < 30 ? 10 : 0) +
+    Math.min(50, Math.floor(kcl / 1.5)) // 重要札の価値をリスクに反映
   );
 
   const totalRiskScore = clamp(

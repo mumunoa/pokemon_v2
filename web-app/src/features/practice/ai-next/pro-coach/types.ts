@@ -86,6 +86,7 @@ export type CoachGameState = {
     player2: CoachPlayerState;
   };
   cards?: Record<string, any>;
+  potentialKeyCardLoss?: number; // Added for resource evaluation context
 };
 
 export type CoachBoardFeatures = {

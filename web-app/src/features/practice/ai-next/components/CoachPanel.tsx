@@ -80,7 +80,7 @@ export function CoachPanel({
   const baseResult = 'baseRecommendation' in result ? result.baseRecommendation : result;
   const simCoaching = 'simulationCoaching' in result ? result.simulationCoaching : (result as any).simulationCoaching || null;
 
-  const { bestAction, alternatives, keyCards, boardStateSummary, opponentThreat, macroStrategy } = baseResult as any;
+  const { bestAction, alternatives, keyCards, boardStateSummary, opponentThreat, macroStrategy, thoughts } = baseResult as any;
   
   const proResult = result as any; 
   const isActuallyPro = isUnlockedPro && !!proResult.recommendedSequence;
@@ -128,6 +128,44 @@ export function CoachPanel({
             )}
           </div>
         </ThoughtPhase>
+
+        {/* プロの戦術インサイト (thoughts) */}
+        {isUnlockedPro && thoughts && thoughts.length > 0 && (
+          <ThoughtPhase
+            number="💡"
+            title="プロの戦術インサイト"
+            color="indigo"
+          >
+            <div className="space-y-2 rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4">
+              {thoughts.map((thought: string, idx: number) => {
+                const isWarning = thought.includes('【警告】');
+                const isCaution = thought.includes('【注意】');
+                const isRisk = thought.includes('〖リスク〗');
+                
+                return (
+                  <div 
+                    key={idx} 
+                    className={`text-sm leading-relaxed ${
+                      isWarning ? 'text-rose-400 font-bold' : 
+                      isCaution ? 'text-amber-400' : 
+                      isRisk ? 'text-indigo-300' : 
+                      'text-indigo-100'
+                    }`}
+                  >
+                    <span className="flex items-start">
+                      <span className={`mr-2 mt-1.5 block h-1 w-1 shrink-0 rounded-full ${
+                        isWarning ? 'bg-rose-500 animate-pulse' : 
+                        isCaution ? 'bg-amber-500' : 
+                        'bg-indigo-400'
+                      }`}></span>
+                      {thought}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </ThoughtPhase>
+        )}
 
         {/* ロックオーバーレイ */}
         {!isUnlockedPro && (

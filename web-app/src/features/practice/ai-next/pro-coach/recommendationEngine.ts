@@ -208,10 +208,13 @@ export function buildProfessionalCoachResult(params: {
   const prizePlan = planPrizePath(features, params.state, params.profiles);
   const opponentThreat = evaluateOpponentThreat(features, params.state);
   
-  // 山札枚数を明示的にリスク評価に渡す
+  // 重要札の総価値を算出し、リスク評価に渡す
+  const potentialKeyCardLoss = keyCards(handProfiles).reduce((sum, c) => sum + c.score, 0);
+
   const enrichedState = { 
     ...params.state, 
-    deckRemaining: params.state.players.player1.deckRemaining 
+    deckRemaining: params.state.players.player1.deckRemaining,
+    potentialKeyCardLoss
   };
   const risk = evaluateRisk(features, enrichedState);
 
@@ -232,6 +235,7 @@ export function buildProfessionalCoachResult(params: {
     hasFreeBenchSlot: features.ownBenchCount < 5,
     opponentHasSystem: features.oppSystemCount > 0,
     opponentHasHeavyRetreat: features.oppHeavyRetreatCount > 0,
+    potentialKeyCardLoss,
   };
 
   const lines: ProfessionalLine[] = actions
