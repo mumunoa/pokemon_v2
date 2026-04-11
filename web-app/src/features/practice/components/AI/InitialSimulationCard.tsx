@@ -13,27 +13,13 @@ interface Props {
 }
 
 export const InitialSimulationCard: React.FC<Props> = ({ planType, isUnlocked = false, onUnlock }) => {
-    const [summary, setSummary] = useState<InitialSimulationSummary | null>(null);
+    const summary = useGameStore(state => state.openingEvaluation as InitialSimulationSummary | null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showShareModal, setShowShareModal] = useState(false);
     const player1Deck = useGameStore(state => state.player1Deck);
     const player2Deck = useGameStore(state => state.player2Deck);
     const gameId = useGameStore(state => state.gameId);
-
-    // デッキが変更（ロード）されたら結果をクリア
-    useEffect(() => {
-        setSummary(null);
-        setError(null);
-        setIsLoading(false);
-    }, [player1Deck, gameId]);
-
-    // 解禁状態が変化したら自動で再シミュレーション（チケット消費直後など）
-    useEffect(() => {
-        if (isUnlocked && !summary?.advancedAdvice) {
-            runSimulation();
-        }
-    }, [isUnlocked]);
 
     const runSimulation = async () => {
         if (!player1Deck || player1Deck.length === 0) {
@@ -56,7 +42,6 @@ export const InitialSimulationCard: React.FC<Props> = ({ planType, isUnlocked = 
 
             const data: InitialSimulationResponse = await response.json();
             if (data.success && data.summary) {
-                setSummary(data.summary);
                 // Store に保存して他コンポーネント（BoardInsightCard）から参照可能にする
                 useGameStore.getState().setOpeningEvaluation(data.summary);
             } else {

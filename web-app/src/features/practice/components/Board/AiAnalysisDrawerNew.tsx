@@ -45,10 +45,11 @@ export const AiAnalysisDrawerNew: React.FC<Props> = ({ isOpen, onClose }) => {
   const player1Deck = useGameStore((state) => state.player1Deck);
   const player2Deck = useGameStore((state) => state.player2Deck);
   const logs = useGameStore((state) => state.logs);
+  const stateVersion = useGameStore((state) => state.stateVersion);
   
-  // 局面が変わる（ログが増える）たびに解禁をリセットするため、logs.length を含める
-  const stabilityUnlock = useTicketUnlock([player1Deck]);
-  const proCoachUnlock = useTicketUnlock([player1Deck, player2Deck, logs.length]);
+  // 局面が変わる（logs.length または stateVersion が変わる）たびに解禁をリセット
+  const stabilityUnlock = useTicketUnlock([player1Deck, stateVersion]);
+  const proCoachUnlock = useTicketUnlock([player1Deck, player2Deck, logs.length, stateVersion]);
   
   const { isThinking, commentary, planType } = useAiCoach(proCoachUnlock.isUnlocked);
   const { runCoachAnalysis, coachResult, coachLoading, openingEvaluation } = useGameStore();
@@ -244,6 +245,7 @@ export const AiAnalysisDrawerNew: React.FC<Props> = ({ isOpen, onClose }) => {
                 isUnlocked={proCoachUnlock.isUnlocked}
                 onUnlock={proCoachUnlock.handleUnlock}
                 openingEvaluation={openingEvaluation}
+                isPreparationPhase={preparationPhase}
               />
             </div>
           </section>

@@ -24,6 +24,7 @@ interface CoachPanelProps {
   isUnlocked?: boolean;
   onUnlock?: () => void;
   openingEvaluation?: any;
+  isPreparationPhase?: boolean;
 }
 
 export function CoachPanel({
@@ -34,7 +35,8 @@ export function CoachPanel({
   onUpgradeClick,
   isUnlocked = false,
   onUnlock,
-  openingEvaluation
+  openingEvaluation,
+  isPreparationPhase = false
 }: CoachPanelProps) {
   const [showDetails, setShowDetails] = React.useState(false);
   const isUnlockedPro = isProUser || isUnlocked;
@@ -72,7 +74,7 @@ export function CoachPanel({
               プレミアムコーチ分析
             </button>
           ) : null}
-          <p className="text-[9px] text-white/30 font-medium mt-1">※ 残り回数は毎日 0:00 に 3回 へ回復します</p>
+          <p className="text-[9px] text-white/30 font-medium mt-1">※ 残り回数は毎日 0:00 に 5回 へ回復します</p>
         </div>
       </div>
     );
@@ -211,57 +213,75 @@ export function CoachPanel({
         {/* プロフェッショナル統合ダッシュボード (Pro Resultがある場合) */}
         {isActuallyPro && (
           <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <CoachPhaseCard 
-                coachResult={proResult} 
-                isPreparationPhase={false} 
-                currentTurn={proResult.currentTurn ?? 0}
-                openingEvaluation={openingEvaluation}
-              />
-              <WinPathSummaryCard 
-                coachResult={proResult} 
-                isPro={true} 
-              />
-            </div>
+            {/* 1. Current Phase */}
+            <CoachPhaseCard 
+              coachResult={proResult} 
+              isPreparationPhase={isPreparationPhase} 
+              currentTurn={proResult.currentTurn ?? 0}
+              openingEvaluation={openingEvaluation}
+            />
 
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <TurnStrategyCard 
-                coachResult={proResult} 
-                isPro={true} 
-              />
+            {/* 2. Preparation (Mid-prep only) */}
+            {isPreparationPhase && (
               <PreparationStrategyCard 
-                isPreparationPhase={false} 
+                isPreparationPhase={true} 
                 coachResult={proResult} 
                 isPro={true} 
                 openingEvaluation={openingEvaluation}
               />
-            </div>
+            )}
 
+            {/* 3. Turn Strategy */}
+            <TurnStrategyCard 
+              coachResult={proResult} 
+              isPro={true} 
+            />
+
+            {/* 4. Win Path (Hidden) */}
+            {/* 
+            <WinPathSummaryCard 
+              coachResult={proResult} 
+              isPro={true} 
+            />
+            */}
+
+            {/* 5. Key Action (Hidden) */}
+            {/* 
+            <KeyActionCard 
+              bestAction={proResult.bestAction} 
+              isPro={true} 
+            />
+            */}
+
+            {/* 6. Recommended Sequence (Hidden) */}
+            {/* 
             <RecommendedSequenceCard 
               sequence={proResult.recommendedSequence} 
               alternatives={proResult.sequenceAlternatives ?? []} 
               isPro={true} 
               isLoading={false} 
             />
+            */}
 
-            <KeyActionCard 
-              bestAction={proResult.bestAction} 
-              isPro={true} 
-            />
-
+            {/* ターン別タブ (Hidden) */}
+            {/* 
             <TurnTabs 
-              isPreparationPhase={false} 
+              isPreparationPhase={isPreparationPhase} 
               coachResult={proResult} 
               commentary={null} 
               isPro={true} 
               openingEvaluation={openingEvaluation}
             />
+            */}
 
+            {/* その他の有力ライン (Hidden) */}
+            {/* 
             <AlternativeLinesCard 
               title="その他の有力ライン" 
               alternatives={proResult.sequenceAlternatives ?? proResult.alternatives ?? []} 
               isPro={true} 
             />
+            */}
           </div>
         )}
 
@@ -352,6 +372,8 @@ export function CoachPanel({
         )}
       </div>
 
+      {/* 詳細データセクション (Hidden by comment out) */}
+      {/* 
       <div className="mt-8">
         <button 
           onClick={() => setShowDetails(!showDetails)}
@@ -390,6 +412,7 @@ export function CoachPanel({
           </div>
         )}
       </div>
+      */}
     </div>
   );
 }

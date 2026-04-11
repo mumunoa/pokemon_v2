@@ -75,6 +75,7 @@ const defaultZones: Record<ZoneType, string[]> = {
 };
 
 export const useGameStore = create<GameState>((set, get) => ({
+    stateVersion: 0,
     cards: {},
     player1Deck: [],
     player2Deck: [],
@@ -402,6 +403,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                 deckHistory: state.deckHistory,
                 isGameStarted: false,
                 coachResult: null,
+                openingEvaluation: null,
+                stateVersion: 0,
                 pastStates: [],
                 futureStates: []
             };
@@ -456,7 +459,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                     : state.turnFlags,
                 logs: [...state.logs, logMsg],
                 structuredLogs: [...state.structuredLogs, structuredLog],
-                coachResult: null
+                coachResult: null,
+                stateVersion: state.stateVersion + 1
             };
         });
     },
@@ -470,7 +474,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                     ...state.cards,
                     [cardId]: { ...card, ...updates }
                 },
-                coachResult: null
+                coachResult: null,
+                stateVersion: state.stateVersion + 1
             };
         });
     },
@@ -521,7 +526,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                     ? { ...state.turnFlags, [state.currentTurnPlayer]: { ...state.turnFlags[state.currentTurnPlayer], energyAttachedThisTurn: true } }
                     : state.turnFlags,
                 logs: [...state.logs, logMsg],
-                structuredLogs: [...state.structuredLogs, structuredLog]
+                structuredLogs: [...state.structuredLogs, structuredLog],
+                stateVersion: state.stateVersion + 1
             };
         });
     },
@@ -554,7 +560,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                     [deckZone]: newDeck
                 },
                 logs: [...state.logs, logMsg],
-                structuredLogs: [...state.structuredLogs, structuredLog]
+                structuredLogs: [...state.structuredLogs, structuredLog],
+                stateVersion: state.stateVersion + 1
             };
         });
     },
@@ -596,7 +603,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                     }
                 },
                 logs: [...state.logs, logMsg],
-                structuredLogs: [...state.structuredLogs, structuredLog]
+                structuredLogs: [...state.structuredLogs, structuredLog],
+                stateVersion: state.stateVersion + 1
             };
         });
     },
@@ -637,7 +645,8 @@ export const useGameStore = create<GameState>((set, get) => ({
 
             return {
                 ...newState,
-                coachResult: null
+                coachResult: null,
+                stateVersion: state.stateVersion + 1
             };
         });
     },
@@ -675,7 +684,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                     [`${playerId}-trash`]: newTrash
                 },
                 logs: [...state.logs, logMsg],
-                structuredLogs: [...state.structuredLogs, structuredLog]
+                structuredLogs: [...state.structuredLogs, structuredLog],
+                stateVersion: state.stateVersion + 1
             };
         });
     },
@@ -714,7 +724,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                     [`${playerId}-hand`]: drawn
                 },
                 logs: [...state.logs, logMsg],
-                structuredLogs: [...state.structuredLogs, structuredLog]
+                structuredLogs: [...state.structuredLogs, structuredLog],
+                stateVersion: state.stateVersion + 1
             };
         });
     },
@@ -758,7 +769,8 @@ export const useGameStore = create<GameState>((set, get) => ({
             return {
                 zones: nextZones,
                 logs: [...state.logs, logMsg],
-                structuredLogs: [...state.structuredLogs, structuredLog]
+                structuredLogs: [...state.structuredLogs, structuredLog],
+                stateVersion: state.stateVersion + 1
             };
         });
     },
@@ -772,7 +784,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                     ...state.zones,
                     [`${playerId}-deck`]: shuffleArray(deck)
                 },
-                logs: [...state.logs, logMsg]
+                logs: [...state.logs, logMsg],
+                stateVersion: state.stateVersion + 1
             };
         });
     },
@@ -783,7 +796,8 @@ export const useGameStore = create<GameState>((set, get) => ({
             const logMsg = `コイントス: ${result === 'heads' ? 'オモテ' : 'ウラ'}`;
             return {
                 coinFlips: [...state.coinFlips, result],
-                logs: [...state.logs, logMsg]
+                logs: [...state.logs, logMsg],
+                stateVersion: state.stateVersion + 1
             };
         });
     },
@@ -791,7 +805,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     startGame: () => {
         set((state) => ({
             isGameStarted: true,
-            logs: [...state.logs, "バトルを開始しました！ プレイヤー1のターン1です。"]
+            logs: [...state.logs, "バトルを開始しました！ プレイヤー1のターン1です。"],
+            stateVersion: state.stateVersion + 1
         }));
     },
 
@@ -810,6 +825,8 @@ export const useGameStore = create<GameState>((set, get) => ({
             gameId: crypto.randomUUID(),
             deckHistory: get().deckHistory,
             isGameStarted: false,
+            openingEvaluation: null,
+            stateVersion: get().stateVersion + 1,
             pastStates: [],
             futureStates: []
         });
@@ -868,7 +885,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                 logs: [...state.logs, logMsg],
                 structuredLogs: [...state.structuredLogs, structuredLog],
                 stateSnapshots: [...state.stateSnapshots, aiSnapshot],
-                coachResult: null
+                coachResult: null,
+                stateVersion: state.stateVersion + 1
             };
         });
     },
@@ -914,14 +932,14 @@ export const useGameStore = create<GameState>((set, get) => ({
                     const newHistory = options?.skipHistory 
                         ? state.deckHistory 
                         : [code, ...state.deckHistory.filter(c => c !== code)].slice(0, 4);
-                    return { player1Deck: deckList, deckHistory: newHistory, coachResult: null };
+                    return { player1Deck: deckList, deckHistory: newHistory, coachResult: null, openingEvaluation: null, stateVersion: 0 };
                 });
             } else {
                 set((state) => {
                     const newHistory = options?.skipHistory 
                         ? state.deckHistory 
                         : [code, ...state.deckHistory.filter(c => c !== code)].slice(0, 4);
-                    return { player2Deck: deckList, deckHistory: newHistory, coachResult: null };
+                    return { player2Deck: deckList, deckHistory: newHistory, coachResult: null, openingEvaluation: null, stateVersion: 0 };
                 });
             }
 

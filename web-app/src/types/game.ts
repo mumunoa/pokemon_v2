@@ -145,6 +145,9 @@ export type ZoneType =
     | 'stadium';
 
 export interface GameState {
+    // 盤面変更バージョン（手変わり検知用）
+    stateVersion: number;
+
     // Dictionary of all card instances in the game
     cards: Record<string, CardInstance>;
 
