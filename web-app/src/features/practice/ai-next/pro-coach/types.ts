@@ -300,6 +300,7 @@ export type RiskReport = {
   comebackFailureRisk: number;
   deckOutRisk: number; // Added for self-mill evaluation
   resourceLossRisk: number; // Added for key card management
+  checkmateRisk: number; // Added for opponent lethal evaluation
   totalRiskScore: number;
 };
 

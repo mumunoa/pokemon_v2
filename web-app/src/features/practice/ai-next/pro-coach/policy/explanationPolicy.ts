@@ -16,24 +16,17 @@ export function buildThoughts(args: {
 }): string[] {
   const { phase, goal, prizePlan, risk, opponentThreat, bestLineText } = args;
 
-  const riskMessages = [
-    `〖リスク〗総合リスク ${risk.totalRiskScore}/100。`,
-    `手札崩壊:${risk.handCollapseRisk} / 盤面崩壊:${risk.boardCollapseRisk}`,
-    `山札切れ:${risk.deckOutRisk} / リソース損失:${risk.resourceLossRisk}`
-  ];
-
   const warnings = [];
-  if (risk.deckOutRisk > 60) warnings.push("【警告】山札が枯渇寸前です。不用意なドロー/トラッシュを避けるべき局面です。");
-  if (risk.resourceLossRisk > 50) warnings.push("【注意】手札に重要札が固まっています。コストとしての破棄には慎重な判断が必要です。");
+  if (risk.checkmateRisk > 70) warnings.push("【警告】相手のリーサル（詰め）圏内です。このターン、確実に負け筋を消す行動が必須です。");
+  if (risk.deckOutRisk > 60) warnings.push("【注意】山札が少なくなっています。リソースを使い切る前に勝ち切るか、ドローを抑える判断が求められます。");
+  if (risk.resourceLossRisk > 60) warnings.push("【戦略助言】手札の重要札（エネやサーチ等）を不用意にトラッシュに送ると、終盤の失速を招く懸念があります。");
 
   return [
-    `〖局面〗${phase === "opening" ? "序盤" : phase === "midgame" ? "中盤" : "終盤"}。今ターンは「${goal.type}」として扱います。`,
-    `〖ゴール〗${goal.primaryReason}`,
-    `〖勝ち筋〗サイドプランは [${prizePlan.pattern.join(" → ")}] を主軸に見ます。`,
-    `〖返し警戒〗相手の最大打点目安は ${opponentThreat.expectedMaxDamage}。${opponentThreat.lethalThreat ? "返しで倒される可能性が高いです。" : "即死圏までは届きにくいです。"}`,
-    ...riskMessages,
+    `〖環境認識〗${phase === "opening" ? "ゲーム序盤" : phase === "midgame" ? "攻防の中盤" : "決着の終盤"}です。${goal.primaryReason}`,
+    `〖戦略目標〗最優先ゴールは「${goal.type}」。サイドプラン [${prizePlan.pattern.join("→")}] の完遂を目指します。`,
+    `〖返し考察〗相手の最大打点は ${opponentThreat.expectedMaxDamage}。${opponentThreat.lethalThreat ? "返しで気絶するリスクが高いため、ベンチの質を保つ必要があります。" : "致命傷は避けられそうな盤面です。"}`,
     ...warnings,
-    `〖採用ライン〗${bestLineText}`,
+    `〖プロの手順〗${bestLineText}`,
   ];
 }
 
@@ -46,11 +39,10 @@ export function buildAnalysis(args: {
   const { goal, prizePlan, opponentThreat, bestLineText } = args;
 
   return [
-    `現在の役割は「${goal.type}」です。`,
-    goal.primaryReason,
-    `勝ち筋は [${prizePlan.pattern.join(", ")}] の取り方を主軸に置きます。`,
-    `相手の返し最大打点はおよそ ${opponentThreat.expectedMaxDamage} と見積もります。`,
-    `そのため今ターンは「${bestLineText}」を通して、直近の最大値よりも数ターン後の勝ち筋を太くする判断です。`,
+    `プロの視点では、現在の役割を「${goal.type}」と定義します。`,
+    `${goal.primaryReason}`,
+    `サイドを [${prizePlan.pattern.join(", ")}] と刻むプランを軸に、${opponentThreat.expectedMaxDamage} 点の返しダメージを考慮した盤面を維持してください。`,
+    `推奨する手順「${bestLineText}」は、目先の盤面形成だけでなく、数ターン先の勝ち筋を太くするための妥当な選択です。`,
   ].join(" ");
 }
 

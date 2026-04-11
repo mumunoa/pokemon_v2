@@ -36,6 +36,7 @@ export function CoachPanel({
   onUnlock,
   openingEvaluation
 }: CoachPanelProps) {
+  const [showDetails, setShowDetails] = React.useState(false);
   const isUnlockedPro = isProUser || isUnlocked;
 
   if (isLoading) {
@@ -105,26 +106,35 @@ export function CoachPanel({
         {/* 最適解セクション (常に表示) */}
         <ThoughtPhase
           number="★"
-          title="今ターンの最適解 (推奨アクション)"
+          title="プロが選ぶ最適解"
           color="emerald"
         >
-          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
-            <div className="text-lg font-bold text-white">{bestAction?.line ?? '候補がありません'}</div>
+          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-6 shadow-[0_0_20px_rgba(16,185,129,0.15)] ring-1 ring-emerald-400/20">
+            <div className="text-xl font-black text-white leading-tight tracking-tight mb-4 border-l-4 border-emerald-500 pl-4">
+              {bestAction?.line ?? '候補がありません'}
+            </div>
 
-            {bestAction && bestAction.reasons && bestAction.reasons.length > 0 && (
-              <div className="mt-4 space-y-2">
-                <div className="text-xs text-emerald-200/50">{isUnlockedPro ? 'プロの思考プロセス:' : '主な理由:'}</div>
-                <ul className="space-y-1.5 list-none">
-                  {(bestAction.reasons as string[]).slice(0, isUnlockedPro ? undefined : 1).map((reason: any, idx: number) => (
-                    <li key={idx} className="flex flex-col">
-                      <span className="flex items-start text-sm text-emerald-100">
-                        <span className="mr-2 mt-1 block h-1 w-1 shrink-0 rounded-full bg-emerald-400"></span>
-                        {reason}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            {bestAction && (
+               <div className="space-y-4">
+                 <div className="text-sm leading-relaxed text-emerald-100/90 font-medium">
+                   {/* explanationPolicy.ts で生成された自然な解説を表示 */}
+                   {proResult.analysis || (bestAction.reasons && bestAction.reasons[0])}
+                 </div>
+                 
+                 {isUnlockedPro && bestAction.reasons && bestAction.reasons.length > 1 && (
+                   <div className="mt-2 pt-3 border-t border-emerald-500/20">
+                     <div className="text-[10px] uppercase font-bold text-emerald-400/60 mb-2 tracking-widest">思考の根拠</div>
+                     <ul className="space-y-2 list-none">
+                       {(bestAction.reasons as string[]).slice(1).map((reason: any, idx: number) => (
+                         <li key={idx} className="flex items-start text-xs text-emerald-200/70">
+                           <span className="mr-2 mt-1.5 block h-1 w-1 shrink-0 rounded-full bg-emerald-500/50"></span>
+                           {reason}
+                         </li>
+                       ))}
+                     </ul>
+                   </div>
+                 )}
+               </div>
             )}
           </div>
         </ThoughtPhase>
@@ -342,31 +352,43 @@ export function CoachPanel({
         )}
       </div>
 
-      <div className={`mt-8 grid gap-4 lg:grid-cols-2 ${!isUnlockedPro ? 'opacity-10 pointer-events-none select-none blur-md' : ''}`}>
-        <div className="rounded-xl bg-white/5 p-4">
-          <div className="mb-3 text-sm font-bold text-white/70">代替のプレイング（リスク許容ルート）</div>
-          <div className="space-y-3">
-            {(alternatives || []).slice(0, 3).map((action: any) => (
-              <ActionRow key={action.id} action={action} />
-            ))}
-          </div>
-        </div>
+      <div className="mt-8">
+        <button 
+          onClick={() => setShowDetails(!showDetails)}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/5 bg-white/5 py-3 text-xs font-bold text-white/40 transition-all hover:bg-white/10 hover:text-white"
+        >
+          {showDetails ? '詳細な分析データを閉じる' : '詳細な分岐・代替案を表示'}
+          <span className={`transition-transform duration-300 ${showDetails ? 'rotate-180' : ''}`}>▼</span>
+        </button>
 
-        <div className="rounded-xl bg-white/5 p-4">
-          <div className="mb-3 text-sm font-bold text-white/70">プレイングを支えるキーカード</div>
-          <div className="space-y-3">
-            {(keyCards || [])
-              .filter((card: any, index: number, self: any[]) =>
-                index === self.findIndex((t: any) => (
-                  t.cardName === card.cardName || (t.cardId && t.cardId === card.cardId)
-                ))
-              )
-              .slice(0, 3)
-              .map((card: any) => (
-                <KeyCardRow key={card.cardId || card.cardName} card={card} />
-              ))}
+        {showDetails && (
+          <div className={`mt-6 grid gap-4 lg:grid-cols-2 animate-in fade-in zoom-in-95 duration-300 ${!isUnlockedPro ? 'opacity-10 pointer-events-none select-none blur-md' : ''}`}>
+            <div className="rounded-xl bg-white/5 p-4">
+              <div className="mb-3 text-sm font-bold text-white/70">代替のプレイング（リスク許容ルート）</div>
+              <div className="space-y-3">
+                {(alternatives || []).slice(0, 3).map((action: any) => (
+                  <ActionRow key={action.id} action={action} />
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-white/5 p-4">
+              <div className="mb-3 text-sm font-bold text-white/70">プレイングを支えるキーカード</div>
+              <div className="space-y-3">
+                {(keyCards || [])
+                  .filter((card: any, index: number, self: any[]) =>
+                    index === self.findIndex((t: any) => (
+                      t.cardName === card.cardName || (t.cardId && t.cardId === card.cardId)
+                    ))
+                  )
+                  .slice(0, 3)
+                  .map((card: any) => (
+                    <KeyCardRow key={card.cardId || card.cardName} card={card} />
+                  ))}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

@@ -216,7 +216,7 @@ export function buildProfessionalCoachResult(params: {
     deckRemaining: params.state.players.player1.deckRemaining,
     potentialKeyCardLoss
   };
-  const risk = evaluateRisk(features, enrichedState);
+  const risk = evaluateRisk(features, enrichedState, opponentThreat);
 
   const rawActions = generateLegalActions(params.state, params.profiles);
   const actions = sortActionsByProfessionalPriority(rawActions);

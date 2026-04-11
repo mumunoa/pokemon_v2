@@ -7,6 +7,7 @@ function clamp(num: number, min = 0, max = 100): number {
 export function evaluateRisk(
   features: CoachBoardFeatures,
   state: CoachGameState,
+  opponentThreat?: { expectedMaxDamage: number; lethalThreat: boolean }
 ): RiskReport {
   const me = state.players.player1;
   const deckRemaining = state.cards ? Object.keys(state.cards).length : 60; // Fallback or direct access if available
@@ -57,15 +58,25 @@ export function evaluateRisk(
     (features.drawNeed < 30 ? 10 : 0) +
     Math.min(50, Math.floor(kcl / 1.5)) // 重要札の価値をリスクに反映
   );
+  
+  // 詰めリスク (Checkmate Risk): 相手が次ターンにサイドを取り切る可能性
+  const oppPrizes = features.oppPrizesRemaining;
+  const lethalPotential = opponentThreat?.lethalThreat ? 60 : 0;
+  const prizePressure = oppPrizes <= 1 ? 40 : oppPrizes <= 2 ? 20 : 0;
+  
+  const checkmateRisk = clamp(
+    lethalPotential + prizePressure + (features.ownTwoPrizeExposed ? 15 : 0)
+  );
 
   const totalRiskScore = clamp(
     Math.round(
       handCollapseRisk * 0.15 +
         boardCollapseRisk * 0.20 +
-        energyStallRisk * 0.15 +
-        prizeRaceLossRisk * 0.20 +
-        comebackFailureRisk * 0.15 +
-        deckOutRisk * 0.15
+        energyStallRisk * 0.10 +
+        prizeRaceLossRisk * 0.15 +
+        comebackFailureRisk * 0.10 +
+        deckOutRisk * 0.10 +
+        checkmateRisk * 0.30 // 詰めリスクを最重視
     ),
   );
 
@@ -77,6 +88,7 @@ export function evaluateRisk(
     comebackFailureRisk,
     deckOutRisk,
     resourceLossRisk,
+    checkmateRisk,
     totalRiskScore,
   };
 }
