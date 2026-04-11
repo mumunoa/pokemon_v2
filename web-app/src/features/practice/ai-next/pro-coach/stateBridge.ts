@@ -26,9 +26,9 @@ function toCoachCard(lite: BoardCardLite | null): CoachCard | null {
 export function toCoachGameState(board: BoardState): CoachGameState {
   const player1: CoachPlayerState = {
     active: toCoachCard(board.active),
-    bench: board.bench.map(toCoachCard).filter(Boolean) as CoachCard[],
-    hand: board.hand.map(name => ({ id: name, name })), // 簡易版手札
-    discard: board.discard.map(name => ({ id: name, name })),
+    bench: (board.bench || []).map(toCoachCard).filter(Boolean) as CoachCard[],
+    hand: (board.hand || []).map(name => ({ id: name, name })), // 簡易版手札
+    discard: (board.discard || []).map(name => ({ id: name, name })),
     prizesTaken: board.prizesTakenByPlayer,
     supporterUsed: !board.availableSupporter,
     energyAttachedThisTurn: !board.availableEnergyAttachment,
@@ -37,9 +37,9 @@ export function toCoachGameState(board: BoardState): CoachGameState {
 
   const player2: CoachPlayerState = {
     active: toCoachCard(board.active === null ? board.opponentActive : board.opponentActive), // 相手
-    bench: board.opponentBench.map(toCoachCard).filter(Boolean) as CoachCard[],
+    bench: (board.opponentBench || []).map(toCoachCard).filter(Boolean) as CoachCard[],
     hand: [], // 相手の手札は基本不明
-    discard: board.opponentDiscard.map(name => ({ id: name, name })),
+    discard: (board.opponentDiscard || []).map(name => ({ id: name, name })),
     prizesTaken: board.prizesTakenByOpponent,
     supporterUsed: false,
     energyAttachedThisTurn: false,
