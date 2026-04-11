@@ -55,13 +55,7 @@ export default function Home() {
     );
   }
 
-  // Redirect if not signed in (Safe guard)
-  if (isLoaded && !isSignedIn) {
-    if (typeof window !== 'undefined') {
-      window.location.href = '/sign-in';
-    }
-    return null;
-  }
+
 
   return (
     <main className="w-full h-screen h-[100dvh] bg-slate-950 flex flex-col overflow-hidden relative" onClick={() => setIsLogOpen(false)}>
