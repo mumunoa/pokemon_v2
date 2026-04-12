@@ -71,6 +71,7 @@ export async function POST(request: NextRequest) {
         },
       ],
       mode: 'subscription',
+      allow_promotion_codes: true,
       success_url: `${origin}/billing?session_id={CHECKOUT_SESSION_ID}&success=true`,
       cancel_url: `${origin}/billing?canceled=true`,
       metadata: {
