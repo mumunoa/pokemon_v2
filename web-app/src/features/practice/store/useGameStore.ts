@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { CardInstance, DeckCard, GameState, ZoneType, PlayerId } from '@/types/game';
 import { buildAIInput } from '@/lib/ai/buildAIInput';
 import { supabase, createSupabaseClient } from '@/lib/supabase';
@@ -18,7 +19,7 @@ import type {
     BoardCardLite,
     CardRoleProfile 
 } from '@/features/practice/ai-next';
-
+ 
 /**
  * 法的リスク（著作権画像URLのDB保存）を避けるためのサニタイズ
  */
@@ -33,7 +34,7 @@ const sanitizeSnapshotState = (state: any) => {
     }
     return { ...state, cards: sanitizedCards };
 };
-
+ 
 // Helper to shuffle an array
 const shuffleArray = <T>(array: T[]): T[] => {
     const newArray = [...array];
@@ -43,7 +44,7 @@ const shuffleArray = <T>(array: T[]): T[] => {
     }
     return newArray;
 };
-
+ 
 const defaultZones: Record<ZoneType, string[]> = {
     'player1-deck': [],
     'player1-hand': [],
@@ -73,73 +74,75 @@ const defaultZones: Record<ZoneType, string[]> = {
     'player2-prizes': [],
     'stadium': []
 };
-
-export const useGameStore = create<GameState>((set, get) => ({
-    stateVersion: 0,
-    cards: {},
-    player1Deck: [],
-    player2Deck: [],
-    zones: { ...defaultZones },
-    coinFlips: [],
-    turnCount: 1,
-    currentTurnPlayer: 'player1',
-    isOpponentView: false,
-    displayMode: 'local-image',
-    logs: [],
-    structuredLogs: [],
-    stateSnapshots: [],
-    gameId: crypto.randomUUID(),
-    deckHistory: [],
-    isGameStarted: false,
-    isAnalyzing: false,
-    coachResult: null,
-    coachLoading: false,
-    openingEvaluation: null,
-    aiAnalysis: null,
-    turnFlags: {
-        player1: { supporterUsed: false, energyAttachedThisTurn: false },
-        player2: { supporterUsed: false, energyAttachedThisTurn: false }
-    },
-
-    // Actions
-    getGameState: () => get(),
-    pastStates: [],
-    futureStates: [],
-
-    addLog: (message: string) => {
-        set((state) => ({ logs: [...state.logs, message] }));
-    },
-
-    addStructuredLog: (logInput) => {
-        set((state) => {
-            const newLog = {
-                ...logInput,
-                id: crypto.randomUUID(),
-                gameId: state.gameId,
-                turn: state.turnCount,
-                createdAt: new Date().toISOString()
-            };
-            return { structuredLogs: [...state.structuredLogs, newLog] };
-        });
-    },
-
-    takeSnapshot: (phase: 'setup' | 'main' | 'attack' | 'end') => {
-        set((state) => {
-            const snapshot = {
-                id: crypto.randomUUID(),
-                gameId: state.gameId,
-                turn: state.turnCount,
-                phase,
-                state: sanitizeSnapshotState({
-                    cards: state.cards,
-                    zones: state.zones,
-                    currentTurnPlayer: state.currentTurnPlayer
-                }),
-                createdAt: new Date().toISOString()
-            };
-            return { stateSnapshots: [...state.stateSnapshots, snapshot] };
-        });
-    },
+ 
+export const useGameStore = create<GameState>()(
+    persist(
+        (set, get) => ({
+            stateVersion: 0,
+            cards: {},
+            player1Deck: [],
+            player2Deck: [],
+            zones: { ...defaultZones },
+            coinFlips: [],
+            turnCount: 1,
+            currentTurnPlayer: 'player1',
+            isOpponentView: false,
+            displayMode: 'local-image',
+            logs: [],
+            structuredLogs: [],
+            stateSnapshots: [],
+            gameId: crypto.randomUUID(),
+            deckHistory: [],
+            isGameStarted: false,
+            isAnalyzing: false,
+            coachResult: null,
+            coachLoading: false,
+            openingEvaluation: null,
+            aiAnalysis: null,
+            turnFlags: {
+                player1: { supporterUsed: false, energyAttachedThisTurn: false },
+                player2: { supporterUsed: false, energyAttachedThisTurn: false }
+            },
+ 
+            // Actions
+            getGameState: () => get(),
+            pastStates: [],
+            futureStates: [],
+ 
+            addLog: (message: string) => {
+                set((state) => ({ logs: [...state.logs, message] }));
+            },
+ 
+            addStructuredLog: (logInput) => {
+                set((state) => {
+                    const newLog = {
+                        ...logInput,
+                        id: crypto.randomUUID(),
+                        gameId: state.gameId,
+                        turn: state.turnCount,
+                        createdAt: new Date().toISOString()
+                    };
+                    return { structuredLogs: [...state.structuredLogs, newLog] };
+                });
+            },
+ 
+            takeSnapshot: (phase: 'setup' | 'main' | 'attack' | 'end') => {
+                set((state) => {
+                    const snapshot = {
+                        id: crypto.randomUUID(),
+                        gameId: state.gameId,
+                        turn: state.turnCount,
+                        phase,
+                        state: sanitizeSnapshotState({
+                            cards: state.cards,
+                            zones: state.zones,
+                            currentTurnPlayer: state.currentTurnPlayer
+                        }),
+                        createdAt: new Date().toISOString()
+                    };
+                    return { stateSnapshots: [...state.stateSnapshots, snapshot] };
+                });
+            },
 
     saveState: () => {
         set((state) => {
@@ -536,11 +539,11 @@ export const useGameStore = create<GameState>((set, get) => ({
         set((state) => {
             const handZone = `${playerId}-hand` as ZoneType;
             const deckZone = `${playerId}-deck` as ZoneType;
-            const handCards = [...state.zones[handZone]];
+            const handCards = shuffleArray([...state.zones[handZone]]);
             if (handCards.length === 0) return state;
 
             const newDeck = [...state.zones[deckZone], ...handCards];
-            const logMsg = `${playerId} の手札を山札に戻しました。`;
+            const logMsg = `${playerId === 'player1' ? 'プレイヤー1' : 'プレイヤー2'} の手札をすべて山札の下に戻しました。`;
 
             const structuredLog = {
                 id: crypto.randomUUID(),
@@ -1142,7 +1145,16 @@ export const useGameStore = create<GameState>((set, get) => ({
             return { success: false, error: error.message };
         }
     }
-}));
+}),
+    {
+        name: 'pokemon-v2-storage',
+        partialize: (state: GameState) => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { pastStates, futureStates, isAnalyzing, coachLoading, ...rest } = state;
+            return rest as GameState;
+        },
+    }
+));
 
 /**
  * AI Store Adapters & Mappers

@@ -240,7 +240,7 @@ export const Arena: React.FC = () => {
     const handleReturnToDeck = (playerId: PlayerId) => {
         useGameStore.getState().saveState();
         useGameStore.getState().returnHandToDeck(playerId);
-        handleShuffleAnimation(playerId);
+        // Do not shuffle deck naturally as user requested "randomly return to bottom, no deck shuffle"
     };
 
     const handleUndo = () => {
@@ -1097,7 +1097,7 @@ export const Arena: React.FC = () => {
                             <button className="bg-green-700 hover:bg-green-600 text-white rounded shadow font-bold border border-green-500 transition-colors responsive-btn" onClick={() => handleDraw1(playerId)}>ドロー</button>
                             <button className="bg-blue-700 hover:bg-blue-600 text-white rounded shadow font-bold border border-blue-500 transition-colors responsive-btn" onClick={() => handleJudge(playerId)}>ジャッジマン</button>
                             <button className="bg-purple-700 hover:bg-purple-600 text-white rounded shadow font-bold border border-purple-500 transition-colors responsive-btn" onClick={() => handleProfResearch(playerId)}>博士の研究</button>
-                            <button className="bg-orange-700 hover:bg-orange-600 text-white rounded shadow font-bold border border-orange-500 transition-colors responsive-btn" onClick={() => handleReturnToDeck(playerId)}>山札に戻す</button>
+                            <button className="bg-orange-700 hover:bg-orange-600 text-white rounded shadow font-bold border border-orange-500 transition-colors responsive-btn" onClick={() => handleReturnToDeck(playerId)}>山札下に戻す</button>
                         </div>
 
                         {/* Hand Count Display - Moved to bottom right */}

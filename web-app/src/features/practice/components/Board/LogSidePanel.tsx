@@ -50,7 +50,7 @@ const formatLogMessage = (log: StructuredLog, cards: Record<string, CardInstance
         case 'judge_man':
             return `ジャッジマン (お互い4枚引く)`;
         case 'return_hand_to_deck':
-            return `${pName}が手札を山札に戻す`;
+            return `${pName}が手札を山札の下に戻す`;
         case 'end_turn':
             return `ターン終了 ➡️ ${log.payload?.nextPlayer === 'player1' ? 'P1' : 'P2'}の番 (Turn ${log.payload?.nextTurnCount})`;
         default:
