@@ -1,0 +1,90 @@
+"use client";
+
+import React, { useState, useRef } from 'react';
+import { ResumeData, EnergyType, PlayStyle, Regulation, RequestItem } from '@/features/resume/types';
+import { ResumeForm } from '@/features/resume/components/ResumeForm';
+import { ResumePreview } from '@/features/resume/components/ResumePreview';
+import { toPng } from 'html-to-image';
+
+export default function ResumePage() {
+  const [data, setData] = useState<ResumeData>({
+    trainerName: '',
+    region: '',
+    history: '',
+    playStyles: [],
+    regulations: ['standard'],
+    requests: [],
+    favoriteTypes: [],
+    favoriteDeck: '',
+    freeSpace: '',
+    template: 'pokedex',
+  });
+
+  const previewRef = useRef<HTMLDivElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleUpdate = (updates: Partial<ResumeData>) => {
+    setData(prev => ({ ...prev, ...updates }));
+  };
+
+  const downloadImage = async () => {
+    if (!previewRef.current) return;
+    setIsExporting(true);
+    try {
+      const dataUrl = await toPng(previewRef.current, {
+        cacheBust: true,
+        width: 1200,
+        height: 675,
+      });
+      const link = document.createElement('a');
+      link.download = `pokeca-resume-${data.trainerName || 'trainer'}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('Export failed', err);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <header className="text-center space-y-2">
+          <h1 className="text-3xl md:text-5xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-white">
+            POKECA RESUME MAKER
+          </h1>
+          <p className="text-slate-400 text-sm md:text-base">自分だけの特別な履歴書で、最高のポケカ仲間を見つけよう。</p>
+        </header>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+          {/* Left Side: Form */}
+          <div className="bg-slate-900/50 rounded-2xl border border-slate-800 p-6 backdrop-blur-sm">
+            <ResumeForm data={data} onUpdate={handleUpdate} />
+            <div className="mt-8 flex flex-col sm:flex-row gap-4">
+              <button
+                onClick={downloadImage}
+                disabled={isExporting}
+                className="flex-1 bg-red-600 hover:bg-red-500 disabled:bg-slate-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-red-900/20 active:scale-95 flex items-center justify-center gap-2"
+              >
+                {isExporting ? '生成中...' : '画像を保存する'}
+              </button>
+            </div>
+          </div>
+
+          {/* Right Side: Preview */}
+          <div className="lg:sticky lg:top-8 space-y-4">
+            <h2 className="text-xl font-bold flex items-center gap-2 px-2">
+              <span className="w-2 h-6 bg-red-600 rounded-full"></span>
+              PREVIEW
+            </h2>
+            <div className="overflow-hidden rounded-xl border-4 border-slate-800 bg-slate-900 aspect-[16/9] relative shadow-2xl">
+              <ResumePreview data={data} ref={previewRef} />
+            </div>
+            <p className="text-center text-xs text-slate-500">※1200x675サイズ（X/Twitter推奨）で書き出されます。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
