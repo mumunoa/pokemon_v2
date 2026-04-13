@@ -5,6 +5,7 @@ export type EnergyType = 'grass' | 'fire' | 'water' | 'lightning' | 'psychic' | 
 
 export interface ResumeData {
   trainerName: string;
+  gender: 'male' | 'female' | 'none'; // Added gender
   region: string;
   history: string;
   playStyles: PlayStyle[];
@@ -13,8 +14,15 @@ export interface ResumeData {
   favoriteTypes: EnergyType[];
   favoriteDeck: string;
   freeSpace: string;
-  pokemonImage?: string; // Data URL
+  pokemonImage?: string; // Data URL for character image
+  imageConfig: {
+    zoom: number;
+    x: number;
+    y: number;
+  };
   template: 'sar' | 'pokedex';
+  mainPokemonId?: number; // Added for theme & header image
+  favoritePokemonIds: number[]; // Added for 5 favorite slots
 }
 
 export const PLAY_STYLE_LABELS: Record<PlayStyle, string> = {
