@@ -33,8 +33,8 @@ export default function ResumePage() {
     try {
       const dataUrl = await toPng(previewRef.current, {
         cacheBust: true,
-        width: 1200,
-        height: 675,
+        width: 800,
+        height: 1133,
       });
       const link = document.createElement('a');
       link.download = `pokeca-resume-${data.trainerName || 'trainer'}.png`;
@@ -78,10 +78,12 @@ export default function ResumePage() {
               <span className="w-2 h-6 bg-red-600 rounded-full"></span>
               PREVIEW
             </h2>
-            <div className="overflow-hidden rounded-xl border-4 border-slate-800 bg-slate-900 aspect-[16/9] relative shadow-2xl">
-              <ResumePreview data={data} ref={previewRef} />
+            <div className="overflow-hidden rounded-xl border-4 border-slate-800 bg-slate-100 relative shadow-2xl origin-top" style={{ height: '700px' }}>
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 scale-[0.6] origin-top">
+                <ResumePreview data={data} ref={previewRef} />
+              </div>
             </div>
-            <p className="text-center text-xs text-slate-500">※1200x675サイズ（X/Twitter推奨）で書き出されます。</p>
+            <p className="text-center text-xs text-slate-500">※800x1133サイズ（縦長カード形式）で書き出されます。</p>
           </div>
         </div>
       </div>

@@ -6,7 +6,11 @@ import {
   PLAY_STYLE_LABELS, 
   REGULATION_LABELS, 
   REQUEST_ITEM_LABELS, 
-  ENERGY_TYPE_NAMES 
+  ENERGY_TYPE_NAMES,
+  PlayStyle,
+  Regulation,
+  RequestItem,
+  EnergyType
 } from '../types';
 import { EnergyIcon } from '../assets/EnergyIcons';
 
@@ -15,156 +19,104 @@ interface Props {
 }
 
 export const ResumePreview = forwardRef<HTMLDivElement, Props>(({ data }, ref) => {
-  // Styles for the 1200x675 container
-  const containerStyle: React.CSSProperties = {
-    width: '1200px',
-    height: '675px',
-    position: 'absolute',
-    top: '0',
-    left: '0',
-    display: 'flex',
-    overflow: 'hidden',
-    backgroundColor: '#0f172a', // Default slate-950
-    transform: 'scale(0.5)', // Match the preview container's scale if needed, but html-to-image handles original size
-    transformOrigin: 'top left',
-  };
-
-  const isPokedex = data.template === 'pokedex';
-
   return (
     <div 
       ref={ref} 
-      style={isPokedex ? pokedexStyle : sarStyle}
-      className="select-none"
+      className="relative bg-[#e5e7eb] overflow-hidden select-none shadow-2xl"
+      style={{
+        width: '800px',
+        height: '1133px', // A4-ish ratio
+        fontFamily: "'Inter', 'DotGothic16', sans-serif",
+        // CSS pattern for Monster Ball background
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23d1d5db' fill-opacity='0.4' fill-rule='evenodd'%3E%3Cpath d='M20 3a17 17 0 1 0 0 34 17 17 0 0 0 0-34zm0 2a15 15 0 0 1 14.9 14H25a5 5 0 0 0-10 0H5.1A15 15 0 0 1 20 5zm0 30a15 15 0 0 1-14.9-14H15a5 5 0 0 0 10 0h9.9A15 15 0 0 1 20 35zm0-20a3 3 0 1 1 0 6 3 3 0 0 1 0-6z'/%3E%3C/g%3E%3C/svg%3E")`,
+      }}
     >
-      {/* Background Layer */}
-      <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-600 rounded-full blur-[150px]"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600 rounded-full blur-[150px]"></div>
+      {/* Header Bar */}
+      <div className="bg-[#1f2937] py-6 px-10 flex items-end justify-between border-b-8 border-black">
+        <h1 className="text-white text-5xl font-black tracking-tighter">ポケカ履歴書</h1>
+        <p className="text-slate-400 text-sm font-bold uppercase tracking-widest pb-1">Profile for Pokemon-Card Trainers</p>
       </div>
 
-      <div className="relative z-10 w-full h-full flex p-10 gap-8">
-        {/* Left Column: Visuals & Profile */}
-        <div className="w-1/3 flex flex-col gap-6">
-          <div className={`relative aspect-square rounded-2xl border-4 ${isPokedex ? 'border-red-600' : 'border-white/30'} bg-slate-800/80 overflow-hidden flex items-center justify-center`}>
+      <div className="p-8 space-y-6">
+        {/* Upper: Visual & Basic Info */}
+        <div className="flex gap-6">
+          <div className="w-[300px] h-[340px] bg-[#d1d5db] border-4 border-white shadow-inner flex items-center justify-center relative overflow-hidden">
             {data.pokemonImage ? (
-              <img src={data.pokemonImage} alt="Pokemon" className="w-[80%] h-[80%] object-contain pixel-art shadow-2xl" />
+              <img src={data.pokemonImage} alt="User" className="w-full h-full object-cover" />
             ) : (
-              <div className="text-slate-500 font-bold text-center p-4">PUSH POKEMON<br/>HERE</div>
+              <div className="text-white font-black text-4xl opacity-50">NO IMAGE</div>
             )}
-            <div className="absolute bottom-0 left-0 right-0 bg-red-600 text-white text-[10px] font-black tracking-widest text-center py-1">
-              {isPokedex ? 'POKEDEX ID: #001' : 'SAR SPECIAL ART'}
-            </div>
           </div>
-
-          <div className="space-y-1">
-            <div className="text-[10px] text-red-500 font-black tracking-[0.2em]">TRAINER NAME</div>
-            <div className="text-4xl font-black italic tracking-tighter truncate leading-tight">
-              {data.trainerName || 'TRAINER'}
+          <div className="flex-1 space-y-4">
+            <InfoBox label="トレーナーネーム" value={data.trainerName} />
+            <div className="grid grid-cols-2 gap-4">
+              <InfoBox label="活動地域" value={data.region} />
+              <InfoBox label="ポケカ歴" value={data.history} />
             </div>
-            <div className="flex gap-2">
-              <span className="bg-slate-100 text-slate-900 px-2 py-0.5 text-[10px] font-black rounded uppercase">{data.region || 'REGION UNKNOWN'}</span>
-              <span className="bg-red-600 text-white px-2 py-0.5 text-[10px] font-black rounded uppercase">PRE-RELEASE VER.</span>
-            </div>
-          </div>
-
-          <div className="mt-auto space-y-2">
-            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest border-b border-slate-700 pb-1">Pokeca History / 歴</div>
-            <div className="text-lg font-bold">{data.history || '---'}</div>
           </div>
         </div>
 
-        {/* Right Column: Detailed Info */}
-        <div className="flex-1 flex flex-col gap-6">
-          <div className="grid grid-cols-2 gap-6">
-            {/* PlayStyles */}
-            <div className="space-y-2">
-              <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-2">
-                <span className="w-1 h-1 bg-red-500 rounded-full"></span>
-                Play Style
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {data.playStyles.length > 0 ? data.playStyles.map(s => (
-                  <span key={s} className="bg-slate-800 border border-slate-700 px-3 py-1 rounded-md text-xs font-bold text-white shadow-sm">
-                    {PLAY_STYLE_LABELS[s]}
-                  </span>
-                )) : <span className="text-slate-600 text-xs">---</span>}
-              </div>
-            </div>
-
-            {/* Regulations */}
-            <div className="space-y-2">
-              <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-2">
-                <span className="w-1 h-1 bg-teal-500 rounded-full"></span>
-                Regulation
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {data.regulations.length > 0 ? data.regulations.map(r => (
-                  <span key={r} className="bg-teal-950/30 border border-teal-800 text-teal-300 px-3 py-1 rounded-md text-xs font-bold shadow-sm">
-                    {REGULATION_LABELS[r]}
-                  </span>
-                )) : <span className="text-slate-600 text-xs">---</span>}
-              </div>
-            </div>
-          </div>
-
-          {/* Requests */}
-          <div className="space-y-2">
-            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-2">
-                <span className="w-1 h-1 bg-amber-500 rounded-full"></span>
-                Requests & News
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {data.requests.length > 0 ? data.requests.map(r => (
-                <div key={r} className="flex items-center gap-2 text-xs font-bold text-slate-200">
-                  <span className="w-1.5 h-1.5 bg-amber-500 rotate-45"></span>
-                  {REQUEST_ITEM_LABELS[r]}
+        {/* Middle: PlayStyle & Regulation */}
+        <div className="grid grid-cols-5 gap-6">
+          <div className="col-span-3">
+             <SectionBox label="プレイスタイル">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 py-1">
+                  {(Object.keys(PLAY_STYLE_LABELS) as PlayStyle[]).map(style => (
+                    <CheckItem key={style} label={PLAY_STYLE_LABELS[style]} checked={data.playStyles.includes(style)} />
+                  ))}
                 </div>
-              )) : <div className="text-slate-600 text-xs col-span-2">---</div>}
-            </div>
+             </SectionBox>
           </div>
-
-          {/* Types */}
-          <div className="space-y-2">
-            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-2">
-              <span className="w-1 h-1 bg-blue-500 rounded-full"></span>
-              Favorite Types
-            </div>
-            <div className="flex gap-2">
-              {data.favoriteTypes.length > 0 ? data.favoriteTypes.map(t => (
-                <div key={t} className="bg-slate-800 p-1.5 rounded-full border border-slate-700 shadow-lg" title={ENERGY_TYPE_NAMES[t]}>
-                  <EnergyIcon type={t} className="w-7 h-7" />
+          <div className="col-span-2">
+             <SectionBox label="レギュレーション">
+                <div className="space-y-2 py-1">
+                  {(Object.keys(REGULATION_LABELS) as Regulation[]).map(reg => (
+                    <CheckItem key={reg} label={REGULATION_LABELS[reg]} checked={data.regulations.includes(reg)} />
+                  ))}
                 </div>
-              )) : <div className="text-slate-600 text-xs">---</div>}
-            </div>
-          </div>
-
-          {/* Deck & FreeSpace */}
-          <div className="mt-auto grid grid-cols-1 gap-4">
-            <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-               <div className="text-[10px] text-red-500 font-black tracking-widest mb-1 uppercase">Favorite Deck</div>
-               <div className="text-lg font-black tracking-tight underline decoration-red-600 decoration-2 underline-offset-4">{data.favoriteDeck || '---'}</div>
-            </div>
-            <div className="bg-white/5 p-4 rounded-xl border border-white/10 flex-1 min-h-[100px]">
-               <div className="text-[10px] text-slate-400 font-black tracking-widest mb-2 uppercase flex items-center justify-between">
-                 <span>Trainer Memo</span>
-                 <span className="text-[8px] opacity-30 tracking-tight italic">AI COACH CO. RESUME SYSTEM</span>
-               </div>
-               <div className="text-sm font-medium leading-relaxed text-slate-300">
-                {data.freeSpace || '自由にご記入ください。'}
-               </div>
-            </div>
+             </SectionBox>
           </div>
         </div>
+
+        {/* Lower: Requests & News / Types / Deck */}
+        <div className="grid grid-cols-5 gap-6">
+          <div className="col-span-2">
+            <SectionBox label="要望＆お知らせ">
+               <div className="space-y-1.5 py-1">
+                  {(Object.keys(REQUEST_ITEM_LABELS) as RequestItem[]).map(item => (
+                    <CheckItem key={item} label={REQUEST_ITEM_LABELS[item]} checked={data.requests.includes(item)} small />
+                  ))}
+               </div>
+            </SectionBox>
+          </div>
+          <div className="col-span-3 space-y-6">
+            <SectionBox label="好きなタイプ">
+               <div className="grid grid-cols-4 gap-2 py-2">
+                  {(Object.keys(ENERGY_TYPE_NAMES) as EnergyType[]).map(type => (
+                    <div key={type} className="flex items-center gap-1 opacity-90">
+                      <div className={`w-3 h-3 rounded-sm border border-slate-400 ${data.favoriteTypes.includes(type) ? 'bg-black' : 'bg-white'}`}></div>
+                      <EnergyIcon type={type} className="w-6 h-6" />
+                    </div>
+                  ))}
+               </div>
+            </SectionBox>
+            <SectionBox label="好きなデッキ">
+               <div className="py-1 text-lg font-bold min-h-[50px]">{data.favoriteDeck || '---'}</div>
+            </SectionBox>
+          </div>
+        </div>
+
+        {/* Bottom: Free Space */}
+        <SectionBox label="フリースペース">
+           <div className="py-2 text-sm font-medium leading-relaxed min-h-[120px] whitespace-pre-wrap">
+             {data.freeSpace || '自由にご記入ください。'}
+           </div>
+        </SectionBox>
       </div>
 
-      {/* Watermark / Logo */}
-      <div className="absolute top-10 right-10 flex items-center gap-3 opacity-40">
-        <div className="flex flex-col items-end">
-          <div className="text-[8px] font-black uppercase tracking-tighter">Powered by</div>
-          <div className="text-sm font-black italic tracking-tighter leading-none">MUMUNOA AI</div>
-        </div>
-        <div className="w-10 h-10 border-2 border-white rounded-lg flex items-center justify-center font-black text-xs italic">AI</div>
+      {/* Footer Branding */}
+      <div className="absolute bottom-4 right-8 opacity-40 text-right">
+        <p className="text-[10px] font-black italic">MUMUNOA AI COACH - GENERATIVE RESUME SYSTEM</p>
       </div>
     </div>
   );
@@ -172,26 +124,34 @@ export const ResumePreview = forwardRef<HTMLDivElement, Props>(({ data }, ref) =
 
 ResumePreview.displayName = 'ResumePreview';
 
-// CSS Design Objects
-const pokedexStyle: React.CSSProperties = {
-  width: '1200px',
-  height: '675px',
-  backgroundColor: '#0f172a',
-  backgroundImage: 'radial-gradient(circle at 2px 2px, #334155 1px, transparent 0)',
-  backgroundSize: '30px 30px',
-  position: 'relative',
-  color: 'white',
-  fontFamily: "'DotGothic16', 'Inter', sans-serif",
-  // No 3D shadows here - keeping it 2D and clean
-};
+// Sub-components for clean architecture
+const InfoBox = ({ label, value }: { label: string, value: string }) => (
+  <div className="space-y-1">
+    <div className="bg-black text-white text-[10px] font-bold px-3 py-1 rounded-t-lg inline-block">{label}</div>
+    <div className="bg-white border-2 border-slate-300 rounded-b-lg rounded-r-lg p-3 min-h-[56px] flex items-center text-xl font-black">
+      {value || '---'}
+    </div>
+  </div>
+);
 
-const sarStyle: React.CSSProperties = {
-  width: '1200px',
-  height: '675px',
-  backgroundColor: '#1e1b4b',
-  backgroundImage: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
-  position: 'relative',
-  color: 'white',
-  fontFamily: "'Inter', sans-serif",
-  boxShadow: 'inset 0 0 100px rgba(129, 140, 248, 0.2)',
-};
+const SectionBox = ({ label, children }: { label: string, children: React.ReactNode }) => (
+  <div className="h-full">
+    <div className="bg-black text-white text-[10px] font-bold px-3 py-1 rounded-t-lg inline-block">{label}</div>
+    <div className="bg-white border-2 border-slate-300 rounded-b-lg rounded-r-lg p-3 min-h-[60px] shadow-sm">
+      {children}
+    </div>
+  </div>
+);
+
+const CheckItem = ({ label, checked, small = false }: { label: string, checked: boolean, small?: boolean }) => (
+  <div className={`flex items-center gap-2 ${small ? 'text-[10px]' : 'text-xs'} font-bold text-slate-700`}>
+    <div className={`flex-shrink-0 w-4 h-4 border-2 border-slate-400 rounded-sm flex items-center justify-center transition-colors ${checked ? 'bg-black border-black' : 'bg-white'}`}>
+       {checked && (
+         <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+         </svg>
+       )}
+    </div>
+    <span className="truncate">{label}</span>
+  </div>
+);
