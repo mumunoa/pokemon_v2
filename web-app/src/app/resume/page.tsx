@@ -120,6 +120,7 @@ export default function ResumePage() {
           <div className="lg:col-span-12 xl:col-span-7 bg-slate-900/50 rounded-2xl border border-slate-800 p-6 backdrop-blur-sm order-2">
             <ResumeForm data={data} onUpdate={handleUpdate} />
             <div className="mt-8 flex flex-col sm:flex-row gap-4">
+              {/* 
               <button
                 onClick={downloadImage}
                 disabled={isExporting}
@@ -127,12 +128,13 @@ export default function ResumePage() {
               >
                 {isExporting ? '生成中...' : '画像を保存する'}
               </button>
+              */}
               <button
                 onClick={shareImage}
                 disabled={isExporting}
-                className="flex-1 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 disabled:from-slate-700 disabled:to-slate-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-900/20 active:scale-95 flex items-center justify-center gap-2"
+                className="flex-1 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 disabled:from-slate-700 disabled:to-slate-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-red-900/20 active:scale-95 flex items-center justify-center gap-2"
               >
-                {isExporting ? '生成中...' : '写真に保存 / SNSでシェア'}
+                {isExporting ? '生成中...' : '画像を保存する / SNSでシェア'}
               </button>
             </div>
           </div>
