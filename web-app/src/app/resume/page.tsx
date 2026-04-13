@@ -50,6 +50,40 @@ export default function ResumePage() {
     }
   };
 
+  const shareImage = async () => {
+    if (!previewRef.current) return;
+    setIsExporting(true);
+    try {
+      const dataUrl = await toPng(previewRef.current, {
+        cacheBust: true,
+        width: 800,
+        height: 1133,
+      });
+
+      // Convert dataUrl to File object for Sharing
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      const file = new File([blob], `ポケカ履歴書-${data.trainerName || 'trainer'}.png`, { type: 'image/png' });
+
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'ポケカ履歴書',
+          text: `${data.trainerName}さんのポケカ履歴書を作成しました！ #ポケカ履歴書メーカー`,
+        });
+      } else {
+        // Fallback for browsers that don't support file sharing
+        alert("このブラウザは「写真への保存・シェア」に直接対応していません。上の「画像を保存する」ボタンから保存してください。");
+      }
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') {
+        console.error('Share failed', err);
+      }
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -92,6 +126,13 @@ export default function ResumePage() {
                 className="flex-1 bg-red-600 hover:bg-red-500 disabled:bg-slate-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-red-900/20 active:scale-95 flex items-center justify-center gap-2"
               >
                 {isExporting ? '生成中...' : '画像を保存する'}
+              </button>
+              <button
+                onClick={shareImage}
+                disabled={isExporting}
+                className="flex-1 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 disabled:from-slate-700 disabled:to-slate-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-900/20 active:scale-95 flex items-center justify-center gap-2"
+              >
+                {isExporting ? '生成中...' : '写真に保存 / SNSでシェア'}
               </button>
             </div>
           </div>
