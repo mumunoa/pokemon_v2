@@ -70,7 +70,7 @@ export const ResumePreview = forwardRef<HTMLDivElement, Props>(({ data }, ref) =
 
         {headerImg && (
           <div className="relative z-10 w-44 h-44 -mr-10 -mb-16 mt-[-40px] drop-shadow-[0_10px_15px_rgba(0,0,0,0.3)] transform transition-transform duration-700 scale-125 hover:scale-130">
-            <img src={headerImg} alt="Main Pokemon" className="w-full h-full object-contain" />
+            <img src={headerImg} alt="Main Pokemon" className="w-full h-full object-contain" crossOrigin="anonymous" />
           </div>
         )}
       </div>
@@ -90,6 +90,7 @@ export const ResumePreview = forwardRef<HTMLDivElement, Props>(({ data }, ref) =
                   alt="User" 
                   className="w-full h-full object-cover relative z-10" 
                   style={{ transform: `translate(${data.imageConfig.x}px, ${data.imageConfig.y}px) scale(${data.imageConfig.zoom})` }}
+                  crossOrigin="anonymous"
                 />
               ) : (
                 <div className="text-slate-200 font-black text-4xl relative z-10">NO IMAGE</div>
@@ -141,7 +142,7 @@ export const ResumePreview = forwardRef<HTMLDivElement, Props>(({ data }, ref) =
                     return (
                       <div key={idx} className="flex-1 h-full bg-slate-50/50 border-2 border-slate-100 flex items-center justify-center rounded-2xl relative overflow-hidden group shadow-inner">
                          {url ? (
-                           <img src={url} alt="poke" className="w-full h-full object-contain p-1 drop-shadow-md transition-all duration-300 group-hover:scale-125 group-hover:rotate-6" />
+                           <img src={url} alt="poke" className="w-full h-full object-contain p-1 drop-shadow-md transition-all duration-300 group-hover:scale-125 group-hover:rotate-6" crossOrigin="anonymous" />
                          ) : (
                            <div className="w-full h-full bg-slate-100/30 flex items-center justify-center">
                               <div className="w-1.5 h-1.5 bg-slate-300 rounded-full"></div>

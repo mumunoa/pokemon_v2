@@ -34,11 +34,16 @@ export default function ResumePage() {
     if (!previewRef.current) return;
     setIsExporting(true);
     try {
+      // First render to preload resources (Safari iOS fix)
+      await toPng(previewRef.current, { cacheBust: true });
+      
+      // Second render for actual capture
       const dataUrl = await toPng(previewRef.current, {
         cacheBust: true,
         width: 800,
         height: 1133,
       });
+
       const link = document.createElement('a');
       link.download = `ポケカ履歴書-${data.trainerName || 'trainer'}.png`;
       link.href = dataUrl;
@@ -54,6 +59,10 @@ export default function ResumePage() {
     if (!previewRef.current) return;
     setIsExporting(true);
     try {
+      // First render (Safari iOS fix)
+      await toPng(previewRef.current, { cacheBust: true });
+
+      // Second render
       const dataUrl = await toPng(previewRef.current, {
         cacheBust: true,
         width: 800,
@@ -72,7 +81,6 @@ export default function ResumePage() {
           text: `${data.trainerName}さんのポケカ履歴書を作成しました！ #ポケカ履歴書メーカー`,
         });
       } else {
-        // Fallback for browsers that don't support file sharing
         alert("このブラウザは「写真への保存・シェア」に直接対応していません。上の「画像を保存する」ボタンから保存してください。");
       }
     } catch (err) {
