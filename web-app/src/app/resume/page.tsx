@@ -147,6 +147,20 @@ export default function ResumePage() {
             </div>
           </div>
         </div>
+
+        {/* Disclaimer Footer for AdSense Compliance */}
+        <footer className="pt-12 pb-8 border-t border-slate-900 mt-12">
+          <div className="max-w-4xl mx-auto text-center space-y-4">
+            <p className="text-[10px] text-slate-500 leading-relaxed max-w-2xl mx-auto">
+              ※ 本サービスはファンによる非公式のツールです。使用されているポケモンカードの画像、キャラクター、ロゴ等の著作権・知的財産権は、株式会社ポケモン、任天堂株式会社、株式会社クリーチャーズ、株式会社ゲームフリークに帰属します。当サイトはこれらの権利を侵害する意図はなく、ファン活動の一環として運営されています。
+            </p>
+            <div className="flex justify-center gap-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              <a href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</a>
+              <a href="/terms" className="hover:text-white transition-colors">Terms of Service</a>
+              <a href="/guide" className="hover:text-white transition-colors">How to use</a>
+            </div>
+          </div>
+        </footer>
       </div>
     </div>
   );

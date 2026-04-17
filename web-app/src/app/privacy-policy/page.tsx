@@ -69,7 +69,20 @@ export default function PrivacyPolicy() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-xl font-bold text-white">第5条（安全性と免責事項）</h2>
+            <h2 className="text-xl font-bold text-white">第5条（著作権および知的財産権について）</h2>
+            <p>
+              当サイト「Mumunoa TCG Lab」は、個人によって制作・運営されているファンサイトであり、株式会社ポケモン、任天堂株式会社、株式会社クリーチャーズ、株式会社ゲームフリークとは一切関係ありません。
+            </p>
+            <p>
+              本サービスで使用されているポケモンカードの画像、キャラクター、ロゴ、商標、素材等の著作権・知的財産権は、それぞれの権利所有者に帰属します。当サイトはこれらの知的財産権の尊重を最優先に考えており、権利を侵害する意図は一切ありません。
+            </p>
+            <p>
+              権利所有者様から、著作物等の取り扱いについて削除等の要請があった場合には、速やかに対処いたします。
+            </p>
+          </section>
+
+          <section className="space-y-4">
+            <h2 className="text-xl font-bold text-white">第6条（安全性と免責事項）</h2>
             <p>
               当サイトのコンテンツ・情報について、できる限り正確な情報を提供するよう努めておりますが、正確性や安全性を保証するものではありません。
               情報提供に起因して発生したトラブルや損害については、当サイトは一切の責任を負いかねます。
@@ -80,7 +93,7 @@ export default function PrivacyPolicy() {
           </section>
 
           <section className="space-y-4 pt-8 border-t border-white/10">
-            <h2 className="text-xl font-bold text-white">第6条（お問合せ先）</h2>
+            <h2 className="text-xl font-bold text-white">第7条（お問合せ先）</h2>
             <p>
               本ポリシーに関するお問い合わせは、以下のメールアドレスまでお願いいたします。
             </p>

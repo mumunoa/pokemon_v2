@@ -208,9 +208,14 @@ export const ResumePreview = forwardRef<HTMLDivElement, Props>(({ data }, ref) =
       </div>
 
       {/* Footer Branding */}
-      <div className="absolute bottom-6 left-12 flex items-center gap-2 opacity-30">
-        <div className="w-1.5 h-6 rounded-full" style={{ backgroundColor: themeColor }}></div>
-        <p className="text-[10px] font-black italic tracking-widest text-slate-900 uppercase">Pokeca Resume x AI Coach</p>
+      <div className="absolute bottom-6 left-12 flex items-center gap-4 opacity-30">
+        <div className="flex items-center gap-2">
+          <div className="w-1.5 h-6 rounded-full" style={{ backgroundColor: themeColor }}></div>
+          <p className="text-[10px] font-black italic tracking-widest text-slate-900 uppercase">Pokeca Resume x AI Coach</p>
+        </div>
+        <p className="text-[7px] font-bold text-slate-700 leading-tight max-w-[300px]">
+          ※本サービスはファンが制作した非公式ツールです。画像・意匠の著作権、知的財産権は株式会社ポケモン等に帰属します。
+        </p>
       </div>
       <div className="absolute bottom-6 right-12 opacity-30 text-right">
         <p className="text-[9px] font-black tracking-widest text-slate-900">© MUMUNOA AI COACH SYSTEM 2024</p>
