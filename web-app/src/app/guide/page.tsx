@@ -35,8 +35,35 @@ export default function GuideListing() {
        title: "初心者向け：一人回し（ソリティア）の基本とステップアップ",
        category: "BEGINNER",
        description: "対戦相手がいなくても強くなれる。プロも実践する「目的意識を持った練習ルーチン」の作り方。",
-       date: "2024.04.17",
+       date: "2024.04.18",
        color: "from-emerald-500 to-teal-600",
+       featured: false
+    },
+    {
+       id: "deck-theory-prize-card",
+       title: "サイドプランの立て方：最短で取り切る「2-2-2」ルートの思考法",
+       category: "THEORY",
+       description: "勝利へのロードマップ。どのポケモンをどの順番で倒すべきか、逆転のサイドマネジメントを解説。",
+       date: "2024.04.18",
+       color: "from-purple-500 to-indigo-600",
+       featured: false
+    },
+    {
+       id: "charizard-ex-meta",
+       title: "環境解説：悪リザードンex を使いこなすための練習法",
+       category: "META",
+       description: "不動のトップメタ。盤面展開の優先順位と、AI分析で読み解くリザードンの「死角」。",
+       date: "2024.04.18",
+       color: "from-red-500 to-orange-600",
+       featured: false
+    },
+    {
+       id: "dragapult-ex-meta",
+       title: "最新環境：ドラパルトex と「ダメカンバラマキ」の戦術論",
+       category: "META",
+       description: "超火力の新星。ファントムダイブの効果を最大化するダメカン配置の数学的最適解。",
+       date: "2024.04.18",
+       color: "from-indigo-500 to-purple-600",
        featured: false
     }
   ];

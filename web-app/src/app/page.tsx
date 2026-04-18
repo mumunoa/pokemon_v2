@@ -62,9 +62,9 @@ export default function HomePage() {
             </span>
           </Link>
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-400">
-            <Link href="#features" className="hover:text-white transition-colors">機能紹介</Link>
+            <Link href="/guide" className="hover:text-white transition-colors">攻略ガイド</Link>
+            <Link href="/resume" className="hover:text-white transition-colors">履歴書メーカー</Link>
             <Link href="https://x.com/mumunoa_tcg" target="_blank" className="hover:text-white transition-colors">公式X</Link>
-            <Link href="https://ofuse.me/mumunoa" target="_blank" className="hover:text-white transition-colors">応援する</Link>
           </nav>
           <div className="flex items-center gap-4">
             <Link
