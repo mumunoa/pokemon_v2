@@ -274,14 +274,15 @@ export default function HomePage() {
           <div>
             <h4 className="text-white font-bold mb-6 text-sm">戦略・ガイド</h4>
             <ul className="space-y-4 text-sm text-slate-500">
+              <li><Link href="/guide" className="hover:text-white transition-colors">攻略ガイド一覧</Link></li>
               <li><Link href="/guide/ai-coaching" className="hover:text-white transition-colors">AIコーチ活用法</Link></li>
               <li><Link href="/guide/deck-stability" className="hover:text-white transition-colors">事故率最小化の極意</Link></li>
-              <li><Link href="/strategy/practice-tips" className="hover:text-white transition-colors">一人回し練習法</Link></li>
             </ul>
           </div>
           <div>
             <h4 className="text-white font-bold mb-6 text-sm">法的情報・お問合せ</h4>
             <ul className="space-y-4 text-sm text-slate-500">
+              <li><Link href="/about" className="hover:text-white transition-colors">当サイトについて / Mission</Link></li>
               <li><Link href="/terms" className="hover:text-white transition-colors">利用規約</Link></li>
               <li><Link href="/privacy-policy" className="hover:text-white transition-colors">プライバシーポリシー</Link></li>
               <li><Link href="mailto:support@mumunoa.com" className="hover:text-white transition-colors">お問い合わせ (Email)</Link></li>

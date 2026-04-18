@@ -349,19 +349,19 @@ async function main() {
   }
 
   // 更新されなかったカードを extra に変更する (カテゴリ指定時のみ)
-  console.log('\nカテゴリ内の未更新カードを "extra" に更新中...');
-  for (const category of activeCategories) {
-    console.log(`${category} カテゴリを更新中...`);
-    const { error: updateError } = await supabase
-      .from('cards')
-      .update({ regulation: 'extra' })
-      .eq('type', category)
-      .lt('updated_at', startTime);
+  //console.log('\nカテゴリ内の未更新カードを "extra" に更新中...');
+  //for (const category of activeCategories) {
+  //  console.log(`${category} カテゴリを更新中...`);
+  //  const { error: updateError } = await supabase
+  //    .from('cards')
+  //    .update({ regulation: 'extra' })
+  //    .eq('type', category)
+  //    .lt('updated_at', startTime);
 
-    if (updateError) {
-      console.error(`Update Error for ${category}:`, updateError.message);
-    }
-  }
+  //  if (updateError) {
+  //    console.error(`Update Error for ${category}:`, updateError.message);
+  //  }
+  //}
 
   console.log('\nすべてのカテゴリ処理が完了しました！');
 }

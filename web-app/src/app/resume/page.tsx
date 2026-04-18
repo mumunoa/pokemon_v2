@@ -148,6 +148,60 @@ export default function ResumePage() {
           </div>
         </div>
 
+        {/* Content Expansion for AdSense Compliance & SEO */}
+        <div className="mt-20 max-w-4xl mx-auto space-y-16 border-t border-slate-900 pt-20">
+          <section className="space-y-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+              <span className="w-1.5 h-8 bg-red-600 rounded-full"></span>
+              ポケカ履歴書を最大活用するために
+            </h2>
+            <p className="text-slate-400 leading-relaxed">
+              ポケカ履歴書は、単なるプロフィールの羅列ではありません。あなたの「プレイスタイル」や「今の熱量」を可視化し、価値観の合う練習仲間や対戦相手と出会うための強力なコミュニケーションツールです。Mumunoa TCG Lab の履歴書メーカーは、高品質なデザインと使いやすさを追求し、SNSでの拡散力を最大化するように設計されています。
+            </p>
+          </section>
+
+          <div className="grid md:grid-cols-2 gap-12">
+            <section className="space-y-6">
+              <h3 className="text-xl font-bold text-red-500">自己紹介のコツ</h3>
+              <ul className="space-y-4 text-sm text-slate-400">
+                <li className="flex gap-2">
+                  <span className="text-red-600 font-bold">・</span>
+                  <span><strong>活動時間の明記:</strong> 「平日の夜21時以降」や「土日メイン」など、具体的な時間を書くとリモート対戦の誘いが増えます。</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-red-600 font-bold">・</span>
+                  <span><strong>目標の宣言:</strong> 「ジムバトルで優勝したい」「CL（シティリーグ）完走を目指す」など、目標が明確なほど熱量の近い仲間が集まります。</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-red-600 font-bold">・</span>
+                  <span><strong>こだわりポケモン:</strong> 好きなポケモンの話は最高の会話のきっかけになります。</span>
+                </li>
+              </ul>
+            </section>
+
+            <section className="space-y-6">
+              <h3 className="text-xl font-bold text-red-500">よくある質問 / FAQ</h3>
+              <div className="space-y-4 text-sm">
+                <div className="space-y-1">
+                  <p className="font-bold text-slate-200 uppercase tracking-tighter">Q. 商用利用やSNS以外での使用は可能ですか？</p>
+                  <p className="text-slate-500 leading-relaxed">A. 当サイトはファンによる非公式の無料ツールです。個人利用の範囲内であればSNSやブログ等で自由にお使いいただけますが、公式様や権利者様を害する行為、および当ツールの商用化は禁止しています。</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="font-bold text-slate-200 uppercase tracking-tighter">Q. iPhoneで画像が真っ白になることがあります。</p>
+                  <p className="text-slate-500 leading-relaxed">A. Safariブラウザの仕様により、通信環境や端末負荷で描画に失敗する場合があります。その際はページを再読み込みするか、「画像を保存する / SNSでシェア」ボタンを何度か試してみてください。</p>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <section className="py-10 bg-slate-900/30 rounded-[32px] p-8 border border-white/5 text-center">
+            <h3 className="text-lg font-bold text-white mb-4 italic">Theory of Networking</h3>
+            <p className="text-xs text-slate-500 max-w-2xl mx-auto leading-relaxed">
+              Mumunoa TCG Lab は、統計データを用いたプレイング解析だけでなく、履歴書を通じたコミュニティの活性化も「プレイヤーの成長」における重要な要素と考えています。良い仲間と出会い、共に練習することが、勝利への最短ルートです。
+            </p>
+          </section>
+        </div>
+
         {/* Disclaimer Footer for AdSense Compliance */}
         <footer className="pt-12 pb-8 border-t border-slate-900 mt-12">
           <div className="max-w-4xl mx-auto text-center space-y-4">
