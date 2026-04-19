@@ -542,7 +542,7 @@ export const useGameStore = create<GameState>()(
             const handCards = shuffleArray([...state.zones[handZone]]);
             if (handCards.length === 0) return state;
 
-            const newDeck = [...state.zones[deckZone], ...handCards];
+            const newDeck = [...handCards, ...state.zones[deckZone]];
             const logMsg = `${playerId === 'player1' ? 'プレイヤー1' : 'プレイヤー2'} の手札をすべて山札の下に戻しました。`;
 
             const structuredLog = {
